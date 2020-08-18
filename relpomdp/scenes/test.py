@@ -1,8 +1,11 @@
-import os
-import habitat_sim
+# This is just testing out functionalities of aihabitat API.
 # THIS IS SUPER HELPFUL
 #
 # https://colab.research.google.com/drive/14t0oOuDTKgH-awUohwoJZ79nus96BmRS?usp=sharing#scrollTo=1UUJWw3GyUYP
+
+
+import os
+import habitat_sim
 
 
 replica_path = "/home/kaiyuzh/repo/Replica-Dataset/downloads/replica_v1/"

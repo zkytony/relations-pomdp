@@ -1,3 +1,5 @@
+# A novince try at MRF in python
+
 from search_and_rescue import *
 from search_and_rescue.experiments.trial import *
 from dynamic_mos.experiments.world_types import create_free_world

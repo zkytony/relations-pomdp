@@ -1,12 +1,14 @@
-import os
-import habitat_sim
-import pandas as pd
 
 # Generates a table:
 #
 #  scene_name  object_id  object_category  center  dims
 #
 # For a list of scenes
+
+
+import os
+import habitat_sim
+import pandas as pd
 
 replica_path = "/home/kaiyuzh/repo/Replica-Dataset/downloads/replica_v1/"
 scenes = [
@@ -97,6 +99,7 @@ for scene_name in scenes:
     cfg = habitat_sim.Configuration(sim_cfg, [agent_cfg])
     sim = habitat_sim.Simulator(cfg)
     scene = sim.semantic_scene
+    
     for obj in scene.objects:
         if obj is not None and obj.category is not None:
             #  scene_name  object_id  object_category  center_x, center_y, center_z, size_x, size_y, size_z
