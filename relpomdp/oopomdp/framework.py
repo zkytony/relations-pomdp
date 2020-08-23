@@ -1,7 +1,7 @@
 # Object Oriented POMDP framework - without object independence assumption
 
 from pomdp_py.framework.basics import POMDP, State, Action, Observation,\
-    ObservationModel, TransitionModel, GenerativeDistribution
+    ObservationModel, TransitionModel, GenerativeDistribution, Environment
 import copy
 from relpomdp.oopomdp.graph import *
 
@@ -138,13 +138,15 @@ class OOState(State):
     
 class Condition:
     """Deterministic condition"""
-    def __init__(self, relations):
-        self.relations = relations
-
-    def met(self, state, action):
+    # def __init__(self, effect):
+    #     """`effect` the effect that will happen if the condition is True"""
+    #     self.effect = effect
+        
+    def satisfy(self, state, action):
         """Returns T/F based on whether the state satisfies the condition."""
         raise NotImplementedError
 
+    
 class Effect(GenerativeDistribution):
     """Probabilistic effect"""
     def __init__(self, effect_type):
@@ -161,8 +163,26 @@ class Effect(GenerativeDistribution):
     def probability(self, next_state, state, action):
         """Returns the probability of getting `next_state` if applying
         this effect on `state` given `action`."""
-        raise NotImplementedError    
+        raise NotImplementedError
 
+class DeterministicEffect(Effect):
+    """Deterministically move"""
+    def __init__(self, effect_type, epsilon=1e-9):
+        self.epsilon = epsilon
+        super().__init__(effect_type)
+        
+    def random(self, state, action):
+        """Returns an OOState after applying this effect on `state`"""
+        return self.mpe(state, action)
+
+    def probability(self, next_state, state, action):
+        """Returns the probability of getting `next_state` if applying
+        this effect on `state` given `action`."""
+        expected_next_state = self.mpe(state, action)
+        if next_state == expected_next_state:
+            return 1.0 - self.epsilon
+        else:
+            return self.epsilon
     
 class Class(Node):
     """A node, which could have an (x,y) location"""
@@ -195,7 +215,8 @@ class Relation(Edge):
         if type(class1) == str:
             class1 = Class(class1)
         if type(class2) == str:
-            class2 = Class(class2) 
+            class2 = Class(class2)
+        self.name = name
         super().__init__((name, class1.name, class2.name),
                          class1, class2, data=name)
 
@@ -203,9 +224,24 @@ class Relation(Edge):
         """Returns True if the Relation holds. False otherwise"""
         raise NotImplementedError
 
+    def __call__(self, object_state1, object_state2):
+        """Returns True if the Relation holds. False otherwise"""
+        return self.eval(object_state1, object_state2)
+
     @property
     def degenerate(self):
         return len(self.nodes) == 1
+
+    @property
+    def class1(self):
+        return self.nodes[0]
+
+    @property
+    def class2(self):
+        if len(self.nodes) >= 2:
+            return self.nodes[1]
+        else:
+            return None
             
     def __repr__(self):
         if self.data is None:
@@ -213,9 +249,9 @@ class Relation(Edge):
         else:
             data = self.data
         if not self.degenerate:
-            return "#%s[<%d>%s<%d>]" % (self.id, self.nodes[0].id, str(data), self.nodes[1].id)
+            return "%s(%s,%s)" % (self.name, self.class1.name, self.class2.name)
         else:
-            return "#%s[<%d>]" % (self.id, self.nodes[0].id)
+            return "%s(%s,%s)" % (self.name, self.class1.name)
 
     @property
     def color(self):
@@ -236,7 +272,7 @@ class OOEnvironment(Environment):
         """
         `relations`s is a set of relations that is relevant for this environment.
 
-        `cond_effects` is a set of (Condition, Effect) pairs,
+        `cond_effects` is a set of (Condition, Effects) pairs,
         which will be used to form the transition model of the OO-POMDP.
         """
         self._cond_effects = cond_effects
@@ -251,11 +287,11 @@ class OOTransitionModel(TransitionModel):
 
     def sample(self, state, action, argmax=False):
         """sample(self, state, action, **kwargs)
-        Samples the next state by applying effects with satisfying conditions
+        Samples the next state by applying effects with satisfying cond_effects
         """
         effects = []
         for condition, effect in self._cond_effects:
-            if condition.met(state, action):
+            if condition.satisfy(state, action):
                 effects.append(effect)
         # apply the effects
         next_state = state.copy()
@@ -273,7 +309,7 @@ class OOTransitionModel(TransitionModel):
         """
         effects = []
         for condition, effect in self._cond_effects:
-            if condition.met(state, action):
+            if condition.satisfy(state, action):
                 effects.append(effect)
         prob = 1.0
         for effect in effects:
