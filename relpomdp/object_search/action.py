@@ -20,17 +20,17 @@ class Move(Action):
     WEST = (-1, 0)
     NORTH = (0, 1)
     SOUTH = (0, -1)
-    def __init__(self, motion):
+    def __init__(self, name, motion):
         if motion not in {Move.EAST, Move.WEST,
                           Move.NORTH, Move.SOUTH}:
             raise ValueError("Invalid move motion %s" % motion)
         self.motion = motion
-        super().__init__("move-%s" % str(motion))
+        super().__init__("move-%s" % name)
 
-MoveE = Move(Move.EAST)
-MoveW = Move(Move.WEST)
-MoveN = Move(Move.NORTH)
-MoveS = Move(Move.SOUTH)
+MoveE = Move("E", Move.EAST)
+MoveW = Move("W", Move.WEST)
+MoveN = Move("N", Move.NORTH)
+MoveS = Move("S", Move.SOUTH)
 
 class Pickup(Action):
     def __init__(self):

@@ -43,14 +43,6 @@ class ObjectSearchViz:
         w, l = self._env.width, self._env.length
         state = self._env.state
 
-        # Draw walls
-        objstates_at_pose = {}
-        for objid in self._env.grid_map.walls:
-            wall = self._env.grid_map.walls[objid]
-            if wall.pose not in objstates_at_pose:
-                objstates_at_pose[wall.pose] = []
-            objstates_at_pose[wall.pose].append(wall)
-
         # Creating image
         img = np.full((w*r,l*r,3), 255, dtype=np.int32)
         for x in range(w):
@@ -58,21 +50,27 @@ class ObjectSearchViz:
                 # Draw free space
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (255, 255, 255), -1)                
-                if (x,y) in objstates_at_pose:
-                    for objstate in objstates_at_pose[(x,y)]:
-                        if objstate.objclass == "Wall":
-                            if objstate.direction == "H":
-                                # draw a line on the top side of the square
-                                cv2.line(img, (y*r+r, x*r), (y*r+r, x*r+r),
-                                         (0, 0, 0), 6)
-                            else:
-                                # draw a line on the right side of the square
-                                cv2.line(img, (y*r, x*r+r), (y*r+r, x*r+r),
-                                         (0, 0, 0), 6)
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                              (0, 0, 0), 1, 8)                    
+                              (0, 0, 0), 1, 8)
+        self.render_walls(img, r)
         return img
+
+    def render_walls(self, img, r):
+        """r == resolution"""
+        # Draw walls
+        walls_at_pose = {}
+        for objid in self._env.grid_map.walls:
+            wall = self._env.grid_map.walls[objid]
+            x, y = wall.pose
+            if wall.direction == "H":
+                # draw a line on the top side of the square
+                cv2.line(img, (y*r+r, x*r), (y*r+r, x*r+r),
+                         (0, 0, 0), 6)
+            else:
+                # draw a line on the right side of the square
+                cv2.line(img, (y*r, x*r+r), (y*r+r, x*r+r),
+                         (0, 0, 0), 6)
     
     @property
     def img_width(self):
@@ -205,7 +203,10 @@ class ObjectSearchViz:
 
         # Draw robot
         rx, ry = self._env.robot_state["pose"]
-        ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)                
+        ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)
+
+        # Draw walls
+        self.render_walls(img, r)        
 
         # In numpy image array, (0,0) is on top-left. But
         # we want to visualize it so that it's on bottom-left,
