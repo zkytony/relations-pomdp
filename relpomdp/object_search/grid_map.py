@@ -5,11 +5,28 @@ from relpomdp.object_search.state import *
 from relpomdp.object_search.action import *
 
 class GridMap:
-    def __init__(self, width, length, walls):
-        """walls (dict): Map from objid to WallState."""
+    def __init__(self, width, length, walls, rooms):
+        """
+        walls (dict): Map from objid to WallState.
+        rooms (list): A list of rooms
+            (includes both rooms and corridors)"""
         self.width = width
         self.length = length
         self.walls = walls
+        self.rooms = {r.name:r for r in rooms}
+
+        # Create a mapping from location to room
+        self.xy_to_room = {}
+        for name in self.rooms:
+            room = self.rooms[name]
+            for x,y in room.locations:
+                self.xy_to_room[(x,y)] = room.name
+
+    def room_of(self, position):
+        if position in self.xy_to_room:
+            return self.xy_to_room[position]
+        else:
+            return None
             
     def within_bounds(self, position):
         if not (position[0] >= 0 and position[0] < self.width\

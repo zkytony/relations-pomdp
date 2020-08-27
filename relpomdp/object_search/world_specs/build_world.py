@@ -4,6 +4,14 @@ from relpomdp.object_search.grid_map import GridMap
 import random
 import pickle
 
+class Room:
+    def __init__(self, name, walls, locations):
+        """walls: A set of (x,y,"H"|"V") walls,
+        locations: A set of (x,y) locations."""
+        self.name = name
+        self.walls = walls
+        self.locations = locations
+
 def init_world(width, length):
     """
     Create a world without any inner wall and only
@@ -19,8 +27,7 @@ def init_world(width, length):
     right_walls = [(width-1,y,"V") for y in range(length)]
     return set(top_walls + bottom_walls + left_walls + right_walls)
 
-
-def make_room(x, y, width, length):
+def make_room(name, x, y, width, length):
     """
     makes a room, which has bottom-left corner at x,y and with
     dimensions width and length.
@@ -30,9 +37,13 @@ def make_room(x, y, width, length):
     res = []
     for wx, wy, direction in walls:
         res.append((wx+x, wy+y, direction))
-    return set(res)
+    # Get the locations -- it's just the rectangle box
+    locations = {(px,py)
+                  for px in range(x,x+width)
+                  for py in range(y,y+length)}
+    return Room(name, set(res), locations)
 
-def make_corridor(x, y, width, length, rooms, corridors=[], seed=100):
+def make_corridor(name, x, y, width, length, rooms, other_corridors=[], seed=100):
     """
     Adds a corridor, which is also a rectangle with bottom-left
     coordinates (x,y) and dimensions (width, length).
@@ -53,27 +64,27 @@ def make_corridor(x, y, width, length, rooms, corridors=[], seed=100):
     """
     random.seed(seed)
     rooms = list(rooms)
-    corridor = make_room(x, y, width, length)
+    corridor = make_room(name, x, y, width, length)
     for room in rooms:
-        walls = list(sorted(room))
+        walls = list(sorted(room.walls))
         random.shuffle(walls)
         for wall in walls:
-            if wall in corridor:
-                room.remove(wall)
-                corridor.remove(wall)
+            if wall in corridor.walls:
+                room.walls.remove(wall)
+                corridor.walls.remove(wall)
                 break
 
-    corridors = list(corridors)
-    for cr in corridors:
-        walls = list(sorted(cr))
+    other_corridors = list(other_corridors)
+    for other_corridor in other_corridors:
+        walls = list(sorted(other_corridor.walls))
         random.shuffle(walls)        
         for wall in walls:
-            if wall in corridor:
-                cr.remove(wall)
-                corridor.remove(wall)
+            if wall in corridor.walls:
+                other_corridor.walls.remove(wall)
+                corridor.walls.remove(wall)
 
-    if len(corridors) > 0:
-        return corridor, rooms, corridors
+    if len(other_corridors) > 0:
+        return corridor, rooms, other_corridors
     else:
         return corridor, rooms
     
@@ -88,24 +99,23 @@ def walls_to_states(walls, base_id=1000):
 ############## Actual worlds; Returning GridMap objects ##########
 def small_world1(seed=100):
     walls = init_world(10,10)
-    room1 = make_room(0,7,3,3)
-    room2 = make_room(0,4,3,3)
-    room3 = make_room(0,0,3,4)
-    room4 = make_room(5,7,2,3)
-    room5 = make_room(7,7,3,3)
-    room6 = make_room(5,0,2,4)
-    room7 = make_room(7,0,3,4)
-    rooms = [room1, room2, room3, room4, room5, room6, room7]
-    corridor1, rooms = make_corridor(3, 0, 2, 10, rooms, seed=seed)
-    corridor2, rooms, corridors = make_corridor(5, 4, 5, 3, rooms, [corridor1], seed=seed)
+    room1 = make_room("room-1", 0,7,3,3)
+    room2 = make_room("room-2", 0,0,3,7)
+    room3 = make_room("room-3", 5,7,2,3)
+    room4 = make_room("room-4", 7,7,3,3)
+    room5 = make_room("room-5", 5,0,2,4)
+    room6 = make_room("room-6", 7,0,3,4)
+    rooms = [room1, room2, room3, room4, room5, room6]
+    corridor1, rooms = make_corridor("corridor-1", 3, 0, 2, 10, rooms, seed=seed)
+    corridor2, rooms, corridors = make_corridor("corridor-2", 5, 4, 5, 3, rooms, [corridor1], seed=seed)
     corridors.append(corridor2)
 
     for room in rooms:
-        walls |= set(room)
+        walls |= set(room.walls)
     for cr in corridors:
-        walls |= set(cr)
+        walls |= set(cr.walls)
     wall_states = walls_to_states(walls)
-    return GridMap(10, 10, wall_states)
+    return GridMap(10, 10, wall_states, rooms + corridors)
 
 
 def big_world1(width=50, length=50, seed=100):
@@ -122,28 +132,20 @@ def big_world1(width=50, length=50, seed=100):
         for j in range(width // room_width):
             x = j*room_width
             y = i * (corridor_length + room_length)
-            room = make_room(x, y, room_width, room_length)
+            room = make_room("room-%d" % (len(rooms)+1), x, y, room_width, room_length)
             rooms.append(room)
 
     corridors = []
     for k in range(length // (corridor_length + room_length)):
         x = 0
         y = k * (corridor_length + room_length) + room_length
-        corridor, rooms = make_corridor(x, y, corridor_width, corridor_length, rooms, seed=seed)
+        corridor, rooms = make_corridor("corridor-%d" % (len(corridors)+1), x, y,
+                                        corridor_width, corridor_length, rooms, seed=seed)
         corridors.append(corridor)
 
     for room in rooms:
-        walls |= set(room)
+        walls |= set(room.walls)
     for cr in corridors:
-        walls |= set(cr)
+        walls |= set(cr.walls)
     wall_states = walls_to_states(walls)
-    return GridMap(width, length, wall_states)
-        
-if __name__ == "__main__":
-    grid_map = big_world1()
-    with open("big_world1.pkl", "wb") as f:
-        pickle.dump((50, 50, grid_map.walls))
-        
-    grid_map = small_world1()
-    with open("big_world1.pkl", "wb") as f:
-        pickle.dump((10, 10, grid_map.walls))
+    return GridMap(width, length, wall_states, rooms + corridors)
