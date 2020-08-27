@@ -36,6 +36,8 @@ class ObjectSearchViz:
         self._running = False
         self._fps = fps
         self._playtime = 0.0
+        
+        self._last_belief = None
 
 
     def _make_gridworld_image(self, r):
@@ -107,6 +109,57 @@ class ObjectSearchViz:
             shift = int(round(res / 2))
             cv2.circle(img, (y+shift, x+shift), radius, color, thickness=-1)
             cv2.circle(img, (y+shift, x+shift), radius//2, lighter(color, 0.4), thickness=-1)
+
+    def update(self, belief):
+        """
+        Update the visualization after there is new real action and observation
+        and updated belief.
+        """
+        self._last_belief = belief
+
+    @staticmethod
+    def draw_belief(img, belief, r, size, colors):
+        """belief (OOBelief)"""
+        radius = int(round(r / 2))
+
+        circle_drawn = {}  # map from pose to number of times drawn
+
+        if type(belief) == dict:
+            object_beliefs = belief
+        else:
+            object_beliefs = belief.object_beliefs
+
+        for objid in object_beliefs:
+            if isinstance(object_beliefs[objid], dict):
+                hist = object_beliefs[objid]
+            else:
+                if isinstance(object_beliefs[objid].random(), RobotState):
+                    continue            
+                hist = object_beliefs[objid].get_histogram()
+                
+            if objid in colors:
+                color = colors[objid]
+            else:
+                color = (255, 165, 0)
+
+            last_val = -1
+            count = 0
+            for state in reversed(sorted(hist, key=hist.get)):
+                if last_val != -1:
+                    color = util.lighter(color, 1-hist[state]/last_val)
+                if np.mean(np.array(color) / np.array([255, 255, 255])) < 0.999:
+                    tx, ty = state['pose']
+                    if (tx,ty) not in circle_drawn:
+                        circle_drawn[(tx,ty)] = 0
+                    circle_drawn[(tx,ty)] += 1
+
+                    cv2.circle(img, (ty*r+radius,
+                                     tx*r+radius), size//circle_drawn[(tx,ty)], color, thickness=-1)
+                    last_val = hist[state]
+
+                    count +=1
+                    if last_val <= 0:
+                        break
 
     # PyGame interface functions
     def on_init(self):
@@ -201,12 +254,16 @@ class ObjectSearchViz:
             ObjectSearchViz.draw_object(img, x*r, y*r, r, r*0.75, color=color,
                                         obj_img_path=obj_img_path)
 
+        # Draw belief
+        if self._last_belief is not None:
+            ObjectSearchViz.draw_belief(img, self._last_belief, r, r//3, self._colors)
+            
         # Draw robot
         rx, ry = self._env.robot_state["pose"]
         ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)
 
         # Draw walls
-        self.render_walls(img, r)        
+        self.render_walls(img, r)
 
         # In numpy image array, (0,0) is on top-left. But
         # we want to visualize it so that it's on bottom-left,

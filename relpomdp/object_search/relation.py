@@ -100,68 +100,76 @@ class Near(oopomdp.InfoRelation):
                      "%s_Pose" % self.class2.name]
         edges = [[variables[0], variables[1]]]
 
-        # values: a list of joint potentials for the table.
+        # potentials: a list of joint potentials for the table.
         potentials = []
-        semantics = {}  # tabular entry (i,j) to semantic meaning (val_i, val_j)
+        
+        # value_names: pgmpy's discrete factor expects every value be
+        # indexed by an integer. Here we are recording the actual meaning
+        # of that integer (e.g. 12 could mean the location (4,14))
+        value_names = {
+            variables[i]: list(locations)
+            for i in range(len(variables))
+        }
+        
+        # semantics = {}  # tabular entry (i,j) to semantic meaning (val_i, val_j)
+        # index_to_semantics = []
         for i, loc_i in enumerate(locations):
             for j, loc_j in enumerate(locations):
-                semantics[(i,j)] = (loc_i, loc_j)
+                # semantics[(i,j)] = (loc_i, loc_j)
                 near = self.is_near(loc_i, loc_j)
                 if near:
                     potentials.append(1.0)
                 else:
                     potentials.append(0.0)
                     
-        factor = DiscreteFactor(variables, cardinality=[card, card], values=potentials)
+        factor = DiscreteFactor(variables, cardinality=[card, card],
+                                values=potentials, state_names=value_names)
         G = MarkovModel()
         G.add_nodes_from(variables)
         G.add_edges_from(edges)
         G.add_factors(factor)
         assert G.check_model()
-        return SemanticMRF(G, semantics)
+        return SemanticMRF(G, value_names)
 
 class SemanticMRF:
-    def __init__(self, markov_model, semantics):
+    def __init__(self, markov_model, value_to_name):
         """semantics_semantics (dict): map from tuple of integer indices (indicating variable values)
                 to a meaningful value of the variable. Note that both the index and
                 the value must be unique"""
         self.markov_model = markov_model
 
-        # Obtain a entry_to_semantics map for every variable
-        variables = list(self.markov_model.nodes)
-        self.var_entry_to_semantics = {var:{}
-                                       for var in variables}
-        self.var_semantics_to_entry = {var:{}
-                                       for var in variables}
-        for i, j in semantics:
-            val_i, val_j = semantics[(i,j)]
-            self.var_entry_to_semantics[variables[0]][i] = val_i
-            self.var_entry_to_semantics[variables[1]][j] = val_j
-            self.var_semantics_to_entry[variables[0]][val_i] = i
-            self.var_semantics_to_entry[variables[1]][val_j] = j
+        self.value_to_name = value_to_name  # {variable -> {value_index -> value_name}}
+        self.name_to_value = {}  # {variable -> {value_name -> value_index}}
+        for variable in self.value_to_name:
+            self.name_to_value[variable] =\
+                {self.value_to_name[variable][value_index]:value_index
+                 for value_index in range(len(self.value_to_name[variable]))}
         self.bp = BeliefPropagation(self.markov_model)
 
     @property
     def G(self):
         return self.markov_model
 
+    @property
+    def factors(self):
+        return self.G.factors
+
     def query(self, variables, evidence=None):
         """
-        evidence is a mapping from variable to value. The value 
-            is the semantic one - e.g. for location, (x,y). Its
+        evidence is a mapping from variable to value_name. The value_name
+            is the semantic one - e.g. for location, it's (x,y). Its
             integer index value in the MRF model will be used for
             actual inference.
         """
-        for v in variables:
-            if not self.valid_var(v):
-                raise ValueError("Variable %s is not in the model" % v)
-
-        e = {}
-        for v in evidence:
-            semantic_val = evidence[v]
-            tabular_entry = self.var_semantics_to_entry[v][semantic_val]
-            e[v] = tabular_entry
-        return self.bp.query(variables, evidence=e)
+        for variable in variables:
+            if not self.valid_var(variable):
+                raise ValueError("Variable %s is not in the model" % variable)
+        phi = self.bp.query(variables, evidence=evidence)
+        return phi
 
     def valid_var(self, var):
         return var in set(self.G.nodes)
+
+    def values(self, var):
+        return list(self.name_to_value[var].keys())
+    

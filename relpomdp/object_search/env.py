@@ -83,7 +83,7 @@ if __name__ == "__main__":
         x, y, direction = walls[i]
         wall_states[1000+i] = WallState((x,y), direction)
         
-    grid_map = GridMap(5, 5, wall_states)
+    grid_map = GridMap(5, 5, wall_states, [])
 
     # Building object state
     robot_state = RobotState((0,0), "+x")

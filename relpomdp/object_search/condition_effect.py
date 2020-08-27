@@ -16,7 +16,7 @@ class CanMove(oopomdp.Condition):
         robot_state = state.object_states[self.ids["Robot"]]
         return action in self.motion_policy.valid_motions(robot_state.pose)
     
-class MoveEffect(oopomdp.DeterministicEffect):
+class MoveEffect(oopomdp.DeterministicTEffect):
     """Deterministically move"""
     def __init__(self, ids):
         self.ids = ids
@@ -46,7 +46,7 @@ class CanPickup(oopomdp.Condition):
                 return True, objid
         return False
             
-class PickupEffect(oopomdp.DeterministicEffect):
+class PickupEffect(oopomdp.DeterministicTEffect):
     """Deterministically move"""
     def __init__(self):
         super().__init__("constant")  # ? not really a reason to name the type this way
@@ -56,3 +56,28 @@ class PickupEffect(oopomdp.DeterministicEffect):
         next_state = state.copy()
         next_state.object_states[picking_objid]["is_found"] = True
         return next_state
+
+# Observation condition / effects
+class CanObserve(oopomdp.Condition):
+    def __init__(self, ids):
+        self.ids = ids
+        
+    def satisfy(self, next_state, action):
+        return True  # always can
+
+class ObserveEffect(oopomdp.DeterministicOEffect):
+    def __init__(self, ids):
+        self.ids = ids
+        super().__init__("sensing")  # ? not really a reason to name the type this way
+        
+    def mpe(self, next_state, action, byproduct=None):
+        """Returns an OOState after applying this effect on `state`"""
+        robot_state = state.object_states[self.ids["Robot"]]
+        obs = {}
+        for objid in next_state.object_states:
+            objstate = next_state.object_states[objid]
+            if isinstance(objstate, PoseState):
+                if objstate.pose == robot_state.pose:
+                    observation = ItemObservation(objstate.objclass, objstate.pose)
+                    obs[objid] = observation
+        return JointObservation(obs)

@@ -4,6 +4,7 @@ from relpomdp.object_search.relation import *
 import networkx as nx
 import matplotlib.pyplot as plt
 from pgmpy.inference import BeliefPropagation
+from search_and_rescue.experiments.plotting import *
 
 def main():
     # Build a world
@@ -24,8 +25,29 @@ def main():
 
     near_salt_pepper = Near("Salt", "Pepper", env.grid_map)
     mrf = near_salt_pepper.to_mrf()
-    print(mrf.query(variables=["Salt_Pose"],
-                    evidence={"Pepper_Pose": (5,5)}))
+    phi = mrf.query(variables=["Salt_Pose"],
+                    evidence={"Pepper_Pose": (5,5)})
+
+    # The mrf is simply the initial belief. Just plot it
+    # by objects.
+    full_phi = mrf.query(variables=["Salt_Pose",
+                                    "Pepper_Pose"])
+    salt_phi = full_phi.marginalize(["Pepper_Pose"], inplace=False)
+    salt_phi.normalize()
+    pepper_phi = full_phi.marginalize(["Salt_Pose"], inplace=False)
+    pepper_phi.normalize()
+    
+    salt_hist = {}
+    pepper_hist = {}
+    for loc in mrf.values("Salt_Pose"):
+        state = ItemState("Salt", loc)
+        salt_hist[state] = salt_phi.get_value({"Salt_Pose":loc})
+    for loc in mrf.values("Pepper_Pose"):
+        state = ItemState("Pepper", loc)
+        pepper_hist[state] = pepper_phi.get_value({"Pepper_Pose":loc})        
+
+    belief = {10: salt_hist,
+              15: pepper_hist}
     
     print("Creating visualization ...")    
     viz = ObjectSearchViz(env,
@@ -35,6 +57,7 @@ def main():
                           controllable=True,
                           img_path="../imgs")
     viz.on_init()
+    viz.update(belief)
     viz.on_execute()
 
 
