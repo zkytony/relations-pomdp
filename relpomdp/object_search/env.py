@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # Building object state
     robot_state = RobotState((0,0), "+x")
     salt_state = ItemState("Salt", (3,3))
-    pepper_state = ItemState("Palt", (3,2))
+    pepper_state = ItemState("Pepper", (3,2))
     init_state = {1: robot_state,
                   10: salt_state,
                   15: pepper_state}
@@ -98,6 +98,7 @@ if __name__ == "__main__":
     viz = ObjectSearchViz(env,
                           {10: (128, 128, 128),
                            15: (200, 10, 10)},
+                          res=40,
                           controllable=True)
     viz.on_init()
     viz.on_execute()

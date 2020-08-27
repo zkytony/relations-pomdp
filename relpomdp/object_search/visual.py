@@ -7,6 +7,7 @@ import cv2
 import math
 import numpy as np
 import random
+import os
 from pomdp_py import util
 from relpomdp.object_search.state import *
 from relpomdp.object_search.action import *
@@ -22,11 +23,12 @@ def lighter(color, percent):
 #### Visualization through pygame ####
 class ObjectSearchViz:
 
-    def __init__(self, env, colors,
+    def __init__(self, env, colors, img_path="imgs",
                  res=30, fps=30, controllable=False):
         """colors: a mapping from object id to (R,G,B)."""
         self._env = env
         self._colors = colors
+        self._img_path = img_path
 
         self._res = res
         self._img = self._make_gridworld_image(res)
@@ -92,11 +94,21 @@ class ObjectSearchViz:
         cv2.circle(img, (y+shift, x+shift), radius//2, color, thickness=2)        
 
     @staticmethod
-    def draw_object(img, x, y, res, size, color=(10,180,40)):
-        radius = int(round(size / 2))
-        shift = int(round(res / 2))
-        cv2.circle(img, (y+shift, x+shift), radius, color, thickness=-1)
-        cv2.circle(img, (y+shift, x+shift), radius//2, lighter(color, 0.4), thickness=-1)        
+    def draw_object(img, x, y, res, size, color=(10,180,40), obj_img_path=None):
+        if obj_img_path is not None:
+            obj_img = cv2.imread(obj_img_path, cv2.IMREAD_COLOR)
+            obj_img = cv2.rotate(obj_img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
+            obj_img = cv2.cvtColor(obj_img, cv2.COLOR_BGR2RGB)
+            obj_img = cv2.resize(obj_img, (res, res))
+            w,l = obj_img.shape[:2]
+            img[x:x+w, y:y+l] = obj_img
+            # Draw boundary
+            cv2.rectangle(img, (y, x), (y+res, x+res), (0, 0, 0), 1, 8)                    
+        else:
+            radius = int(round(size / 2))
+            shift = int(round(res / 2))
+            cv2.circle(img, (y+shift, x+shift), radius, color, thickness=-1)
+            cv2.circle(img, (y+shift, x+shift), radius//2, lighter(color, 0.4), thickness=-1)
 
     # PyGame interface functions
     def on_init(self):
@@ -173,21 +185,27 @@ class ObjectSearchViz:
 
     def render_env(self, display_surf):
         img = np.copy(self._img)
-        rx, ry = self._env.robot_state["pose"]
         r = self._res  # Not radius!
-        ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)
-
+        
+        # Draw objects
         for objid in self._env.state.object_states:
             objstate = self._env.state.object_states[objid]
             if isinstance(objstate, RobotState):
-                ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)
+                continue
+            if objid in self._colors:
+                color = self._colors[objid]
             else:
-                if objid in self._colors:
-                    color = self._colors[objid]
-                else:
-                    color = (10,180,40)
-                x, y = objstate.pose
-                ObjectSearchViz.draw_object(img, x*r, y*r, r, r*0.75, color=color)
+                color = (10,180,40)
+            x, y = objstate.pose
+            obj_img_path = os.path.join(self._img_path, "%s.png" %  objstate.objclass.lower())
+            if not os.path.exists(obj_img_path):
+                obj_img_path = None
+            ObjectSearchViz.draw_object(img, x*r, y*r, r, r*0.75, color=color,
+                                        obj_img_path=obj_img_path)
+
+        # Draw robot
+        rx, ry = self._env.robot_state["pose"]
+        ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)                
 
         # In numpy image array, (0,0) is on top-left. But
         # we want to visualize it so that it's on bottom-left,
