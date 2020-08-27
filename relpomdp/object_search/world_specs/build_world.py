@@ -2,6 +2,7 @@ import numpy as np
 from relpomdp.object_search.state import WallState
 from relpomdp.object_search.grid_map import GridMap
 import random
+import pickle
 
 def init_world(width, length):
     """
@@ -84,7 +85,6 @@ def walls_to_states(walls, base_id=1000):
         wall_states[base_id+i] = WallState((x,y), direction)
     return wall_states
 
-
 ############## Actual worlds; Returning GridMap objects ##########
 def small_world1(seed=100):
     walls = init_world(10,10)
@@ -106,7 +106,44 @@ def small_world1(seed=100):
         walls |= set(cr)
     wall_states = walls_to_states(walls)
     return GridMap(10, 10, wall_states)
-        
-    
-    
 
+
+def big_world1(width=50, length=50, seed=100):
+    walls = init_world(width, length)
+
+    # layers
+    corridor_width = width
+    corridor_length = 3    
+    room_width = width // 10
+    room_length = length // 5 - corridor_length
+
+    rooms = []
+    for i in range(length // (corridor_length + room_length)):
+        for j in range(width // room_width):
+            x = j*room_width
+            y = i * (corridor_length + room_length)
+            room = make_room(x, y, room_width, room_length)
+            rooms.append(room)
+
+    corridors = []
+    for k in range(length // (corridor_length + room_length)):
+        x = 0
+        y = k * (corridor_length + room_length) + room_length
+        corridor, rooms = make_corridor(x, y, corridor_width, corridor_length, rooms, seed=seed)
+        corridors.append(corridor)
+
+    for room in rooms:
+        walls |= set(room)
+    for cr in corridors:
+        walls |= set(cr)
+    wall_states = walls_to_states(walls)
+    return GridMap(width, length, wall_states)
+        
+if __name__ == "__main__":
+    grid_map = big_world1()
+    with open("big_world1.pkl", "wb") as f:
+        pickle.dump((50, 50, grid_map.walls))
+        
+    grid_map = small_world1()
+    with open("big_world1.pkl", "wb") as f:
+        pickle.dump((10, 10, grid_map.walls))
