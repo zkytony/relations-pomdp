@@ -1,6 +1,8 @@
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.object_search.relation import *
 from relpomdp.object_search.action import *
+from relpomdp.object_search.state import *
+from relpomdp.object_search.observation import *
 
 # Conditions and effects
 class CanMove(oopomdp.Condition):
@@ -72,7 +74,7 @@ class ObserveEffect(oopomdp.DeterministicOEffect):
         
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
-        robot_state = state.object_states[self.ids["Robot"]]
+        robot_state = next_state.object_states[self.ids["Robot"]]
         obs = {}
         for objid in next_state.object_states:
             objstate = next_state.object_states[objid]

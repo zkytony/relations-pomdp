@@ -198,13 +198,10 @@ class ObjectSearchViz:
 
             if action is None:
                 return
-
-            if self._controllable:
-                reward = self._env.state_transition(action, execute=True)
-                print("robot state: %s" % str(self._env.robot_state))
-                print("     action: %s" % str(action.name))
-                print("     reward: %s" % str(reward))
-                print("------------")
+            if not self._controllable:
+                # The actual state transition happens outside of the visualizer
+                # TODO: FIX THIS - it could also happen in here
+                return None
             return action
 
     def on_loop(self):

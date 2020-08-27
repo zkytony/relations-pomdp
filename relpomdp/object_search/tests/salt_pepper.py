@@ -1,10 +1,13 @@
 from relpomdp.object_search.world_specs.build_world import *
 from relpomdp.object_search.env import *
+from relpomdp.object_search.agent import *
 from relpomdp.object_search.relation import *
 import networkx as nx
 import matplotlib.pyplot as plt
 from pgmpy.inference import BeliefPropagation
 from search_and_rescue.experiments.plotting import *
+import pomdp_py
+import pygame
 
 def main():
     # Build a world
@@ -48,6 +51,10 @@ def main():
 
     belief = {10: salt_hist,
               15: pepper_hist}
+
+    init_belief = pomdp_py.Histogram(belief)
+    agent = ObjectSearchAgent(env.grid_map, env.ids,
+                              init_belief)
     
     print("Creating visualization ...")    
     viz = ObjectSearchViz(env,
@@ -58,6 +65,65 @@ def main():
                           img_path="../imgs")
     viz.on_init()
     viz.update(belief)
+
+    if viz.on_init() == False:
+        viz._running = False
+
+    while( viz._running ):
+        for event in pygame.event.get():
+            action = viz.on_event(event)
+
+            if action is not None:
+                reward = env.state_transition(action, execute=True)
+                print("robot state: %s" % str(env.robot_state))
+                print("     action: %s" % str(action.name))
+                print("     reward: %s" % str(reward))
+                
+                observation = agent.observation_model.sample(env.state, action)
+                print("observation: %s" % str(observation))
+                print("------------")
+
+                # Update belief
+                for objid in observation.object_observations:
+                    o_obj = observation.object_observations[objid]
+                    if objid != env.ids["Robot"]\
+                       and o_obj.objclass in {"Salt", "Pepper"}:
+                        objclass = o_obj.objclass
+                        pose = o_obj.pose
+                        
+                        query_vars = ["%s_Pose" % c for c in {"Salt", "Pepper"} - {objclass}]
+                        full_phi = mrf.query(variables=query_vars,
+                                             evidence={"%s_Pose" % objclass: pose})
+
+                        # TODO: REFACTROR                        
+                        papper_hist = {}
+                        salt_hist = {}                        
+                        if objclass == "Salt":
+                            pepper_phi = full_phi#.marginalize(["Salt_Pose"], inplace=False)
+                            pepper_phi.normalize()
+                            for loc in mrf.values("Pepper_Pose"):
+                                state = ItemState("Pepper", loc)
+                                pepper_hist[state] = pepper_phi.get_value({"Pepper_Pose":loc})
+                            salt_hist[ItemState("Salt", pose)] = 1.0
+
+                        else:
+                            salt_phi = full_phi#.marginalize(["Pepper_Pose"], inplace=False)
+                            salt_phi.normalize()
+                            for loc in mrf.values("Salt_Pose"):
+                                state = ItemState("Salt", loc)
+                                salt_hist[state] = salt_phi.get_value({"Salt_Pose":loc})
+                            pepper_hist[ItemState("Pepper", pose)] = 1.0                                
+                        belief = {10: salt_hist,
+                                  15: pepper_hist}
+                        agent.set_belief(pomdp_py.Histogram(belief))
+                        viz.update(belief)
+                break
+            
+        viz.on_loop()
+        viz.on_render()
+    viz.on_cleanup()
+    
+    
     viz.on_execute()
 
 
