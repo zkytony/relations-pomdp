@@ -6,6 +6,7 @@ if __name__ == "__main__":
     # Build a world
     print("Creating world ...")    
     grid_map = big_world1(50, 50)
+    # grid_map = small_world1()    
 
     # Arbitrary states
     robot_state = RobotState((0,0), "+x")
