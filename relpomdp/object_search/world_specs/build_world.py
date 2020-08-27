@@ -1,6 +1,7 @@
 import numpy as np
 from relpomdp.object_search.state import WallState
-
+from relpomdp.object_search.grid_map import GridMap
+import random
 
 def init_world(width, length):
     """
@@ -21,7 +22,7 @@ def init_world(width, length):
 def make_room(x, y, width, length):
     """
     makes a room, which has bottom-left corner at x,y and with
-    dimensions width and length
+    dimensions width and length.
     """
     walls = init_world(width, length)
     # shift all the walls
@@ -30,7 +31,7 @@ def make_room(x, y, width, length):
         res.append((wx+x, wy+y, direction))
     return set(res)
 
-def make_corridor(x, y, width, length, rooms, corridors=[]):
+def make_corridor(x, y, width, length, rooms, corridors=[], seed=100):
     """
     Adds a corridor, which is also a rectangle with bottom-left
     coordinates (x,y) and dimensions (width, length).
@@ -45,11 +46,17 @@ def make_corridor(x, y, width, length, rooms, corridors=[]):
 
     Returns corridor, rooms, corridors; The first is the walls for the
     corridor, and the second is a list of rooms each a set of walls.
+
+    The seed determines the order of walls which will make an impact on
+    the doorway
     """
+    random.seed(seed)
     rooms = list(rooms)
     corridor = make_room(x, y, width, length)
     for room in rooms:
-        for wall in list(room):
+        walls = list(sorted(room))
+        random.shuffle(walls)
+        for wall in walls:
             if wall in corridor:
                 room.remove(wall)
                 corridor.remove(wall)
@@ -57,7 +64,9 @@ def make_corridor(x, y, width, length, rooms, corridors=[]):
 
     corridors = list(corridors)
     for cr in corridors:
-        for wall in list(cr):
+        walls = list(sorted(cr))
+        random.shuffle(walls)        
+        for wall in walls:
             if wall in corridor:
                 cr.remove(wall)
                 corridor.remove(wall)
@@ -74,3 +83,30 @@ def walls_to_states(walls, base_id=1000):
         x, y, direction = tup
         wall_states[base_id+i] = WallState((x,y), direction)
     return wall_states
+
+
+############## Actual worlds; Returning GridMap objects ##########
+def small_world1(seed=100):
+    walls = init_world(10,10)
+    room1 = make_room(0,7,3,3)
+    room2 = make_room(0,4,3,3)
+    room3 = make_room(0,0,3,4)
+    room4 = make_room(5,7,2,3)
+    room5 = make_room(7,7,3,3)
+    room6 = make_room(5,0,2,4)
+    room7 = make_room(7,0,3,4)
+    rooms = [room1, room2, room3, room4, room5, room6, room7]
+    corridor1, rooms = make_corridor(3, 0, 2, 10, rooms, seed=seed)
+    corridor2, rooms, corridors = make_corridor(5, 4, 5, 3, rooms, [corridor1], seed=seed)
+    corridors.append(corridor2)
+
+    for room in rooms:
+        walls |= set(room)
+    for cr in corridors:
+        walls |= set(cr)
+    wall_states = walls_to_states(walls)
+    return GridMap(10, 10, wall_states)
+        
+    
+    
+

@@ -1,20 +1,10 @@
 from relpomdp.object_search.world_specs.build_world import *
 from relpomdp.object_search.env import *
 
+
 if __name__ == "__main__":
     # Build a world
-    walls = init_world(10,10)
-    room1 = make_room(5, 5, 3, 3)
-    room2 = make_room(0, 2, 3, 3)
-    corridor, rooms = make_corridor(0, 0, 6, 2, [room1, room2])
-    corridor, rooms, corridors = make_corridor(6, 0, 2, 5, [room1, room2], [corridor])
-    for room in rooms:
-        walls |= room
-    for cr in corridors:
-        walls |= cr
-    walls |= corridor
-    wall_states = walls_to_states(walls)
-    grid_map = GridMap(10, 10, wall_states)
+    grid_map = small_world1()
 
     # Arbitrary states
     robot_state = RobotState((0,0), "+x")
