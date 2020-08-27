@@ -152,15 +152,15 @@ class Effect(GenerativeDistribution):
     def __init__(self, effect_type):
         self.effect_type = effect_type
 
-    def random(self, state, action):
+    def random(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         raise NotImplementedError
 
-    def mpe(self, state, action):
+    def mpe(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         raise NotImplementedError    
 
-    def probability(self, next_state, state, action):
+    def probability(self, next_state, state, action, byproduct=None):
         """Returns the probability of getting `next_state` if applying
         this effect on `state` given `action`."""
         raise NotImplementedError
@@ -171,11 +171,11 @@ class DeterministicEffect(Effect):
         self.epsilon = epsilon
         super().__init__(effect_type)
         
-    def random(self, state, action):
+    def random(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
-        return self.mpe(state, action)
+        return self.mpe(state, action, byproduct)
 
-    def probability(self, next_state, state, action):
+    def probability(self, next_state, state, action, byproduct=None):
         """Returns the probability of getting `next_state` if applying
         this effect on `state` given `action`."""
         expected_next_state = self.mpe(state, action)
@@ -285,21 +285,30 @@ class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
         self._cond_effects = cond_effects
 
+    def _satisfied_effects(self, state, action):
+        effects = []
+        for condition, effect in self._cond_effects:
+            res = condition.satisfy(state, action)
+            if type(res) == tuple:
+                satisfied, byproduct = res
+            else:
+                satisfied = res
+                byproduct = None
+            if satisfied:
+                effects.append((effect, byproduct))
+        return effects
+
     def sample(self, state, action, argmax=False):
         """sample(self, state, action, **kwargs)
         Samples the next state by applying effects with satisfying cond_effects
         """
-        effects = []
-        for condition, effect in self._cond_effects:
-            if condition.satisfy(state, action):
-                effects.append(effect)
-        # apply the effects
+        effects = self._satisfied_effects(state, action)
         next_state = state.copy()
-        for effect in effects:
+        for effect, byproduct in effects:
             if argmax:
-                next_state = effect.mpe(next_state, action)
+                next_state = effect.mpe(next_state, action, byproduct)
             else:
-                next_state = effect.random(next_state, action)
+                next_state = effect.random(next_state, action, byproduct)
         return next_state
         
     def probability(self, next_state, state, action, **kwargs):
@@ -307,13 +316,10 @@ class OOTransitionModel(TransitionModel):
         probability(self, next_state, state, action, **kwargs)
         Returns the probability of :math:`\Pr(s'|s,a)`.
         """
-        effects = []
-        for condition, effect in self._cond_effects:
-            if condition.satisfy(state, action):
-                effects.append(effect)
+        effects = self._satisfied_effects(state, action)        
         prob = 1.0
-        for effect in effects:
-            prob *= effect.probability(next_state, state, action)
+        for effect, byproduct in effects:
+            prob *= effect.probability(next_state, state, action, byproduct)
         return prob
     
     def argmax(self, state, action):
