@@ -118,9 +118,9 @@ class Near(oopomdp.InfoRelation):
                 # semantics[(i,j)] = (loc_i, loc_j)
                 near = self.is_near(loc_i, loc_j)
                 if near:
-                    potentials.append(1.0)
+                    potentials.append(1.0-1e-9)
                 else:
-                    potentials.append(0.0)
+                    potentials.append(1e-9)
                     
         factor = DiscreteFactor(variables, cardinality=[card, card],
                                 values=potentials, state_names=value_names)

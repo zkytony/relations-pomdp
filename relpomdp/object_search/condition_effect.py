@@ -68,9 +68,9 @@ class CanObserve(oopomdp.Condition):
         return True  # always can
 
 class ObserveEffect(oopomdp.DeterministicOEffect):
-    def __init__(self, ids):
+    def __init__(self, ids, epsilon=1e-9):
         self.ids = ids
-        super().__init__("sensing")  # ? not really a reason to name the type this way
+        super().__init__("sensing", epsilon=epsilon)  # ? not really a reason to name the type this way
         
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""

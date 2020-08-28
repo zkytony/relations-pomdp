@@ -30,6 +30,12 @@ class JointObservation(oopomdp.OOObservation):
     def obj_pose(self, objid):
         return self.object_observations[objid]["pose"]
 
+    def for_objs(self, objids):
+        object_observations = {objid : self.object_observations[objid].copy()
+                               for objid in objids\
+                               if objid in self.object_observations}
+        return JointObservation(object_observations)
+
 
 if __name__ == "__main__":
     robot_observation = RobotObservation((10,5), (1,), "+x")
