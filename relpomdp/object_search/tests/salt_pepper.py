@@ -49,10 +49,8 @@ def main():
         state = ItemState("Pepper", loc)
         pepper_hist[state] = pepper_phi.get_value({"Pepper_Pose":loc})        
 
-    belief = {10: salt_hist,
-              15: pepper_hist}
-
-    init_belief = pomdp_py.Histogram(belief)
+    init_belief = pomdp_py.OOBelief({10: pomdp_py.Histogram(salt_hist),
+                                     1: pomdp_py.Histogram({robot_state:1.0})})
     agent = ObjectSearchAgent(env.grid_map, env.ids,
                               init_belief)
     
@@ -64,68 +62,101 @@ def main():
                           controllable=True,
                           img_path="../imgs")
     viz.on_init()
-    viz.update(belief)
+    viz.on_render()    
+    viz.update({10:salt_hist})
+    viz.on_render()        
 
-    if viz.on_init() == False:
-        viz._running = False
+    planner = pomdp_py.POUCT(max_depth=10,
+                             discount_factor=0.95,
+                             num_sims=100,
+                             exploration_const=2,
+                             rollout_policy=agent.policy_model)  # Random by default    
+        
+    for step in range(100):
+        # Input action from keyboard
+        # for event in pygame.event.get():
+        #     action = viz.on_event(event)
+        print("---- Step %d ----" % step)        
 
-    while( viz._running ):
-        for event in pygame.event.get():
-            action = viz.on_event(event)
+        action = planner.plan(agent)
+        print("   num sims: %d" % planner.last_num_sims)
 
-            if action is not None:
-                reward = env.state_transition(action, execute=True)
-                print("robot state: %s" % str(env.robot_state))
-                print("     action: %s" % str(action.name))
-                print("     reward: %s" % str(reward))
-                
-                observation = agent.observation_model.sample(env.state, action)
-                print("observation: %s" % str(observation))
-                print("------------")
+        robot_state = env.robot_state.copy()
+        reward = env.state_transition(action, execute=True)
+        print("robot state: %s" % str(env.robot_state))
+        print("     action: %s" % str(action.name))
+        print("     reward: %s" % str(reward))
 
-                # Update belief
-                for objid in observation.object_observations:
-                    o_obj = observation.object_observations[objid]
-                    if objid != env.ids["Robot"]\
-                       and o_obj.objclass in {"Salt", "Pepper"}:
-                        objclass = o_obj.objclass
-                        pose = o_obj.pose
-                        
-                        query_vars = ["%s_Pose" % c for c in {"Salt", "Pepper"} - {objclass}]
-                        full_phi = mrf.query(variables=query_vars,
-                                             evidence={"%s_Pose" % objclass: pose})
+        observation = agent.observation_model.sample(env.state, action)
+        print("observation: %s" % str(observation))
 
-                        # TODO: REFACTROR                        
-                        papper_hist = {}
-                        salt_hist = {}                        
-                        if objclass == "Salt":
-                            pepper_phi = full_phi#.marginalize(["Salt_Pose"], inplace=False)
-                            pepper_phi.normalize()
-                            for loc in mrf.values("Pepper_Pose"):
-                                state = ItemState("Pepper", loc)
-                                pepper_hist[state] = pepper_phi.get_value({"Pepper_Pose":loc})
-                            salt_hist[ItemState("Salt", pose)] = 1.0
+        # Compute a distribution using the MRF
+        for objid in observation.object_observations:
+            o_obj = observation.object_observations[objid]
+            if objid != env.ids["Robot"]\
+               and o_obj.objclass in {"Salt", "Pepper"}:
+                objclass = o_obj.objclass
+                pose = o_obj.pose
 
-                        else:
-                            salt_phi = full_phi#.marginalize(["Pepper_Pose"], inplace=False)
-                            salt_phi.normalize()
-                            for loc in mrf.values("Salt_Pose"):
-                                state = ItemState("Salt", loc)
-                                salt_hist[state] = salt_phi.get_value({"Salt_Pose":loc})
-                            pepper_hist[ItemState("Pepper", pose)] = 1.0                                
-                        belief = {10: salt_hist,
-                                  15: pepper_hist}
-                        agent.set_belief(pomdp_py.Histogram(belief))
-                        viz.update(belief)
-                break
-            
+                query_vars = ["%s_Pose" % c for c in {"Salt", "Pepper"} - {objclass}]
+                full_phi = mrf.query(variables=query_vars,
+                                     evidence={"%s_Pose" % objclass: pose})
+
+                # TODO: REFACTROR                        
+                papper_hist = {}
+                salt_hist = {}                        
+                if objclass == "Salt":
+                    pepper_phi = full_phi#.marginalize(["Salt_Pose"], inplace=False)
+                    pepper_phi.normalize()
+                    for loc in mrf.values("Pepper_Pose"):
+                        state = ItemState("Pepper", loc)
+                        pepper_hist[state] = pepper_phi.get_value({"Pepper_Pose":loc})
+                    salt_hist[ItemState("Salt", pose)] = 1.0
+
+                else:
+                    salt_phi = full_phi#.marginalize(["Pepper_Pose"], inplace=False)
+                    salt_phi.normalize()
+                    for loc in mrf.values("Salt_Pose"):
+                        state = ItemState("Salt", loc)
+                        salt_hist[state] = salt_phi.get_value({"Salt_Pose":loc})
+                    pepper_hist[ItemState("Pepper", pose)] = 1.0
+        salt_hist_mrf = salt_hist
+
+        # Compute a distribution using the standard belief update
+        current_salt_hist = agent.belief.object_beliefs[10]
+        next_robot_state = env.robot_state.copy()
+        
+        new_histogram = {}  # state space still the same.
+        total_prob = 0
+        for next_salt_state in current_salt_hist:
+            next_state = JointState({10: next_salt_state,
+                                     1: next_robot_state})
+            observation_prob = agent.observation_model.probability(observation,
+                                                                   next_state,
+                                                                   action)
+            transition_prob = current_salt_hist[next_salt_state]
+            new_histogram[next_salt_state] = observation_prob * transition_prob
+            total_prob += new_histogram[next_salt_state]
+
+        # Normalize
+        for salt_state in new_histogram:
+            if total_prob > 0:
+                new_histogram[salt_state] /= total_prob
+        salt_hist_update = new_histogram
+
+        # Multiply the two
+        salt_hist = {}
+        for state in salt_hist_mrf:
+            salt_hist[state] = salt_hist_mrf[state] * salt_hist_update[state]
+        agent.set_belief(pomdp_py.OOBelief({10:pomdp_py.Histogram(salt_hist_mrf),
+                                            1:pomdp_py.Histogram({env.robot_state:1.0})}))
+        planner.update(agent, action, observation)        
+        viz.update({10: salt_hist_mrf})
+        
+
         viz.on_loop()
         viz.on_render()
     viz.on_cleanup()
-    
-    
-    viz.on_execute()
-
 
 if __name__ == "__main__":
     main()

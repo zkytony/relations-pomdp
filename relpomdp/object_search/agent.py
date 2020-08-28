@@ -17,7 +17,7 @@ class ObjectSearchAgent(OOAgent):
         cond_effects_t = {(CanMove(ids, mp), MoveEffect(ids)),
                           (CanPickup(ids), PickupEffect())}
         cond_effects_o = {(CanObserve(ids), ObserveEffect(ids))}
-        policy_model = PolicyModel(ids, grid_map)
+        policy_model = PolicyModel(ids, mp)
         reward_model = RewardModel(ids)
         self.ids = ids
         super().__init__(init_belief, cond_effects_t, cond_effects_o,

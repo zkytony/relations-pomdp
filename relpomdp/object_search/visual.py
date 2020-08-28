@@ -134,7 +134,7 @@ class ObjectSearchViz:
                 hist = object_beliefs[objid]
             else:
                 if isinstance(object_beliefs[objid].random(), RobotState):
-                    continue            
+                    continue
                 hist = object_beliefs[objid].get_histogram()
                 
             if objid in colors:

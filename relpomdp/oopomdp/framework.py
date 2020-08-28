@@ -138,6 +138,9 @@ class OOState(State):
         return len(self.object_states)
 
 ########### Observation ###########
+class NullObservation(Observation):
+    pass
+
 class ObjectObservation(Observation):
     def __init__(self, objclass, attributes):
         self.objclass = objclass
@@ -246,8 +249,13 @@ class OOObservation(Observation):
         self.set_object_observation(objid, object_observation)
     
     def __len__(self):
-        return len(self.object_observations)    
+        return len(self.object_observations)
 
+
+######### Belief ###########
+class OOBelief(GenerativeDistribution):
+    # TODO
+    pass
 
 ########### Condition and Effect ###########
 class Condition:
@@ -326,7 +334,7 @@ class DeterministicOEffect(OEffect):
     def probability(self, observation, next_state, action, byproduct=None):
         """Returns the probability of getting `observation` if applying
         this effect on `state` given `action`."""
-        expected_observation = self.mpe(state, action)
+        expected_observation = self.mpe(next_state, action)
         if observation == expected_observation:
             return 1.0 - self.epsilon
         else:
@@ -490,13 +498,13 @@ class OOObservationModel(ObservationModel):
         Samples the observation by applying effects with satisfying cond_effects
         """
         effects = self._satisfied_effects(next_state, action)
-        next_state = state.copy()
+        observation = NullObservation()
         for effect, byproduct in effects:
             if argmax:
-                next_state = effect.mpe(next_state, action, byproduct)
+                observation = effect.mpe(next_state, action, byproduct)
             else:
-                next_state = effect.random(next_state, action, byproduct)
-        return next_state
+                observation = effect.random(next_state, action, byproduct)
+        return observation
         
     def probability(self, observation, next_state, action, **kwargs):
         """
@@ -558,9 +566,10 @@ class OOAgent(Agent):
         self._cond_effects_t = cond_effects_t
         transition_model = OOTransitionModel(cond_effects_t)
         self._cond_effects_o = cond_effects_o
-        observation_model = OOTransitionModel(cond_effects_o)
+        observation_model = OOObservationModel(cond_effects_o)
         super().__init__(init_belief,
                          policy_model,
                          transition_model,
                          observation_model,
                          reward_model)
+
