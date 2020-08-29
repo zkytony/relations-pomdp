@@ -1,9 +1,11 @@
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.pgm.mrf import SemanticMRF
 from relpomdp.object_search.state import WallState
 from relpomdp.object_search.utils import euclidean_dist
 from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation
+from pgmpy.sampling import GibbsSampling
 
 # Relations
 class Touch(oopomdp.Relation):
@@ -27,8 +29,8 @@ class Touch(oopomdp.Relation):
         if not isinstance(object_state2, WallState):
             raise ValueError("Taxi domain (at least in OO-MDP) requires"
                              "the Touch relation to involve Wall as the second object.")
-        x1, y1 = object_state1.pose
-        x2, y2 = object_state2.pose
+        x1, y1 = object_state1.pose[:2]
+        x2, y2 = object_state2.pose[:2]
         if self.direction == "N":
             if object_state2.direction == "H":
                 return x1 == x2 and y1 == y2
@@ -65,7 +67,7 @@ class On(oopomdp.Relation):
         """Returns True if the Relation holds. False otherwise.
         According to the paper, on(o1,o2) holds if o1 and o2 are
         overlapping"""
-        return object_state1.pose == object_state2.pose            
+        return object_state1.pose[:2] == object_state2.pose[:2]
 
 is_on = On("PoseObject", "PoseObject")
 
@@ -82,7 +84,7 @@ class Near(oopomdp.InfoRelation):
         overlapping"""
         if object_state1.objclass == self.class1.name\
            and object_state2.objclass == self.class2.name:
-            return self.is_near(object_state1.pose, object_state2.pose)
+            return self.is_near(object_state1.pose[:2], object_state2.pose[:2])
         return False
 
     def is_near(self, pose1, pose2):
@@ -91,7 +93,8 @@ class Near(oopomdp.InfoRelation):
         return same_room\
             and euclidean_dist(pose1, pose2) <= 2
 
-    def to_mrf(self):
+    def to_factor(self):
+        """Return a DiscreteFactor representation of the grounded factor"""
         locations = [(x,y)
                      for x in range(self.grid_map.width)\
                      for y in range(self.grid_map.length)]
@@ -124,52 +127,14 @@ class Near(oopomdp.InfoRelation):
                     
         factor = DiscreteFactor(variables, cardinality=[card, card],
                                 values=potentials, state_names=value_names)
+        return factor
+        
+
+    def to_mrf(self):
+        factor = self.to_factor()
         G = MarkovModel()
         G.add_nodes_from(variables)
         G.add_edges_from(edges)
         G.add_factors(factor)
         assert G.check_model()
         return SemanticMRF(G, value_names)
-
-class SemanticMRF:
-    def __init__(self, markov_model, value_to_name):
-        """semantics_semantics (dict): map from tuple of integer indices (indicating variable values)
-                to a meaningful value of the variable. Note that both the index and
-                the value must be unique"""
-        self.markov_model = markov_model
-
-        self.value_to_name = value_to_name  # {variable -> {value_index -> value_name}}
-        self.name_to_value = {}  # {variable -> {value_name -> value_index}}
-        for variable in self.value_to_name:
-            self.name_to_value[variable] =\
-                {self.value_to_name[variable][value_index]:value_index
-                 for value_index in range(len(self.value_to_name[variable]))}
-        self.bp = BeliefPropagation(self.markov_model)
-
-    @property
-    def G(self):
-        return self.markov_model
-
-    @property
-    def factors(self):
-        return self.G.factors
-
-    def query(self, variables, evidence=None):
-        """
-        evidence is a mapping from variable to value_name. The value_name
-            is the semantic one - e.g. for location, it's (x,y). Its
-            integer index value in the MRF model will be used for
-            actual inference.
-        """
-        for variable in variables:
-            if not self.valid_var(variable):
-                raise ValueError("Variable %s is not in the model" % variable)
-        phi = self.bp.query(variables, evidence=evidence)
-        return phi
-
-    def valid_var(self, var):
-        return var in set(self.G.nodes)
-
-    def values(self, var):
-        return list(self.name_to_value[var].keys())
-    

@@ -1,4 +1,5 @@
 import pomdp_py
+import math
 
 class Action(pomdp_py.Action):
     def __init__(self, name):
@@ -16,10 +17,10 @@ class Action(pomdp_py.Action):
         return "Action(%s)" % self.name
 
 class Move(Action):
-    EAST = (1, 0)  # x is horizontal; x+ is right. y is vertical; y+ is up.
-    WEST = (-1, 0)
-    NORTH = (0, 1)
-    SOUTH = (0, -1)
+    EAST = (1, 0, 0)  # x is horizontal; x+ is right. y is vertical; y+ is up.
+    WEST = (-1, 0, math.pi)
+    NORTH = (0, 1, math.pi/2)
+    SOUTH = (0, -1, 3*math.pi/2)
     def __init__(self, name, motion):
         if motion not in {Move.EAST, Move.WEST,
                           Move.NORTH, Move.SOUTH}:

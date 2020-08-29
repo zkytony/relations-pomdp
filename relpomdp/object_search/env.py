@@ -86,7 +86,7 @@ if __name__ == "__main__":
     grid_map = GridMap(5, 5, wall_states, [])
 
     # Building object state
-    robot_state = RobotState((0,0), "+x")
+    robot_state = RobotState((0,0,0), "+x")
     salt_state = ItemState("Salt", (3,3))
     pepper_state = ItemState("Pepper", (3,2))
     init_state = {1: robot_state,

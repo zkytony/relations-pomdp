@@ -29,8 +29,11 @@ class MoveEffect(oopomdp.DeterministicTEffect):
         robot_state = state.object_states[self.ids["Robot"]]
         next_state = state.copy()
         next_robot_state = next_state.object_states[self.ids["Robot"]]
-        next_robot_state["pose"] = (robot_state["pose"][0] + action.motion[0],
-                                    robot_state["pose"][1] + action.motion[1])
+        rx, ry, _ = robot_state.pose
+        dx, dy, th = action.motion
+        next_robot_state["pose"] = (rx + dx,
+                                    ry + dy,
+                                    th)
         next_robot_state["camera_direction"] = action.name
         return next_state
 
@@ -79,7 +82,7 @@ class ObserveEffect(oopomdp.DeterministicOEffect):
         for objid in next_state.object_states:
             objstate = next_state.object_states[objid]
             if isinstance(objstate, PoseState):
-                if objstate.pose == robot_state.pose:
+                if objstate.pose == robot_state.pose[:2]:
                     observation = ItemObservation(objstate.objclass, objstate.pose)
                     obs[objid] = observation
         return JointObservation(obs)

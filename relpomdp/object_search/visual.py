@@ -87,11 +87,14 @@ class ObjectSearchViz:
         return self._last_observation
     
     @staticmethod
-    def draw_robot(img, x, y, res, size, color=(255,150,0)):
+    def draw_robot(img, x, y, th, res, size, color=(255,150,0)):
         radius = int(round(size / 2))        
         shift = int(round(res / 2))
         cv2.circle(img, (y+shift, x+shift), radius, color, thickness=2)
-        cv2.circle(img, (y+shift, x+shift), radius//2, color, thickness=2)        
+
+        endpoint = (y+shift + int(round(shift*math.sin(th))),
+                    x+shift + int(round(shift*math.cos(th))))
+        cv2.line(img, (y+shift,x+shift), endpoint, color, 2)        
 
     @staticmethod
     def draw_object(img, x, y, res, size, color=(10,180,40), obj_img_path=None):
@@ -210,10 +213,10 @@ class ObjectSearchViz:
     def on_render(self):
         # self._display_surf.blit(self._background, (0, 0))
         self.render_env(self._display_surf)
-        rx, ry = self._env.robot_state["pose"]
+        rx, ry, th = self._env.robot_state["pose"]
         fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())
-        pygame.display.set_caption("Objectsearch(%.2f,%.2f) | %s" %
-                                   (rx, ry,
+        pygame.display.set_caption("Objectsearch(%.2f,%.2f,%.2f) | %s" %
+                                   (rx, ry, th,
                                     fps_text))
         pygame.display.flip() 
  
@@ -226,7 +229,15 @@ class ObjectSearchViz:
  
         while( self._running ):
             for event in pygame.event.get():
-                self.on_event(event)
+                action = self.on_event(event)
+                if event.type == pygame.KEYDOWN:
+                    if action is not None\
+                       and self._controllable:
+                        reward = self._env.state_transition(action, execute=True)
+                        print("robot state: %s" % str(self._env.robot_state))
+                        print("     action: %s" % str(action.name))
+                        print("     reward: %s" % str(reward))
+                        print("---------------")
             self.on_loop()
             self.on_render()
         self.on_cleanup()
@@ -256,8 +267,8 @@ class ObjectSearchViz:
             ObjectSearchViz.draw_belief(img, self._last_belief, r, r//3, self._colors)
             
         # Draw robot
-        rx, ry = self._env.robot_state["pose"]
-        ObjectSearchViz.draw_robot(img, rx*r, ry*r, r, r*0.85)
+        rx, ry, rth = self._env.robot_state["pose"]
+        ObjectSearchViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)
 
         # Draw walls
         self.render_walls(img, r)
