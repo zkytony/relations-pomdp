@@ -31,7 +31,7 @@ class SemanticMRF:
         #  "Found unknown state name. Trying to switch to using all state names as state numbers"
         # I have no clue why it happens. But it seems like the consequence is
         # the result of the sampling will be in value_index instead of value_name.
-        # Therefore a conversion is needed in the "sample()" function below.
+        # Therefore a conversion is needed in the "sample()" function below>.
         self.gibbs = GibbsSampling(self.markov_model)
 
     @property
@@ -73,3 +73,23 @@ class SemanticMRF:
     def values(self, var):
         return list(self.name_to_value[var].keys())
     
+
+def relations_to_mrf(relations):
+    """Here, relations is a list of Relation objects"""    
+    factors = []
+    variables = []
+    edges = []
+    value_to_names = {}  # {variable -> {value_index -> value_name}}
+    for relation in relations:
+        factor = relation.to_factor()  # MRF factor
+        value_to_names.update(factor.no_to_name)
+        variables.extend(factor.variables)
+        edges.append([factor.variables[0], factor.variables[1]])
+        factors.append(factor)
+    G = MarkovModel()
+    G.add_nodes_from(variables)
+    G.add_edges_from(edges)
+    G.add_factors(*factors)
+    assert G.check_model()
+    mrf = SemanticMRF(G, value_to_names)
+    return mrf

@@ -73,8 +73,12 @@ is_on = On("PoseObject", "PoseObject")
 
 # Extensions: Relations that are used not for transiitions
 class Near(oopomdp.InfoRelation):
-    def __init__(self, class1, class2, grid_map):
+    def __init__(self,
+                 class1, class2,
+                 grid_map, pose_attr="pose", negate=False):
         self.grid_map = grid_map
+        self.pose_attr = pose_attr
+        self.negate = negate  # True if "not near"
         super().__init__("near",
                          class1, class2)
         
@@ -99,8 +103,8 @@ class Near(oopomdp.InfoRelation):
                      for x in range(self.grid_map.width)\
                      for y in range(self.grid_map.length)]
         card = len(locations)
-        variables = ["%s_Pose" % self.class1.name,
-                     "%s_Pose" % self.class2.name]
+        variables = ["%s_%s" % (self.class1.name, self.pose_attr),
+                     "%s_%s" % (self.class2.name, self.pose_attr)]
         edges = [[variables[0], variables[1]]]
 
         # potentials: a list of joint potentials for the table.
@@ -120,16 +124,17 @@ class Near(oopomdp.InfoRelation):
             for j, loc_j in enumerate(locations):
                 # semantics[(i,j)] = (loc_i, loc_j)
                 near = self.is_near(loc_i, loc_j)
-                if near:
-                    potentials.append(1.0-1e-9)
+                if not self.negate:
+                    potential = 1.0-1e-9 if near else 1e-9
                 else:
-                    potentials.append(1e-9)
+                    # negation
+                    potential = 1e-9 if near else 1.0-1e-9
+                potentials.append(potential)
                     
         factor = DiscreteFactor(variables, cardinality=[card, card],
                                 values=potentials, state_names=value_names)
         return factor
         
-
     def to_mrf(self):
         factor = self.to_factor()
         G = MarkovModel()
@@ -138,3 +143,5 @@ class Near(oopomdp.InfoRelation):
         G.add_factors(factor)
         assert G.check_model()
         return SemanticMRF(G, value_names)
+
+

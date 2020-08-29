@@ -1,13 +1,16 @@
 from relpomdp.object_search.world_specs.build_world import *
 from relpomdp.object_search.env import *
+from relpomdp.object_search.sensor import *
 from relpomdp.object_search.agent import *
+from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
 from relpomdp.object_search.relation import *
 import networkx as nx
 import matplotlib.pyplot as plt
 from pgmpy.inference import BeliefPropagation
 from search_and_rescue.experiments.plotting import *
 import pomdp_py
-import pygame
+import pygame    
+    
 
 def main():
     # Build a world
@@ -27,29 +30,31 @@ def main():
                                   {10})
 
     near_salt_pepper = Near("Salt", "Pepper", env.grid_map)
-    mrf = near_salt_pepper.to_mrf()
+    mrf = relations_to_mrf([near_salt_pepper])
 
     # The mrf is simply the initial belief. Just plot it
     # by objects.
-    full_phi = mrf.query(variables=["Salt_Pose",
-                                    "Pepper_Pose"])
-    salt_phi = full_phi.marginalize(["Pepper_Pose"], inplace=False)
+    full_phi = mrf.query(variables=["Salt_pose",
+                                    "Pepper_pose"])
+    salt_phi = full_phi.marginalize(["Pepper_pose"], inplace=False)
     salt_phi.normalize()
-    pepper_phi = full_phi.marginalize(["Salt_Pose"], inplace=False)
+    pepper_phi = full_phi.marginalize(["Salt_pose"], inplace=False)
     pepper_phi.normalize()
     
     salt_hist_mrf = {}
     pepper_hist_mrf = {}
-    for loc in mrf.values("Salt_Pose"):
+    for loc in mrf.values("Salt_pose"):
         state = ItemState("Salt", loc)
-        salt_hist_mrf[state] = salt_phi.get_value({"Salt_Pose":loc})
-    for loc in mrf.values("Pepper_Pose"):
+        salt_hist_mrf[state] = salt_phi.get_value({"Salt_pose":loc})
+    for loc in mrf.values("Pepper_pose"):
         state = ItemState("Pepper", loc)
-        pepper_hist_mrf[state] = pepper_phi.get_value({"Pepper_Pose":loc})        
+        pepper_hist_mrf[state] = pepper_phi.get_value({"Pepper_pose":loc})        
 
     init_belief = pomdp_py.OOBelief({10: pomdp_py.Histogram(salt_hist_mrf),
                                      1: pomdp_py.Histogram({robot_state:1.0})})
-    agent = ObjectSearchAgent(env.grid_map, env.ids,
+    sensor = Laser2DSensor(1, env.grid_map, fov=90, min_range=1, max_range=2,
+                           angle_increment=0.5)
+    agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
                               init_belief)
     
     print("Creating visualization ...")    
@@ -99,28 +104,28 @@ def main():
                 objclass = o_obj.objclass
                 pose = o_obj.pose
 
-                query_vars = ["%s_Pose" % c for c in {"Salt", "Pepper"} - {objclass}]
+                query_vars = ["%s_pose" % c for c in {"Salt", "Pepper"} - {objclass}]
                 full_phi = mrf.query(variables=query_vars,
-                                     evidence={"%s_Pose" % objclass: pose})
+                                     evidence={"%s_pose" % objclass: pose})
 
                 # TODO: REFACTROR                        
                 papper_hist = {}
                 salt_hist_mrf = {}                        
                 if objclass == "Salt":
-                    pepper_phi = full_phi#.marginalize(["Salt_Pose"], inplace=False)
+                    pepper_phi = full_phi#.marginalize(["Salt_pose"], inplace=False)
                     pepper_phi.normalize()
-                    for loc in mrf.values("Pepper_Pose"):
+                    for loc in mrf.values("Pepper_pose"):
                         state = ItemState("Pepper", loc)
-                        pepper_hist_mrf[state] = pepper_phi.get_value({"Pepper_Pose":loc})
+                        pepper_hist_mrf[state] = pepper_phi.get_value({"Pepper_pose":loc})
                         salt_hist_mrf[ItemState("Salt", loc)] = 1e-9
                     salt_hist_mrf[ItemState("Salt", pose)] = 1.0 - 1e-9
 
                 else:
-                    salt_phi = full_phi#.marginalize(["Pepper_Pose"], inplace=False)
+                    salt_phi = full_phi#.marginalize(["Pepper_pose"], inplace=False)
                     salt_phi.normalize()
-                    for loc in mrf.values("Salt_Pose"):
+                    for loc in mrf.values("Salt_pose"):
                         state = ItemState("Salt", loc)
-                        salt_hist_mrf[state] = salt_phi.get_value({"Salt_Pose":loc})
+                        salt_hist_mrf[state] = salt_phi.get_value({"Salt_pose":loc})
                         pepper_hist_mrf[ItemState("Pepper", loc)] = 1e-9                        
                     pepper_hist_mrf[ItemState("Pepper", pose)] = 1.0
                 updating_mrf = True
@@ -143,18 +148,6 @@ def main():
             
             transition_prob = current_salt_hist[next_salt_state]
             new_histogram[next_salt_state] = mrf_prob * observation_prob * transition_prob
-
-            if updating_mrf:
-                if next_salt_state.pose == pepper_state.pose:
-                    print("Pepper!", new_histogram[next_salt_state])
-                else:
-                    print("---", new_histogram[next_salt_state])
-                print("        T", transition_prob, "  O", observation_prob,  "  M", mrf_prob)
-            else:
-                if next_salt_state.pose == pepper_state.pose:
-                    print("Pepper!", new_histogram[next_salt_state])
-                    print("        T", transition_prob, "  O", observation_prob,  "  M", mrf_prob)                    
-                    
             total_prob += new_histogram[next_salt_state]
 
         # Normalize

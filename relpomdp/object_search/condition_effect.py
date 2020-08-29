@@ -71,8 +71,9 @@ class CanObserve(oopomdp.Condition):
         return True  # always can
 
 class ObserveEffect(oopomdp.DeterministicOEffect):
-    def __init__(self, ids, epsilon=1e-9):
+    def __init__(self, sensor, ids, epsilon=1e-9):
         self.ids = ids
+        self.sensor = sensor
         super().__init__("sensing", epsilon=epsilon)  # ? not really a reason to name the type this way
         
     def mpe(self, next_state, action, byproduct=None):
@@ -82,7 +83,7 @@ class ObserveEffect(oopomdp.DeterministicOEffect):
         for objid in next_state.object_states:
             objstate = next_state.object_states[objid]
             if isinstance(objstate, PoseState):
-                if objstate.pose == robot_state.pose[:2]:
+                if self.sensor.within_range(robot_state.pose, objstate.pose):
                     observation = ItemObservation(objstate.objclass, objstate.pose)
                     obs[objid] = observation
         return JointObservation(obs)

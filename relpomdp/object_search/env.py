@@ -27,19 +27,9 @@ import pomdp_py
 class ObjectSearchEnvironment(OOEnvironment):
     
     def __init__(self,
+                 ids,  # Must contain "Robot" and "Target" fields.
                  grid_map,  # specifies the map (dimension and walls)
-                 init_object_states, # maps from object id to initial state
-                 target_objects):  # a set of object ids that are the targets
-        
-        # maps from object class to id        
-        ids = {}  
-        for objid in init_object_states:
-            c = init_object_states[objid].objclass
-            if c not in ids:
-                ids[c] = []
-            ids[c].append(objid)
-        ids["Robot"] = ids["Robot"][0]
-        ids["Target"] = target_objects
+                 init_object_states): # maps from object id to initial state
         self.ids = ids
         self.grid_map = grid_map
 

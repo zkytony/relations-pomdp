@@ -10,13 +10,13 @@ from relpomdp.oopomdp.framework import *
 import pomdp_py
 
 class ObjectSearchAgent(OOAgent):
-    def __init__(self, grid_map, ids,
+    def __init__(self, grid_map, sensor, ids,
                  init_belief):
         
         mp = MotionPolicy(grid_map)        
         cond_effects_t = {(CanMove(ids, mp), MoveEffect(ids)),
                           (CanPickup(ids), PickupEffect())}
-        cond_effects_o = {(CanObserve(ids), ObserveEffect(ids, epsilon=1e-12))}
+        cond_effects_o = {(CanObserve(ids), ObserveEffect(sensor, ids, epsilon=1e-12))}
         policy_model = PolicyModel(ids, mp)
         reward_model = RewardModel(ids)
         self.ids = ids

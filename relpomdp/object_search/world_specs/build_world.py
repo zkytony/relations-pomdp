@@ -12,14 +12,14 @@ class Room:
         self.walls = walls
         self.locations = locations
 
-def init_world(width, length):
+def init_map(width, length):
     """
-    Create a world without any inner wall and only
-    walls around the world. Note that for a horizontal
+    Create a map without any inner wall and only
+    walls around the map. Note that for a horizontal
     wall at (x,y), it is on the north edge of that cell.
     A vertical wall is on the east side of the grid cell.
     ---
-    A world is represented by a collection of walls (x,y,"H"|"V").
+    A map is represented by a collection of walls (x,y,"H"|"V").
     """
     top_walls = [(x,length-1,"H") for x in range(width)]
     bottom_walls = [(x,-1,"H") for x in range(width)]
@@ -32,7 +32,7 @@ def make_room(name, x, y, width, length):
     makes a room, which has bottom-left corner at x,y and with
     dimensions width and length.
     """
-    walls = init_world(width, length)
+    walls = init_map(width, length)
     # shift all the walls
     res = []
     for wx, wy, direction in walls:
@@ -96,9 +96,9 @@ def walls_to_states(walls, base_id=1000):
         wall_states[base_id+i] = WallState((x,y), direction)
     return wall_states
 
-############## Actual worlds; Returning GridMap objects ##########
-def small_world0(seed=100):
-    walls = init_world(5,5)
+############## Actual maps; Returning GridMap objects ##########
+def small_map0(seed=100):
+    walls = init_map(5,5)
     room1 = make_room("room-1", 0,0,3,3)
     rooms = [room1]
     corridor1, rooms = make_corridor("corridor-1", 3, 0, 2, 5, rooms, seed=seed)
@@ -114,8 +114,8 @@ def small_world0(seed=100):
     return GridMap(5, 5, wall_states, rooms + corridors)
 
 
-def small_world1(seed=100):
-    walls = init_world(10,10)
+def small_map1(seed=100):
+    walls = init_map(10,10)
     room1 = make_room("room-1", 0,7,3,3)
     room2 = make_room("room-2", 0,0,3,7)
     room3 = make_room("room-3", 5,7,2,3)
@@ -135,8 +135,8 @@ def small_world1(seed=100):
     return GridMap(10, 10, wall_states, rooms + corridors)
 
 
-def big_world1(width=50, length=50, seed=100):
-    walls = init_world(width, length)
+def big_map1(width=50, length=50, seed=100):
+    walls = init_map(width, length)
 
     # layers
     corridor_width = width
