@@ -15,9 +15,9 @@ def main():
     grid_map = small_world0() # 10 by 10 world
 
     # Arbitrary states
-    robot_state = RobotState((1,4), "-x")
+    robot_state = RobotState((1,4,0), "-x")
     salt_state = ItemState("Salt", (0,1))
-    pepper_state = ItemState("Pepper", (1,3))
+    pepper_state = ItemState("Pepper", (1,2))
     init_state = {1: robot_state,
                   10: salt_state,
                   15: pepper_state}

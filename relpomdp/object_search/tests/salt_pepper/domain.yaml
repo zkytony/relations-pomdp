@@ -1,0 +1,18 @@
+Classes:
+  Salt:
+    amount: 1
+    loc: default
+    
+  Pepper:
+    amount: 1
+    loc: default
+
+  Robot:
+    loc: top-right
+
+
+Relations:
+  - near, Salt, Pepper
+
+Map: small_world1
+
