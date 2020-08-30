@@ -24,6 +24,10 @@ class PolicyModel(pomdp_py.RolloutPolicy):
             motions = self.motion_policy.valid_motions(robot_state.pose)
             return motions | {Pickup()}
 
+    @property
+    def all_motion_actions(self):
+        return {MoveE, MoveW, MoveN, MoveS}
+
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
         
@@ -84,3 +88,6 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
                             preferences.add((action,
                                              self.num_visits_init, self.val_init))
         return preferences
+
+
+# Greedy planner

@@ -2,6 +2,7 @@ from relpomdp.object_search.world_specs.build_world import *
 from relpomdp.object_search.env import *
 from relpomdp.object_search.sensor import *
 from relpomdp.object_search.agent import *
+from relpomdp.object_search.greedy_planner import GreedyPlanner
 from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
 from relpomdp.object_search.relation import *
 import networkx as nx
@@ -110,11 +111,12 @@ def main(world=office_floor1):
     viz.update({10:salt_hist_mrf})
     viz.on_render()        
 
-    planner = pomdp_py.POUCT(max_depth=20,
-                             discount_factor=0.95,
-                             num_sims=300,
-                             exploration_const=200,
-                             rollout_policy=agent.policy_model)  # Random by default    
+    # planner = pomdp_py.POUCT(max_depth=20,
+    #                          discount_factor=0.95,
+    #                          num_sims=1000,
+    #                          exploration_const=100,
+    #                          rollout_policy=agent.policy_model)
+    planner = GreedyPlanner(ids)
 
     used_objects = set()  # objects who has contributed to mrf belief update    
     for step in range(100):
@@ -128,7 +130,7 @@ def main(world=office_floor1):
         print("---- Step %d ----" % step)        
 
         action = planner.plan(agent)
-        print("   num sims: %d" % planner.last_num_sims)
+        # print("   num sims: %d" % planner.last_num_sims)
 
         robot_state = env.robot_state.copy()
         reward = env.state_transition(action, execute=True)
