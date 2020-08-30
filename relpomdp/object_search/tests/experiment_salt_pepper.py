@@ -59,8 +59,8 @@ def generate_experiment():
 
         init_robot_pose = tuple(map(str,config["world_configs"]["init_robot_pose"]))
         for i in range(20):
-            trial = SingleObjectSearchTrial("salt-pepper-%s_%d" \
-                                            % (",".join(init_robot_pose), i),
+            trial = SingleObjectSearchTrial("salt-pepper-%s_%d_%s" \
+                                            % (",".join(init_robot_pose), i, baseline),
                                             config, verbose=True)
             trials.append(trial)
 
