@@ -12,9 +12,12 @@ from search_and_rescue.experiments.plotting import *
 import pomdp_py
 import pygame
 import time
+import pickle
+import os
 
 
-def office_floor1(init_robot_pose=(9,0,0)):
+def office_floor1(init_robot_pose=(9,0,0),
+                  mrfdir="./mrf", save_mrf=True):
     """
     Office floor with many rooms. There is a kitchen,
     a coffee room, and other rooms are offices. There is a computer in
@@ -23,7 +26,7 @@ def office_floor1(init_robot_pose=(9,0,0)):
     This describes the full environment configuration (i.e. all
     object locations and the robot's location).
     """
-    grid_map = small_map1()
+    grid_map = small_map1()  # THiS IS FIXED - office_floor1 uses small_map1
     init_salt_pose = (0,6)
     init_pepper_pose = (1,5)
 
@@ -54,15 +57,24 @@ def office_floor1(init_robot_pose=(9,0,0)):
     ids["Robot"] = ids["Robot"][0]
     ids["Target"] = [salt_id]
 
-    # Relations in this world
-    near_salt_pepper = Near("Salt", "Pepper", grid_map)
-    near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
-
+    # Relations in this world;
+    # Check if the MRF already exists
+    mrf_path = os.path.join(mrfdir, "salt_pepper_1.pkl")
+    if os.path.exists(mrf_path):
+        with open(mrf_path, "rb") as f:
+            mrf = pickle.load(f)
+    else:
+        near_salt_pepper = Near("Salt", "Pepper", grid_map)  # grounding the relation on the grid map
+        near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
+        mrf = relations_to_mrf([near_salt_pepper, near_salt_computer])
+        if save_mrf:
+            os.makedirs(mrfdir, exist_ok=True)
+            with open(mrf_path, "wb") as f:
+                pickle.dump(mrf, f)
+    
     colors = {"Salt": (128, 128, 128),
               "Pepper": (200, 10, 10)}
-    
-    return ids, grid_map, init_state,\
-        [near_salt_pepper, near_salt_computer], colors
+    return ids, grid_map, init_state, mrf, colors
 
 
 def main(world=office_floor1):

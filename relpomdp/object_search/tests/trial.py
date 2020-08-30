@@ -28,14 +28,12 @@ class SingleObjectSearchTrial(Trial):
     def run(self, logging=False):
         world = self._config["world"]
         print("Creating map ...")
-        ids, grid_map, init_state, relations, colors = world(**self._config["world_configs"])
+        ids, grid_map, init_state, mrf, colors = world(**self._config["world_configs"])
 
         print("Creating environment ...")
         env = ObjectSearchEnvironment(ids,
                                       grid_map,
                                       init_state)
-        mrf = relations_to_mrf(relations)
-
         target_variable = self._config["target_variable"]
         target_class = target_variable.split("_")[0]
         target_phi = mrf.query(variables=[target_variable])
