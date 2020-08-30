@@ -25,8 +25,8 @@ def office_floor1():
     """
     grid_map = small_map1()
     init_robot_pose = (9,9,0)
-    init_salt_pose = (0,1)
-    init_pepper_pose = (1,2)
+    init_salt_pose = (0,6)
+    init_pepper_pose = (2,4)
 
     salt_id = 10
     pepper_id = 15
@@ -35,7 +35,7 @@ def office_floor1():
     salt_state = ItemState("Salt", init_salt_pose)
     pepper_state = ItemState("Pepper", init_pepper_pose)
     
-    computer_poses = []
+    computer_poses = [(5,9), (6,2)]
     computer_states = []
     for pose in computer_poses:
         computer_states.append(ItemState("Computer", pose))
@@ -57,13 +57,13 @@ def office_floor1():
 
     # Relations in this world
     near_salt_pepper = Near("Salt", "Pepper", grid_map)
-    # near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
+    near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
 
     colors = {"Salt": (128, 128, 128),
               "Pepper": (200, 10, 10)}
     
     return ids, grid_map, init_state,\
-        [near_salt_pepper], colors#, near_salt_computer]
+        [near_salt_pepper, near_salt_computer], colors
 
 
 def main(world=office_floor1):
@@ -111,12 +111,12 @@ def main(world=office_floor1):
     viz.update({10:salt_hist_mrf})
     viz.on_render()        
 
-    # planner = pomdp_py.POUCT(max_depth=20,
-    #                          discount_factor=0.95,
-    #                          num_sims=1000,
-    #                          exploration_const=100,
-    #                          rollout_policy=agent.policy_model)
-    planner = GreedyPlanner(ids)
+    planner = pomdp_py.POUCT(max_depth=20,
+                             discount_factor=0.95,
+                             num_sims=200,
+                             exploration_const=100,
+                             rollout_policy=agent.policy_model)
+    # planner = GreedyPlanner(ids)
 
     used_objects = set()  # objects who has contributed to mrf belief update    
     for step in range(100):
@@ -130,7 +130,8 @@ def main(world=office_floor1):
         print("---- Step %d ----" % step)        
 
         action = planner.plan(agent)
-        # print("   num sims: %d" % planner.last_num_sims)
+        # time.sleep(0.1)
+        print("   num sims: %d" % planner.last_num_sims)
 
         robot_state = env.robot_state.copy()
         reward = env.state_transition(action, execute=True)
