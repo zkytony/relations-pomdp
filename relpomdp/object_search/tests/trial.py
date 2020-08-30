@@ -29,29 +29,64 @@ class SingleObjectSearchTrial(Trial):
         world = self._config["world"]
         print("Creating map ...")
         ids, grid_map, init_state, mrf, colors = world(**self._config["world_configs"])
+        
+        target_id = ids["Target"][0]
+        robot_id = ids["Robot"]
 
         print("Creating environment ...")
         env = ObjectSearchEnvironment(ids,
                                       grid_map,
                                       init_state)
+        
         target_variable = self._config["target_variable"]
         target_class = target_variable.split("_")[0]
-        target_phi = mrf.query(variables=[target_variable])
-        target_phi.normalize()
-        target_hist_mrf = {}
-        for loc in mrf.values(target_variable):
-            state = ItemState(target_class, loc)
-            target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
 
-        target_id = ids["Target"][0]
-        robot_id = ids["Robot"]
-        init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist_mrf),
+        if self._config["prior_type"] == "mrf":
+            target_phi = mrf.query(variables=[target_variable])        
+
+        # Obtain prior
+        target_hist = {}
+        total_prob = 0
+        for x in range(grid_map.width):
+            for y in range(grid_map.length):
+                state = ItemState(target_class, (x,y))
+                if self._config["prior_type"] == "uniform":
+                    target_hist[state] = 1.0
+                elif self._config["prior_type"] == "mrf":
+                    target_hist[state] = target_phi.get_value({target_variable:(x,y)})
+                elif self._config["prior_type"] == "informed":
+                    if (x,y) != env.state.object_states[target_id].pose:
+                        target_hist[state] = 0.0
+                    else:
+                        target_hist[state] = 1.0
+                total_prob += target_hist[state]
+        # Normalize
+        for state in target_hist:
+            target_hist[state] /= total_prob
+            
+        init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist),
                                          robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
         sensor = Laser2DSensor(robot_id, env.grid_map, fov=90, min_range=1, max_range=2,
                                angle_increment=0.5)
         agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
                                   init_belief)
 
+
+        # Create planner
+        if self._config["planner_type"] == "pouct":
+            planner = pomdp_py.POUCT(max_depth=self._config["planner"]["max_depth"],
+                                     discount_factor=self._config["planner"]["discount_factor"],
+                                     num_sims=self._config["planner"]["num_sims"],
+                                     exploration_const=self._config["planner"]["exploration_const"],
+                                     rollout_policy=agent.policy_model)
+            
+        elif self._config["planner_type"] == "greedy":
+            planner = GreedyPlanner(ids)
+            
+        elif self._config["planner_type"] == "random":
+            planner = RandomPlanner(ids)
+
+        # Visualization
         viz = None
         if self._config["visualize"]:
             print("Creating visualization ...")
@@ -67,21 +102,8 @@ class SingleObjectSearchTrial(Trial):
                                   img_path="../imgs")
             viz.on_init()
             viz.on_render()    
-            viz.update({target_id:target_hist_mrf})
-            viz.on_render()        
-
-        if self._config["planner_type"] == "pouct":
-            planner = pomdp_py.POUCT(max_depth=self._config["planner"]["max_depth"],
-                                     discount_factor=self._config["planner"]["discount_factor"],
-                                     num_sims=self._config["planner"]["num_sims"],
-                                     exploration_const=self._config["planner"]["exploration_const"],
-                                     rollout_policy=agent.policy_model)
-            
-        elif self._config["planner_type"] == "greedy":
-            planner = GreedyPlanner(ids)
-            
-        elif self._config["planner_type"] == "random":
-            planner = RandomPlanner(ids)
+            viz.update({target_id:target_hist})
+            viz.on_render()                    
 
         _History = [(copy.deepcopy(env.state),None,None,0)]  # s,a,o,r
 
@@ -114,22 +136,24 @@ class SingleObjectSearchTrial(Trial):
             print("observation: %s" % str(observation))
 
             # Compute a distribution using the MRF
-            updating_mrf = False
-            for objid in observation.object_observations:
-                o_obj = observation.object_observations[objid]
-                if objid != env.ids["Robot"] and objid not in used_objects:
-                    if o_obj.objclass == target_class:
-                        # You just observed the target. MRF isn't useful here.
-                        continue
+            if self._config["using_mrf_belief_update"]:
+                updating_mrf = False
+                target_hist_mrf = {}                
+                for objid in observation.object_observations:
+                    o_obj = observation.object_observations[objid]
+                    if objid != env.ids["Robot"] and objid not in used_objects:
+                        if o_obj.objclass == target_class:
+                            # You just observed the target. MRF isn't useful here.
+                            continue
 
-                    target_phi = mrf.query(variables=[target_variable],
-                                         evidence=o_obj.to_evidence())
-                    target_phi.normalize()
-                    for loc in mrf.values(target_variable):
-                        state = ItemState(target_class, loc)
-                        target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
-                    updating_mrf = True
-                    used_objects.add(objid)
+                        target_phi = mrf.query(variables=[target_variable],
+                                             evidence=o_obj.to_evidence())
+                        target_phi.normalize()
+                        for loc in mrf.values(target_variable):
+                            state = ItemState(target_class, loc)
+                            target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
+                        updating_mrf = True
+                        used_objects.add(objid)
 
             # Compute a distribution using the standard belief update
             current_target_hist = agent.belief.object_beliefs[target_id]
@@ -143,7 +167,7 @@ class SingleObjectSearchTrial(Trial):
                 observation_prob = agent.observation_model.probability(
                     observation.for_objs([robot_id,target_id]), next_state, action)
                 mrf_prob = 1.0
-                if updating_mrf:
+                if self._config["using_mrf_belief_update"] and updating_mrf:
                     mrf_prob = target_hist_mrf[next_target_state]
 
                 transition_prob = current_target_hist[next_target_state]
@@ -185,11 +209,13 @@ if __name__ == "__main__":
         "target_variable": "Salt_pose",
         "planner_type": "pouct",
         "planner": {
-            "max_depth": 20,
+            "max_depth": 40,
             "discount_factor": 0.95,
             "num_sims": 200,
-            "exploration_const": 100
+            "exploration_const": 200
         },
+        "prior_type": "mrf",
+        "using_mrf_belief_update": True,
         "max_steps": 100,
         "visualize": True,
         "user_control": False
