@@ -10,6 +10,7 @@ from pgmpy.inference import BeliefPropagation
 from search_and_rescue.experiments.plotting import *
 import pomdp_py
 import pygame
+import time
 
 
 def office_floor1():
@@ -22,7 +23,7 @@ def office_floor1():
     object locations and the robot's location).
     """
     grid_map = small_map1()
-    init_robot_pose = (5,5,0)
+    init_robot_pose = (6,4,0)
     init_salt_pose = (0,1)
     init_pepper_pose = (1,2)
 
@@ -112,14 +113,18 @@ def main(world=office_floor1):
     planner = pomdp_py.POUCT(max_depth=30,
                              discount_factor=0.95,
                              num_sims=150,
-                             exploration_const=2,
+                             exploration_const=5,
                              rollout_policy=agent.policy_model)  # Random by default    
 
     used_objects = set()  # objects who has contributed to mrf belief update    
     for step in range(100):
-        # Input action from keyboard
-        # for event in pygame.event.get():
-        #     action = viz.on_event(event)
+        # # Input action from keyboard
+        # action = None
+        # while action is None:
+        #     for event in pygame.event.get():
+        #         if event.type == pygame.KEYDOWN:
+        #             action = viz.on_event(event)
+        #     time.sleep(0.1)
         print("---- Step %d ----" % step)        
 
         action = planner.plan(agent)

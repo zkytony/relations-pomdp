@@ -1,6 +1,7 @@
 import numpy as np
 import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
+import relpomdp.object_search.utils as utils
     
 # Object classes and attributes
 class PoseState(oopomdp.ObjectState):
@@ -23,7 +24,19 @@ class WallState(PoseState):
         return WallState(tuple(self["pose"]), self.direction)
     @property
     def direction(self):
-        return self["direction"]    
+        return self["direction"]
+    
+    def intersect(self, src, dst):
+        """Returns true if the wall intersects with a light ray
+        shooting from src to dst (2d points)"""
+        if self.direction == "V":
+            wall_pose1 = (self.pose[0]+0.5, self.pose[1]+0.5)
+            wall_pose2 = (self.pose[0]+0.5, self.pose[1]-0.5)                        
+        else:
+            wall_pose1 = (self.pose[0]+0.5, self.pose[1]+0.5)
+            wall_pose2 = (self.pose[0]-0.5, self.pose[1]+0.5)
+        wall_seg = [wall_pose1, wall_pose2]
+        return utils.intersect(wall_seg, (src, dst))
 
     
 class RoomState(ContainerState):

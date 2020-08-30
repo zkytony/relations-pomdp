@@ -17,6 +17,16 @@ def in_range(val, rang):
     # Returns True if val is in range (a,b); Inclusive.
     return val >= rang[0] and val <= rang[1]
 
+def in_range_angle(target, angle1, angle2):
+    r_angle = ((angle2 - angle1) % 2*math.pi + 2*math.pi) % 2*math.pi;
+    if r_angle >= 180:
+        angle1, angle2 = angle2, angle1
+
+    if angle1 <= angle2:
+        return target >= angle1 and target <= angle2
+    else:
+        return target >= angle1 or target <= angle2
+
 #### Sensors ####
 class Sensor:
     LASER = "laser"
@@ -92,7 +102,6 @@ class Laser2DSensor:
         direction of the beam from robot to the `point`.x"""
         if (robot_pose, point) in self._cache:
             return self._cache[(robot_pose, point)]
-        
         if robot_pose[:2] == point:
             result = True
         else:
@@ -103,15 +112,12 @@ class Laser2DSensor:
                      or in_range(point_bearing, self._fov_right))
             if not point_in_range:
                 result = False
-            for objid in self.grid_map.walls:
-                wall = self.grid_map.walls[objid]
-                wall_dist, wall_bearing = self.shoot_beam(robot_pose, wall.pose)
-                wall_in_range = (in_range(wall_dist, (self.min_range, self.max_range)))\
-                    and (in_range(wall_bearing, self._fov_left)\
-                         or in_range(wall_bearing, self._fov_right))
-                if wall_in_range and (wall_dist <= point_dist):
-                    result = False
-                    break
+            else:
+                for objid in self.grid_map.walls:
+                    wall = self.grid_map.walls[objid]
+                    if wall.intersect(robot_pose[:2], point):
+                        result = False
+                        break
         self._cache[(robot_pose, point)] = result
         return result
 
