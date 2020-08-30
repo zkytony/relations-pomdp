@@ -19,6 +19,7 @@ class ObjectSearchAgent(OOAgent):
         cond_effects_o = {(CanObserve(ids), ObserveEffect(sensor, ids, epsilon=1e-12))}
         action_prior = GreedyActionPrior(ids, mp, 10, 100)
         policy_model = PreferredPolicyModel(action_prior)
+        # policy_model = PolicyModel(ids, mp)
         reward_model = RewardModel(ids)
         self.ids = ids
         super().__init__(init_belief, cond_effects_t, cond_effects_o,

@@ -111,7 +111,6 @@ class MotionPolicy:
                     path.append(position)
                 pair = prev[position]
         return list(reversed(path))
-    
 
     def get_neighbors(self, robot_pose):
         neighbors = {MoveEffect.move_by(robot_pose, action.motion):action

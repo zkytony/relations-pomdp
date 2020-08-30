@@ -1,7 +1,6 @@
 import pomdp_py
 from relpomdp.object_search.action import *
 from relpomdp.object_search.utils import euclidean_dist
-from relpomdp.object_search.condition_effect import MoveEffect
 import random
 
 class PolicyModel(pomdp_py.RolloutPolicy):
@@ -64,29 +63,22 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
         """Get preferred actions. This can be used by a rollout policy as well."""
         robot_id = self.ids["Robot"]
         robot_state = state.object_states[robot_id]
-        cur_room = self.motion_policy.grid_map.room_of(robot_state.pose[:2])
+        cur_room = self.motion_policy._grid_map.room_of(robot_state.pose[:2])
         preferences = set()
         for objid in state.object_states:
             objstate = state.object_states[objid]
             if objid in self.ids["Target"] and objstate.is_found is False:
                 cur_dist = euclidean_dist(robot_state.pose, objstate.pose)
-                neighbors = {MoveEffect.move_by(robot_state.pose, action.motion):action
-                             for action in self.motion_policy.valid_motions(robot_state.pose)}
+                neighbors = self.motion_policy.get_neighbors(robot_state.pose)
                 for next_robot_pose in neighbors:
-                    # Prefer action to move into a different room
+                    # # Prefer action to move into a different room
                     action = neighbors[next_robot_pose]
-                    next_room = self.motion_policy.grid_map.room_of(next_robot_pose[:2])
-                    if next_room != cur_room:
+                    next_room = self.motion_policy._grid_map.room_of(next_robot_pose[:2])
+                    object_room = self.motion_policy._grid_map.room_of(objstate.pose)
+                    if object_room == next_room\
+                       and euclidean_dist(next_robot_pose, objstate.pose) < cur_dist:
                         preferences.add((action,
-                                         self.num_visits_init, self.val_init))                        
-                    else:
-                        # If the object and the robot are in the same room,
-                        # Prefer actions that move the robot closer
-                        object_room = self.motion_policy.grid_map.room_of(objstate.pose)
-                        if object_room == next_room\
-                           and euclidean_dist(next_robot_pose, objstate.pose) < cur_dist:
-                            preferences.add((action,
-                                             self.num_visits_init, self.val_init))
+                                         self.num_visits_init, self.val_init))
         return preferences
 
 
