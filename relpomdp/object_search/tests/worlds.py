@@ -1,0 +1,1 @@
+from relpomdp.object_search.tests.salt_pepper_complex import office_floor1 as salt_pepper_1

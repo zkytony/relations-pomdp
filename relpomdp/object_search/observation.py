@@ -18,6 +18,9 @@ class ItemObservation(PoseObservation):
     def copy(self):
         return self.__class__(self.name, tuple(self["pose"]))
 
+    def to_evidence(self):
+        return {"%s_pose" % (self.name): self["pose"]}
+
 class JointObservation(oopomdp.OOObservation):
     def __init__(self, object_observations):
         super().__init__(object_observations)

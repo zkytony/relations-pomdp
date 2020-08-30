@@ -14,7 +14,7 @@ import pygame
 import time
 
 
-def office_floor1():
+def office_floor1(init_robot_pose=(9,0,0)):
     """
     Office floor with many rooms. There is a kitchen,
     a coffee room, and other rooms are offices. There is a computer in
@@ -24,7 +24,6 @@ def office_floor1():
     object locations and the robot's location).
     """
     grid_map = small_map1()
-    init_robot_pose = (9,0,0)
     init_salt_pose = (0,6)
     init_pepper_pose = (1,5)
 

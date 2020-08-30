@@ -59,3 +59,21 @@ class GreedyPlanner(ManualPlanner):
                     self._actions.append(action)
             # Return action
             return self._actions.popleft()
+
+
+class RandomPlanner(ManualPlanner):
+    # Greedily moves to the location of highest belief,
+    # and look around. Take "Find" after seeing an object.
+    def __init__(self, ids):
+        super().__init__(ids)
+
+    def plan(self, agent):
+        if self._pickup_next:
+            self._pickup_next = False
+            return Pickup()
+        else:
+            motion_policy = agent.policy_model.motion_policy
+            agent_state = agent.belief.mpe().object_states[self.ids["Robot"]]
+            valid_motions = motion_policy.valid_motions(agent_state.pose)
+            return random.sample(valid_motions, 1)[0]
+        
