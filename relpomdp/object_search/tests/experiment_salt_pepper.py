@@ -1,6 +1,10 @@
 from sciex import *
 from relpomdp.object_search.tests.worlds import *
 from relpomdp.object_search.tests.trial import *
+import os
+import copy
+
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def generate_experiment():
     # Will have the robot start at bottom right corner.
@@ -13,12 +17,13 @@ def generate_experiment():
     # both-greedy: Greedy planner with the same prior (greedy works pretty well)
     # informed: POUCT with informed prior
     
-    config = {
+    overall_config = {
         "world": salt_pepper_1,
-        "world_configs": {"init_robot_pose": (9,0,0)},
+        "world_configs": {"init_robot_pose": (9,0,0),
+                          "mrfdir": os.path.join(ABS_PATH, "mrf")},
         "target_variable": "Salt_pose",
         "max_steps": 100,
-        "visualize": True,
+        "visualize": False,
         "user_control": False
     }
     trials = []
@@ -29,6 +34,7 @@ def generate_experiment():
                      "mrf#both#pouct",
                      "mrf#both#greedy",
                      "informed"}:
+        config = copy.deepcopy(overall_config)
         if baseline == "random":
             config["planner_type"] = "random"
             config["prior_type"] = "uniform"
@@ -67,7 +73,7 @@ def generate_experiment():
     random.shuffle(trials)
     output_dir = "./results"
     print("Generating experiment")
-    exp = Experiment("SaltPepperA", trials, output_dir, verbose=True, add_timestamp=True)
+    exp = Experiment("SaltPepperC", trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=5, exist_ok=True)
     print("Find multiple computers to run these experiments.")    
 
