@@ -3,6 +3,7 @@ import copy
 from relpomdp.object_search.relation import *
 from relpomdp.object_search.state import *
 from relpomdp.object_search.action import *
+import sys
 
 class GridMap:
     def __init__(self, width, length, walls, rooms):
@@ -53,6 +54,7 @@ class MotionPolicy:
                     elif touch_W(objstate, wall):
                         motion_actions.remove(MoveW)
                 self._legal_actions[(x,y)] = motion_actions
+        self.grid_map = grid_map
 
     def valid_motions(self, robot_pose):
         """

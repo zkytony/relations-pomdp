@@ -23,7 +23,7 @@ def office_floor1():
     object locations and the robot's location).
     """
     grid_map = small_map1()
-    init_robot_pose = (6,4,0)
+    init_robot_pose = (9,9,0)
     init_salt_pose = (0,1)
     init_pepper_pose = (1,2)
 
@@ -110,10 +110,10 @@ def main(world=office_floor1):
     viz.update({10:salt_hist_mrf})
     viz.on_render()        
 
-    planner = pomdp_py.POUCT(max_depth=30,
+    planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
-                             num_sims=150,
-                             exploration_const=5,
+                             num_sims=300,
+                             exploration_const=200,
                              rollout_policy=agent.policy_model)  # Random by default    
 
     used_objects = set()  # objects who has contributed to mrf belief update    

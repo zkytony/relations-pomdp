@@ -118,11 +118,9 @@ def small_map1(seed=100):
     walls = init_map(10,10)
     room1 = make_room("room-1", 0,7,3,3)
     room2 = make_room("room-2", 0,0,3,7)
-    room3 = make_room("room-3", 5,7,2,3)
-    room4 = make_room("room-4", 7,7,3,3)
-    room5 = make_room("room-5", 5,0,2,4)
-    room6 = make_room("room-6", 7,0,3,4)
-    rooms = [room1, room2, room3, room4, room5, room6]
+    room3 = make_room("room-3", 5,7,5,3)
+    room4 = make_room("room-4", 5,0,5,4)
+    rooms = [room1, room2, room3, room4]
     corridor1, rooms = make_corridor("corridor-1", 3, 0, 2, 10, rooms, seed=seed)
     corridor2, rooms, corridors = make_corridor("corridor-2", 5, 4, 5, 3, rooms, [corridor1], seed=seed)
     corridors.append(corridor2)

@@ -23,17 +23,19 @@ class MoveEffect(oopomdp.DeterministicTEffect):
     def __init__(self, ids):
         self.ids = ids
         super().__init__("arithmetic")  # ? not really a reason to name the type this way
+
+    @classmethod
+    def move_by(self, robot_pose, motion):
+        rx, ry, _ = robot_pose
+        dx, dy, th = motion
+        return (rx + dx, ry + dy, th)
         
     def mpe(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         robot_state = state.object_states[self.ids["Robot"]]
         next_state = state.copy()
         next_robot_state = next_state.object_states[self.ids["Robot"]]
-        rx, ry, _ = robot_state.pose
-        dx, dy, th = action.motion
-        next_robot_state["pose"] = (rx + dx,
-                                    ry + dy,
-                                    th)
+        next_robot_state["pose"] = MoveEffect.move_by(robot_state.pose, action.motion)
         next_robot_state["camera_direction"] = action.name
         return next_state
 

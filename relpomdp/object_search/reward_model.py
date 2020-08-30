@@ -21,10 +21,10 @@ class RewardModel(pomdp_py.RewardModel):
                 if not found:
                     all_found = False
                 if not found and next_found:
-                    return 1.0
+                    return 100.0
             # Didn't pick up anything new
             if not all_found:
-                return -1.0
+                return -100.0
             else:
-                return -0.1
-        return -0.1
+                return -1
+        return -1
