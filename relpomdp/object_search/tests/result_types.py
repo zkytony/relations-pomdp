@@ -25,18 +25,6 @@ class HistoryResult(PklResult):
     def FILENAME(cls):
         return "history.pkl"
 
-    # @classmethod
-    # def collect(cls, path):
-    #     # Collect prior from config
-    #     trial_path = os.path.dirname(path)
-    #     trial_name = os.path.basename(trial_path)
-    #     with open(os.path.join(trial_path, "trial.pkl"), "rb") as f:
-    #         config = pickle.load(f).config
-        
-    #     # Collect the pickle file
-    #     with open(path, "rb") as f:
-    #         return (pickle.load(f), trial_path, config)#["map_name"], prior, prior_type)
-
     @classmethod
     def gather(cls, results):
         """`results` is a mapping from specific_name to a dictionary {seed: actual_result}.

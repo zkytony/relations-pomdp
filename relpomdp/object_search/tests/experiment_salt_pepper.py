@@ -24,7 +24,14 @@ def generate_experiment():
         "target_variable": "Salt_pose",
         "max_steps": 100,
         "visualize": False,
-        "user_control": False
+        "user_control": False,
+        "img_path": os.path.join(ABS_PATH, "../imgs"),
+        "planner": {
+            "max_depth": 20,
+            "discount_factor": 0.95,
+            "num_sims": 200,
+            "exploration_const": 200
+        }
     }
     trials = []
     
@@ -35,6 +42,7 @@ def generate_experiment():
                      "mrf#both#greedy",
                      "informed"}:
         config = copy.deepcopy(overall_config)
+        config["planner"]["max_depth"] = 20
         if baseline == "random":
             config["planner_type"] = "random"
             config["prior_type"] = "uniform"
@@ -47,6 +55,7 @@ def generate_experiment():
             config["planner_type"] = "pouct"
             config["prior_type"] = "informed"
             config["using_mrf_belief_update"] = False
+            config["planner"]["max_depth"] = 40
         elif baseline.startswith("mrf"):
             config["prior_type"] = "mrf"
             if baseline.split("#")[1] == "both":
@@ -54,14 +63,6 @@ def generate_experiment():
             else:
                 config["using_mrf_belief_update"] = False
             config["planner_type"] = baseline.split("#")[2]
-
-        if config["planner_type"] == "pouct":
-            config["planner"] = {
-                "max_depth": 40,
-                "discount_factor": 0.95,
-                "num_sims": 200,
-                "exploration_const": 200
-            }
 
         init_robot_pose = tuple(map(str,config["world_configs"]["init_robot_pose"]))
         for i in range(20):

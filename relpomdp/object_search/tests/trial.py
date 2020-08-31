@@ -25,7 +25,8 @@ class SingleObjectSearchTrial(Trial):
     def __init__(self, name, config, verbose=False):
         super().__init__(name, config, verbose=verbose)
 
-    def run(self, logging=False):
+
+    def setup(self):
         world = self._config["world"]
         print("Creating map ...")
         ids, grid_map, init_state, mrf, colors = world(**self._config["world_configs"])
@@ -71,7 +72,6 @@ class SingleObjectSearchTrial(Trial):
         agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
                                   init_belief)
 
-
         # Create planner
         if self._config["planner_type"] == "pouct":
             planner = pomdp_py.POUCT(max_depth=self._config["planner"]["max_depth"],
@@ -99,15 +99,24 @@ class SingleObjectSearchTrial(Trial):
                                   objcolors,
                                   res=30,
                                   controllable=True,
-                                  img_path="../imgs")
+                                  img_path=self._config["img_path"])
             viz.on_init()
             viz.on_render()    
             viz.update({target_id:target_hist})
             viz.on_render()                    
 
-        _History = [(copy.deepcopy(env.state),None,None,0)]  # s,a,o,r
+        return env, agent, planner, mrf, viz
+        
 
+    def run(self, logging=False):
+        env, agent, planner, mrf, viz = self.setup()
+        target_id = env.ids["Target"][0]
+        robot_id = env.ids["Robot"]        
+        
+        _History = [(copy.deepcopy(env.state),None,None,0)]  # s,a,o,r
         used_objects = set()  # objects who has contributed to mrf belief update
+        discount = 1.0
+        discounted_reward = 0
         for step in range(self._config["max_steps"]):
             print("---- Step %d ----" % step)                    
             # Input action from keyboard
@@ -126,80 +135,90 @@ class SingleObjectSearchTrial(Trial):
                 else:
                     time.sleep(0.1)
 
-            robot_state = env.robot_state.copy()
             reward = env.state_transition(action, execute=True)
+            observation = agent.observation_model.sample(env.state, action)            
+            next_robot_state = env.robot_state.copy()
+            self.belief_update(agent, action, observation, next_robot_state, mrf, used_objects)
+            planner.update(agent, action, observation.for_objs([target_id]))
+
+            discounted_reward += discount * reward
+            discount *= self.config["planner"]["discount_factor"]
             print("robot state: %s" % str(env.robot_state))
             print("     action: %s" % str(action.name))
             print("     reward: %s" % str(reward))
-
-            observation = agent.observation_model.sample(env.state, action)
+            print("disc reward: %.3f" % discounted_reward)
             print("observation: %s" % str(observation))
-
-            # Compute a distribution using the MRF
-            if self._config["using_mrf_belief_update"]:
-                updating_mrf = False
-                target_hist_mrf = {}                
-                for objid in observation.object_observations:
-                    o_obj = observation.object_observations[objid]
-                    if objid != env.ids["Robot"] and objid not in used_objects:
-                        if o_obj.objclass == target_class:
-                            # You just observed the target. MRF isn't useful here.
-                            continue
-
-                        target_phi = mrf.query(variables=[target_variable],
-                                             evidence=o_obj.to_evidence())
-                        target_phi.normalize()
-                        for loc in mrf.values(target_variable):
-                            state = ItemState(target_class, loc)
-                            target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
-                        updating_mrf = True
-                        used_objects.add(objid)
-
-            # Compute a distribution using the standard belief update
-            current_target_hist = agent.belief.object_beliefs[target_id]
-            next_robot_state = env.robot_state.copy()
-
-            new_histogram = {}  # state space still the same.
-            total_prob = 0
-            for next_target_state in current_target_hist:
-                next_state = JointState({target_id: next_target_state,
-                                         robot_id: next_robot_state})
-                observation_prob = agent.observation_model.probability(
-                    observation.for_objs([robot_id,target_id]), next_state, action)
-                mrf_prob = 1.0
-                if self._config["using_mrf_belief_update"] and updating_mrf:
-                    mrf_prob = target_hist_mrf[next_target_state]
-
-                transition_prob = current_target_hist[next_target_state]
-                new_histogram[next_target_state] = mrf_prob * observation_prob * transition_prob
-                total_prob += new_histogram[next_target_state]
-
-            # Normalize
-            for target_state in new_histogram:
-                if total_prob > 0:
-                    new_histogram[target_state] /= total_prob
-            target_hist_update = new_histogram
-
-            agent.set_belief(pomdp_py.OOBelief({target_id:pomdp_py.Histogram(target_hist_update),
-                                                robot_id:pomdp_py.Histogram({env.robot_state:1.0})}))
-            planner.update(agent, action, observation)
-
+            
             if viz is not None:
-                viz.update({target_id: target_hist_update})
+                viz.update({target_id: agent.belief.object_beliefs[target_id]})
                 viz.on_loop()
                 viz.on_render()
-
+            
             # Record result
-            _History.append((copy.deepcopy(env.state), action, observation, reward))
+            _History.append((copy.deepcopy(env.state),
+                             copy.deepcopy(action),
+                             copy.deepcopy(observation), reward))
 
             # Terminates
             if env.state.object_states[target_id].is_found:
                 break
-
+            
         if viz is not None:
             viz.on_cleanup()
-            
         return [HistoryResult(_History)]
+
+
+    def belief_update(self, agent, action, observation, next_robot_state, mrf, used_objects):
+        # Compute a distribution using the MRF
+        target_id = agent.ids["Target"][0]
+        robot_id = agent.ids["Robot"]
+        target_variable = self._config["target_variable"]
+        target_class = target_variable.split("_")[0]        
+        if self._config["using_mrf_belief_update"]:
+            updating_mrf = False
+            target_hist_mrf = {}                
+            for objid in observation.object_observations:
+                o_obj = observation.object_observations[objid]
+                if objid != robot_id and objid not in used_objects:
+                    if o_obj.objclass == target_class:
+                        # You just observed the target. MRF isn't useful here.
+                        continue
+
+                    target_phi = mrf.query(variables=[target_variable],
+                                         evidence=o_obj.to_evidence())
+                    target_phi.normalize()
+                    for loc in mrf.values(target_variable):
+                        state = ItemState(target_class, loc)
+                        target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
+                    updating_mrf = True
+                    used_objects.add(objid)
+
+        # Compute a distribution using the standard belief update
+        current_target_hist = agent.belief.object_beliefs[target_id]
+
+        new_histogram = {}  # state space still the same.
+        total_prob = 0
+        for next_target_state in current_target_hist:
+            next_state = JointState({target_id: next_target_state,
+                                     robot_id: next_robot_state})
+            observation_prob = agent.observation_model.probability(
+                observation.for_objs([robot_id,target_id]), next_state, action)
+            mrf_prob = 1.0
+            if self._config["using_mrf_belief_update"] and updating_mrf:
+                mrf_prob = target_hist_mrf[next_target_state]
+
+            transition_prob = current_target_hist[next_target_state]
+            new_histogram[next_target_state] = mrf_prob * observation_prob * transition_prob
+            total_prob += new_histogram[next_target_state]
+
+        # Normalize
+        for target_state in new_histogram:
+            if total_prob > 0:
+                new_histogram[target_state] /= total_prob
+        target_hist_update = new_histogram
+        agent.set_belief(pomdp_py.OOBelief({target_id:pomdp_py.Histogram(target_hist_update),
+                                            robot_id:pomdp_py.Histogram({next_robot_state:1.0})}))
+
 
 
 if __name__ == "__main__":
@@ -209,7 +228,7 @@ if __name__ == "__main__":
         "target_variable": "Salt_pose",
         "planner_type": "pouct",
         "planner": {
-            "max_depth": 40,
+            "max_depth": 20,
             "discount_factor": 0.95,
             "num_sims": 200,
             "exploration_const": 200
