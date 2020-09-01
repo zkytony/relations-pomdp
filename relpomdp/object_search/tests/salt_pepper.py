@@ -64,7 +64,8 @@ def office_floor1(init_robot_pose=(9,0,0),
     near_salt_pepper = Near("Salt", "Pepper", grid_map)  # grounding the relation on the grid map
     not_near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
     in_salt_kitchen = In("Salt", "Kitchen", "Room", grid_map)
-    mrf = relations_to_mrf([near_salt_pepper])#, in_salt_kitchen])
+    not_in_salt_office = In("Salt", "Office", "Room", grid_map, negate=True)    
+    mrf = relations_to_mrf([near_salt_pepper, in_salt_kitchen, not_in_salt_office])
         # if save_mrf:
         #     os.makedirs(mrfdir, exist_ok=True)
         #     with open(mrf_path, "wb") as f:
