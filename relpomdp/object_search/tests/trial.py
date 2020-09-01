@@ -198,14 +198,15 @@ class SingleObjectSearchTrial(Trial):
                     if mrf.valid_var(o.room_type):
                         evidence.update(o.to_evidence())
                         cues.add(o.name)
-                            
-            target_phi = mrf.query(variables=[target_variable],
-                                   evidence=evidence)
-            target_phi.normalize()
-            for loc in mrf.values(target_variable):
-                state = ItemState(target_class, loc)
-                target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
-            updating_mrf = True                    
+                        
+            if len(evidence) > 0:
+                target_phi = mrf.query(variables=[target_variable],
+                                       evidence=evidence)
+                target_phi.normalize()
+                for loc in mrf.values(target_variable):
+                    state = ItemState(target_class, loc)
+                    target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
+                updating_mrf = True
 
         # Compute a distribution using the standard belief update
         current_target_hist = agent.belief.object_beliefs[target_id]
@@ -223,6 +224,8 @@ class SingleObjectSearchTrial(Trial):
 
             transition_prob = current_target_hist[next_target_state]
             new_histogram[next_target_state] = mrf_prob * observation_prob * transition_prob
+            if next_target_state.pose == (0,0):
+                print(mrf_prob, observation_prob, transition_prob)
             total_prob += new_histogram[next_target_state]
 
         # Normalize

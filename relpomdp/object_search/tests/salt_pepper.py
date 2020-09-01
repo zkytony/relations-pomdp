@@ -56,19 +56,19 @@ def office_floor1(init_robot_pose=(9,0,0),
 
     # Relations in this world;
     # Check if the MRF already exists
-    mrf_path = os.path.join(mrfdir, "salt_pepper_1.pkl")
-    if os.path.exists(mrf_path):
-        with open(mrf_path, "rb") as f:
-            mrf = pickle.load(f)
-    else:
-        near_salt_pepper = Near("Salt", "Pepper", grid_map)  # grounding the relation on the grid map
-        near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
-        in_salt_kitchen = In("Salt", "Kitchen", "Room", grid_map)
-        mrf = relations_to_mrf([near_salt_pepper, in_salt_kitchen])
-        if save_mrf:
-            os.makedirs(mrfdir, exist_ok=True)
-            with open(mrf_path, "wb") as f:
-                pickle.dump(mrf, f)
+    # mrf_path = os.path.join(mrfdir, "salt_pepper_1.pkl")
+    # if os.path.exists(mrf_path):
+    #     with open(mrf_path, "rb") as f:
+    #         mrf = pickle.load(f)
+    # else:
+    near_salt_pepper = Near("Salt", "Pepper", grid_map)  # grounding the relation on the grid map
+    not_near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
+    in_salt_kitchen = In("Salt", "Kitchen", "Room", grid_map)
+    mrf = relations_to_mrf([near_salt_pepper])#, in_salt_kitchen])
+        # if save_mrf:
+        #     os.makedirs(mrfdir, exist_ok=True)
+        #     with open(mrf_path, "wb") as f:
+        #         pickle.dump(mrf, f)
     
     colors = {"Salt": (128, 128, 128),
               "Pepper": (200, 10, 10)}
