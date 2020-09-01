@@ -89,6 +89,7 @@ class Laser2DSensor:
         # The size of the sensing region here is the area covered by the fan
         self._sensing_region_size = self.fov / (2*math.pi) * math.pi * (max_range - min_range)**2
 
+
     def in_field_of_view(th, view_angles):
         """Determines if the beame at angle `th` is in a field of view of size `view_angles`.
         For example, the view_angles=180, means the range scanner scans 180 degrees

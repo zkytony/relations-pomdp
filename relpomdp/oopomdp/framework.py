@@ -251,6 +251,39 @@ class OOObservation(Observation):
     def __len__(self):
         return len(self.object_observations)
 
+class CombinedObservation(Observation):
+    """A collection of different observations"""
+    def __init__(self, effect_to_observations):
+        self._effodict = effect_to_observations
+        self._situation = frozenset(self._effodict.items())
+        self._hashcode = hash(self._situation)
+
+    def observation_for(self, effect):
+        if isinstance(effect, OEffect):
+            effect = effect.__class__.__name__
+        return self._effodict[effect]
+
+    @property
+    def observations(self):
+        return [self._effodict[eff] for eff in self._effodict]
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return '%s::(%s)' % (str(self.__class__.__name__),
+                             str(self.observations))
+    
+    def __hash__(self):
+        return self._hashcode
+
+    def __eq__(self, other):
+        if isinstance(other, CombinedObservation):
+            return self._situation == other._situation
+        else:
+            return False
+
+
 
 ######### Belief ###########
 class OOBelief(GenerativeDistribution):
@@ -320,6 +353,10 @@ class OEffect(GenerativeDistribution):
         """Returns the probability of getting `observation` if applying
         this effect on `state` given `action`."""
         raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
 class DeterministicOEffect(OEffect):
     """Probabilistic transition effect"""
@@ -415,6 +452,8 @@ class Relation(Edge):
         return "black"
 
 class InfoRelation(Relation):
+    def to_factor(self):
+        pass
     def to_mrf(self, *args, **kwargs):
         pass
 
@@ -498,13 +537,20 @@ class OOObservationModel(ObservationModel):
         Samples the observation by applying effects with satisfying cond_effects
         """
         effects = self._satisfied_effects(next_state, action)
+        observations = {}
         observation = NullObservation()
         for effect, byproduct in effects:
             if argmax:
                 observation = effect.mpe(next_state, action, byproduct)
             else:
                 observation = effect.random(next_state, action, byproduct)
-        return observation
+            observations[effect.name] = observation
+        if len(observations) == 0:
+            return NullObservation()
+        elif len(observations) == 1:
+            return observations[0]
+        else:
+            return CombinedObservation(observations)
         
     def probability(self, observation, next_state, action, **kwargs):
         """
@@ -518,7 +564,10 @@ class OOObservationModel(ObservationModel):
         effects = self._satisfied_effects(next_state, action)
         prob = 1.0
         for effect, byproduct in effects:
-            prob *= effect.probability(observation, next_state, action, byproduct)
+            o_e = observation
+            if isinstance(observation, CombinedObservation):
+                o_e = observation.observation_for(effect)
+            prob *= effect.probability(o_e, next_state, action, byproduct)
         return prob
     
     def argmax(self, state, action):

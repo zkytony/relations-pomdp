@@ -145,3 +145,66 @@ class Near(oopomdp.InfoRelation):
         return SemanticMRF(G, value_names)
 
 
+
+class In(oopomdp.InfoRelation):
+    def __init__(self,
+                 item_class, container_class, container_type,
+                 grid_map, pose_attr="pose", negate=False):
+        self.grid_map = grid_map
+        self.pose_attr = pose_attr
+        self.negate = negate
+        self.item_class = item_class
+        self.container_class = container_class
+        self.container_type = container_type
+        super().__init__("in",
+                         item_class, container_class)
+
+    def eval(self, item_state, container_state):
+        """Returns True if the Relation holds. False otherwise.
+        According to the paper, on(o1,o2) holds if o1 and o2 are
+        overlapping"""
+        return item_state.pose[:2] in container_state.footprint
+
+    def is_in(self, pose, container):
+        """container (ContainerState)"""
+        return pose in container.footprint
+
+    def to_factor(self):
+        # For right now, we will assume the robot knows that the grid map
+        # contains a fixed number of containers. So basically the factor
+        # is an enumeration of those containers.
+        locations = [(x,y)
+                     for x in range(self.grid_map.width)\
+                     for y in range(self.grid_map.length)]
+        item_card = len(locations)
+        containers = self.grid_map.containers(self.container_type)
+        container_card = len(containers)
+        variables = ["%s_%s" % (self.item_class, self.pose_attr),
+                     "%s" % (self.container_class)]
+        edges = [[variables[0], variables[1]]]
+        
+        # potentials: a list of joint potentials for the table.
+        potentials = []
+
+        # value_names: pgmpy's discrete factor expects every value be
+        # indexed by an integer. Here we are recording the actual meaning
+        # of that integer (e.g. 12 could mean the location (4,14))
+        value_names = {
+            variables[0]: list(locations),
+            variables[1]: [name for name in containers]
+        }
+        for i, loc_i in enumerate(value_names[variables[0]]):
+            for j, cont_j in enumerate(value_names[variables[1]]):
+                is_in = self.is_in(loc_i, containers[cont_j])
+                if not self.negate:
+                    potential = 1.0-1e-9 if is_in else 1e-9
+                else:
+                    # negation
+                    potential = 1e-9 if is_in else 1.0-1e-9
+                potentials.append(potential)                    
+        factor = DiscreteFactor(variables, cardinality=[item_card, container_card],
+                                values=potentials, state_names=value_names)
+        return factor                
+        
+        
+        

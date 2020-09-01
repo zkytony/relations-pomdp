@@ -19,10 +19,7 @@ import os
 def office_floor1(init_robot_pose=(9,0,0),
                   mrfdir="./mrf", save_mrf=True):
     """
-    Office floor with many rooms. There is a kitchen,
-    a coffee room, and other rooms are offices. There is a computer in
-    every office. There's salt and pepper in the kitchen.
-
+    Office floor with salt, pepper, and computers
     This describes the full environment configuration (i.e. all
     object locations and the robot's location).
     """
@@ -66,7 +63,8 @@ def office_floor1(init_robot_pose=(9,0,0),
     else:
         near_salt_pepper = Near("Salt", "Pepper", grid_map)  # grounding the relation on the grid map
         near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
-        mrf = relations_to_mrf([near_salt_pepper, near_salt_computer])
+        in_salt_kitchen = In("Salt", "Kitchen", "Room", grid_map)
+        mrf = relations_to_mrf([near_salt_pepper, in_salt_kitchen])
         if save_mrf:
             os.makedirs(mrfdir, exist_ok=True)
             with open(mrf_path, "wb") as f:

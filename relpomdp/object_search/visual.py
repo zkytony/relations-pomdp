@@ -212,13 +212,14 @@ class ObjectSearchViz:
         
     def on_render(self):
         # self._display_surf.blit(self._background, (0, 0))
-        self.render_env(self._display_surf)
+        img = self.render_env(self._display_surf)
         rx, ry, th = self._env.robot_state["pose"]
         fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())
         pygame.display.set_caption("Objectsearch(%.2f,%.2f,%.2f) | %s" %
                                    (rx, ry, th,
                                     fps_text))
-        pygame.display.flip() 
+        pygame.display.flip()
+        return img
  
     def on_cleanup(self):
         pygame.quit()
@@ -278,3 +279,4 @@ class ObjectSearchViz:
         # matching the definition in Taxi. So we just flip the image.
         img = cv2.flip(img, 1)  # flip horizontally 
         pygame.surfarray.blit_array(display_surf, img)
+        return img

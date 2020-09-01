@@ -1,5 +1,10 @@
 import math
 import numpy as np
+import tarfile
+import shutil
+from datetime import datetime as dt
+import cv2
+import os
 
 # Utility functions
 def euclidean_dist(p1, p2):
@@ -40,4 +45,29 @@ def intersect(seg1, seg2):
         else:
             # two lines are parallel and non intersecting
             return False
+
+#### File Utils ####
+def save_images_and_compress(images, outdir, filename="images", img_type="png"):
+    # First write the images as temporary files into the outdir
+    cur_time = dt.now()
+    cur_time_str = cur_time.strftime("%Y%m%d%H%M%S%f")[:-3]    
+    img_save_dir = os.path.join(outdir, "tmp_imgs_%s" % cur_time_str)
+    os.makedirs(img_save_dir)
+
+    for i, img in enumerate(images):
+        img = img.astype(np.float32)
+        img = cv2.flip(img, 0)
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        save_path = os.path.join(img_save_dir, "tmp_img%d.%s" % (i, img_type))
+        cv2.imwrite(save_path, img)
+
+    # Then compress the image files in the outdir
+    output_filepath = os.path.join(outdir, "%s.tar.gz" % filename)
+    with tarfile.open(output_filepath, "w:gz") as tar:
+        tar.add(img_save_dir, arcname=filename)        
+
+    # Then remove the temporary directory
+    shutil.rmtree(img_save_dir)
 

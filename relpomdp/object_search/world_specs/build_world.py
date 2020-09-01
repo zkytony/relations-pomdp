@@ -1,5 +1,5 @@
 import numpy as np
-from relpomdp.object_search.state import WallState
+from relpomdp.object_search.state import WallState, ContainerState
 from relpomdp.object_search.grid_map import GridMap
 import random
 import pickle
@@ -7,11 +7,16 @@ import pickle
 class Room:
     def __init__(self, name, walls, locations):
         """walls: A set of (x,y,"H"|"V") walls,
-        locations: A set of (x,y) locations."""
+        locations: A set of (x,y) locations.
+        name (str): Assumed to be of the format Class-#"""
         self.name = name
         self.walls = walls
         self.locations = locations
-
+        self.room_type = self.name.split("-")[0]
+        
+    def to_state(self):
+        return ContainerState(self.room_type, self.name, tuple(self.locations))
+    
 def init_map(width, length):
     """
     Create a map without any inner wall and only
@@ -116,13 +121,13 @@ def small_map0(seed=100):
 
 def small_map1(seed=100):
     walls = init_map(10,10)
-    room1 = make_room("room-1", 0,7,3,3)
-    room2 = make_room("room-2", 0,0,3,7)
-    room3 = make_room("room-3", 5,7,5,3)
-    room4 = make_room("room-4", 5,0,5,4)
+    room1 = make_room("Bathroom-1", 0,7,3,3)
+    room2 = make_room("Kitchen-2", 0,0,3,7)
+    room3 = make_room("Office-3", 5,7,5,3)
+    room4 = make_room("Office-4", 5,0,5,4)
     rooms = [room1, room2, room3, room4]
-    corridor1, rooms = make_corridor("corridor-1", 3, 0, 2, 10, rooms, seed=seed)
-    corridor2, rooms, corridors = make_corridor("corridor-2", 5, 4, 5, 3, rooms, [corridor1], seed=seed)
+    corridor1, rooms = make_corridor("Corridor-1", 3, 0, 2, 10, rooms, seed=seed)
+    corridor2, rooms, corridors = make_corridor("Corridor-2", 5, 4, 5, 3, rooms, [corridor1], seed=seed)
     corridors.append(corridor2)
 
     for room in rooms:

@@ -16,7 +16,8 @@ class ObjectSearchAgent(OOAgent):
         mp = MotionPolicy(grid_map)        
         cond_effects_t = {(CanMove(ids, mp), MoveEffect(ids)),
                           (CanPickup(ids), PickupEffect())}
-        cond_effects_o = {(CanObserve(ids), ObserveEffect(sensor, ids, epsilon=1e-12))}
+        cond_effects_o = {(CanObserve(ids), ObjectObserveEffect(sensor, ids, epsilon=1e-12)),
+                          (CanObserve(ids), RoomObserveEffect(sensor, ids, grid_map, epsilon=1e-12))}
         action_prior = GreedyActionPrior(ids, mp, 10, 100)
         policy_model = PreferredPolicyModel(action_prior)
         # policy_model = PolicyModel(ids, mp)
@@ -24,3 +25,4 @@ class ObjectSearchAgent(OOAgent):
         self.ids = ids
         super().__init__(init_belief, cond_effects_t, cond_effects_o,
                          policy_model, reward_model)
+    

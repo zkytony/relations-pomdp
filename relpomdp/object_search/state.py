@@ -9,11 +9,6 @@ class PoseState(oopomdp.ObjectState):
     def pose(self):
         return self["pose"]
     
-class ContainerState(oopomdp.ObjectState):
-    @property
-    def footprint(self):
-        return self["footprint"]
-
 class WallState(PoseState):
     def __init__(self, pose, direction):
         """direction can be 'H' or 'V'"""
@@ -38,16 +33,35 @@ class WallState(PoseState):
         wall_seg = [wall_pose1, wall_pose2]
         return utils.intersect(wall_seg, (src, dst))
 
-    
-class RoomState(ContainerState):
-    def __init__(self, footprint, room_type="Room"):
-        super().__init__(room_type,
-                         {"footprint": footprint})
-    @property
-    def room_type(self):
-        return self.objclass
+class ContainerState(oopomdp.ObjectState):
+    def __init__(self, container_type, name, footprint):
+        """name, e.g. Room"""
+        super().__init__(container_type,
+                         {"name": name,
+                          "footprint": footprint})
     def copy(self):
-        return self.__class__(tuple(self.footprint), room_type=self.room_type)
+        return self.__class__(self.category, self.name, tuple(self.footprint))
+    @property
+    def name(self):
+        return self["name"]
+    @property
+    def category(self):
+        return self.objclass        
+    def copy(self):
+        return self.__class__(self.container_type, tuple(self.footprint))
+    @property
+    def footprint(self):
+        return self["footprint"]
+
+# class RoomState(ContainerState):
+#     def __init__(self, name, category, footprint):
+#         """name, e.g. Room"""
+#         super().__init__("Room",
+#                          {"name": name,
+#                           "category": category,
+#                           "footprint": footprint})
+#         return self["category"]    
+
     
 class ItemState(PoseState):
     def __init__(self, name, pose, is_found=False):

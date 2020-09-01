@@ -21,6 +21,21 @@ class ItemObservation(PoseObservation):
     def to_evidence(self):
         return {"%s_pose" % (self.name): self["pose"]}
 
+class RoomObservation(oopomdp.ObjectObservation):
+    def __init__(self, room_name):
+        super().__init__(room_name.split("-")[0],  # get the category
+                         {"name": room_name})
+    @property
+    def room_type(self):
+        return self.objclass
+    @property
+    def name(self):
+        return self["name"]
+    def copy(self):
+        return self.__class__(self["name"])
+    def to_evidence(self):
+        return {"%s" % (self.room_type): self.name}
+
 class JointObservation(oopomdp.OOObservation):
     def __init__(self, object_observations):
         super().__init__(object_observations)

@@ -8,6 +8,7 @@ import pomdp_py
 import subprocess
 import copy
 from relpomdp.object_search.tests.worlds import *
+from relpomdp.object_search.utils import save_images_and_compress
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,7 +33,9 @@ def main():
     # Visualization
     viz.on_init()
     viz.update({target_id:agent.belief.object_beliefs[target_id]})
-    viz.on_render()
+    img = viz.on_render()
+
+    game_states = [img]
 
     # TODO: You should save the prior as a pkl file
     used_objects = set()  # objects who has contributed to mrf belief update
@@ -42,21 +45,29 @@ def main():
         print("---- Step %d ----" % i)        
         state, action, _, reward = history[i]
         observation = agent.observation_model.sample(state, action)
-        next_robot_state = copy.deepcopy(env.robot_state)
         env.apply_transition(state)
+        next_robot_state = copy.deepcopy(env.robot_state)        
         trial.belief_update(agent, action, observation, next_robot_state, mrf, used_objects)
 
         discounted_reward += discount * reward
-        discount *= trial.config["planner"]["discount_factor"]        
+        discount *= 0.95 # trial.config["planner"]["discount_factor"]        
         print("robot state: %s" % str(env.robot_state))
         print("     reward: %s" % str(reward))
         print("disc reward: %.3f" % discounted_reward)
         print("observation: %s" % str(observation))
         
         viz.update({target_id: agent.belief.object_beliefs[target_id]})
-        time.sleep(0.1)
+        time.sleep(0.05)
         viz.on_loop()        
-        viz.on_render()
+        img = viz.on_render()
+        game_states.append(img)
+
+    if args.save:
+        print("Saving images...")
+        save_images_and_compress(game_states,
+                                 os.path.join(args.trial_path))
+        subprocess.Popen(["nautilus", args.trial_path])
+        
     viz.on_cleanup()        
         
         

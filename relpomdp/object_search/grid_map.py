@@ -36,6 +36,11 @@ class GridMap:
             return False
         return True
 
+    def containers(self, container_type):
+        if container_type == "Room":
+            return {name:self.rooms[name].to_state()
+                    for name in self.rooms}
+
 class MotionPolicy:
     def __init__(self, grid_map, all_motion_actions={MoveN, MoveS, MoveE, MoveW}):
         # Compute the valid motion actions at every location

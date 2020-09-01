@@ -101,7 +101,7 @@ class SingleObjectSearchTrial(Trial):
                                   controllable=True,
                                   img_path=self._config["img_path"])
             viz.on_init()
-            viz.on_render()    
+            viz.on_render()
             viz.update({target_id:target_hist})
             viz.on_render()                    
 
@@ -114,11 +114,11 @@ class SingleObjectSearchTrial(Trial):
         robot_id = env.ids["Robot"]        
         
         _History = [(copy.deepcopy(env.state),None,None,0)]  # s,a,o,r
-        used_objects = set()  # objects who has contributed to mrf belief update
+        used_cues = set()  # objects who has contributed to mrf belief update
         discount = 1.0
         discounted_reward = 0
         for step in range(self._config["max_steps"]):
-            print("---- Step %d ----" % step)                    
+            print("---- Step %d ----" % step)
             # Input action from keyboard
             if self._config["visualize"] and self._config["user_control"]:
                 action = None
@@ -136,10 +136,10 @@ class SingleObjectSearchTrial(Trial):
                     time.sleep(0.1)
 
             reward = env.state_transition(action, execute=True)
-            observation = agent.observation_model.sample(env.state, action)            
+            observation = agent.observation_model.sample(env.state, action)
             next_robot_state = env.robot_state.copy()
-            self.belief_update(agent, action, observation, next_robot_state, mrf, used_objects)
-            planner.update(agent, action, observation.for_objs([target_id]))
+            self.belief_update(agent, action, observation, next_robot_state, mrf, used_cues)
+            planner.update(agent, action, observation)
 
             discounted_reward += discount * reward
             discount *= self.config["planner"]["discount_factor"]
@@ -168,7 +168,7 @@ class SingleObjectSearchTrial(Trial):
         return [HistoryResult(_History)]
 
 
-    def belief_update(self, agent, action, observation, next_robot_state, mrf, used_objects):
+    def belief_update(self, agent, action, observation, next_robot_state, mrf, used_cues):
         # Compute a distribution using the MRF
         target_id = agent.ids["Target"][0]
         robot_id = agent.ids["Robot"]
@@ -176,22 +176,36 @@ class SingleObjectSearchTrial(Trial):
         target_class = target_variable.split("_")[0]        
         if self._config["using_mrf_belief_update"]:
             updating_mrf = False
-            target_hist_mrf = {}                
-            for objid in observation.object_observations:
-                o_obj = observation.object_observations[objid]
-                if objid != robot_id and objid not in used_objects:
-                    if o_obj.objclass == target_class:
-                        # You just observed the target. MRF isn't useful here.
-                        continue
+            target_hist_mrf = {}
+            observations = [observation]
+            if isinstance(observation, CombinedObservation):
+                observations = observation.observations
 
-                    target_phi = mrf.query(variables=[target_variable],
-                                         evidence=o_obj.to_evidence())
-                    target_phi.normalize()
-                    for loc in mrf.values(target_variable):
-                        state = ItemState(target_class, loc)
-                        target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
-                    updating_mrf = True
-                    used_objects.add(objid)
+            evidence = {}
+            cues = set()
+            for o in observations:
+                if isinstance(o, JointObservation):
+                    for objid in o.object_observations:
+                        o_obj = o.object_observations[objid]
+                        if objid != robot_id and objid not in used_cues:
+                            if o_obj.objclass == target_class:
+                                # You just observed the target. MRF isn't useful here.
+                                continue
+                            if mrf.valid_var("%s_pose" % o_obj.objclass):
+                                evidence.update(o_obj.to_evidence())
+                                cues.add(objid)
+                elif isinstance(o, RoomObservation):
+                    if mrf.valid_var(o.room_type):
+                        evidence.update(o.to_evidence())
+                        cues.add(o.name)
+                            
+            target_phi = mrf.query(variables=[target_variable],
+                                   evidence=evidence)
+            target_phi.normalize()
+            for loc in mrf.values(target_variable):
+                state = ItemState(target_class, loc)
+                target_hist_mrf[state] = target_phi.get_value({target_variable:loc})
+            updating_mrf = True                    
 
         # Compute a distribution using the standard belief update
         current_target_hist = agent.belief.object_beliefs[target_id]
@@ -202,7 +216,7 @@ class SingleObjectSearchTrial(Trial):
             next_state = JointState({target_id: next_target_state,
                                      robot_id: next_robot_state})
             observation_prob = agent.observation_model.probability(
-                observation.for_objs([robot_id,target_id]), next_state, action)
+                observation, next_state, action)
             mrf_prob = 1.0
             if self._config["using_mrf_belief_update"] and updating_mrf:
                 mrf_prob = target_hist_mrf[next_target_state]
@@ -237,7 +251,8 @@ if __name__ == "__main__":
         "using_mrf_belief_update": True,
         "max_steps": 100,
         "visualize": True,
-        "user_control": False
+        "user_control": False,
+        "img_path": "../imgs"
     }
     trial = SingleObjectSearchTrial("salt_pepper",
                                     config, verbose=True)
