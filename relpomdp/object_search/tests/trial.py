@@ -106,7 +106,6 @@ class SingleObjectSearchTrial(Trial):
             viz.on_render()                    
 
         return env, agent, planner, mrf, viz
-        
 
     def run(self, logging=False):
         env, agent, planner, mrf, viz = self.setup()
@@ -182,7 +181,6 @@ class SingleObjectSearchTrial(Trial):
                 observations = observation.observations
 
             evidence = {}
-            cues = set()
             for o in observations:
                 if isinstance(o, JointObservation):
                     for objid in o.object_observations:
@@ -193,11 +191,12 @@ class SingleObjectSearchTrial(Trial):
                                 continue
                             if mrf.valid_var("%s_pose" % o_obj.objclass):
                                 evidence.update(o_obj.to_evidence())
-                                cues.add(objid)
+                                used_cues.add(objid)
                 elif isinstance(o, RoomObservation):
-                    if mrf.valid_var(o.room_type):
+                    if mrf.valid_var(o.room_type)\
+                       and o.name not in used_cues:
                         evidence.update(o.to_evidence())
-                        cues.add(o.name)
+                        used_cues.add(o.name)
                         
             if len(evidence) > 0:
                 target_phi = mrf.query(variables=[target_variable],
