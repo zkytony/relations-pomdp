@@ -27,20 +27,20 @@ def generate_experiment():
         "user_control": False,
         "img_path": os.path.join(ABS_PATH, "../imgs"),
         "planner": {
-            "max_depth": 20,
+            "max_depth": 40,
             "discount_factor": 0.95,
             "num_sims": 200,
-            "exploration_const": 200
+            "exploration_const": 200,
         }
     }
     trials = []
     
-    for baseline in {"random",
-                     "uniform",
-                     "mrf#prior#pouct",
-                     "mrf#both#pouct",
-                     "mrf#both#greedy",
-                     "informed"}:
+    for baseline in {"mrf#prior#pouct-subgoal",
+                     "mrf#both#pouct-subgoal"}:
+        # "random",
+        # "uniform",
+        # "mrf#both#greedy",
+        # "informed"}:
         config = copy.deepcopy(overall_config)
         config["planner"]["max_depth"] = 20
         if baseline == "random":
@@ -63,6 +63,8 @@ def generate_experiment():
             else:
                 config["using_mrf_belief_update"] = False
             config["planner_type"] = baseline.split("#")[2]
+        if baseline.endswith("subgoal"):
+            config["planner"]["subgoals"] = ["Kitchen"]
 
         init_robot_pose = tuple(map(str,config["world_configs"]["init_robot_pose"]))
         for i in range(20):
@@ -74,7 +76,7 @@ def generate_experiment():
     random.shuffle(trials)
     output_dir = "./results"
     print("Generating experiment")
-    exp = Experiment("SaltPepperC", trials, output_dir, verbose=True, add_timestamp=True)
+    exp = Experiment("SaltPepperSubgoalA", trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=5, exist_ok=True)
     print("Find multiple computers to run these experiments.")    
 

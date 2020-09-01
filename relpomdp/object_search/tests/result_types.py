@@ -126,3 +126,7 @@ class HistoryResult(PklResult):
                           'sum'])  # this is not relevant for most except for foref_prediction_count
         flatten_column_names(summary)        
         return summary
+
+    # @classmethod
+    # def plot_reward(cls, df):
+    #     df = cls.summarize

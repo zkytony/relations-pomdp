@@ -16,7 +16,7 @@ import pickle
 import os
 
 
-def office_floor1(init_robot_pose=(3,3,0),
+def office_floor1(init_robot_pose=(9,0,0),
                   mrfdir="./mrf", save_mrf=True):
     """
     Office floor with salt, pepper, and computers
@@ -58,7 +58,8 @@ def office_floor1(init_robot_pose=(3,3,0),
     not_near_salt_computer = Near("Salt", "Computer", grid_map, negate=True)
     in_salt_kitchen = In("Salt", "Kitchen", "Room", grid_map)
     not_in_salt_office = In("Salt", "Office", "Room", grid_map, negate=True)
-    relations = [near_salt_pepper]#, in_salt_kitchen, not_in_salt_office]
+    relations = [near_salt_pepper, not_near_salt_computer]
+    #, in_salt_kitchen, not_in_salt_office]
 
     # Relations in this world;
     # Check if the MRF already exists

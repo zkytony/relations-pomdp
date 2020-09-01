@@ -139,7 +139,7 @@ class SingleObjectSearchTrial(Trial):
             else:
                 action = planner.plan(agent)
 
-                if isinstance(planner, pomdp_py.POUCT):
+                if hasattr(planner, "last_num_sims"):
                     print("   num sims: %d" % planner.last_num_sims)
                 else:
                     time.sleep(0.1)

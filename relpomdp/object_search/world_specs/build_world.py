@@ -13,9 +13,16 @@ class Room:
         self.walls = walls
         self.locations = locations
         self.room_type = self.name.split("-")[0]
+
+        mean = np.mean(np.array([*self.locations]),axis=0)
+        self._center_of_mass = tuple(np.round(mean).astype(int))
         
     def to_state(self):
         return ContainerState(self.room_type, self.name, tuple(self.locations))
+
+    @property
+    def center_of_mass(self):
+        return self._center_of_mass
     
 def init_map(width, length):
     """

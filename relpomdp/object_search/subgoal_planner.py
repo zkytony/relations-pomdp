@@ -19,10 +19,13 @@ class ReachRoomSubgoal(Subgoal):
         super().__init__("Reach-%s" % room_type)
         
     def achieved(self, state, action):
-        robot_id = self.ids["Robot"]        
-        room_name = self.grid_map.room_of(state.object_states[robot_id].pose[:2])
+        # Achieves the goal when the robot is at the center of mass of the room
+        robot_id = self.ids["Robot"]
+        robot_state = state.object_states[robot_id]
+        room_name = self.grid_map.room_of(robot_state.pose[:2])
         room = self.grid_map.rooms[room_name]
-        return room.room_type == self.room_type
+        return room.room_type == self.room_type\
+            and robot_state.pose[:2] == room.center_of_mass
 
 
 class RobotStateWithSubgoals(RobotState):
@@ -94,7 +97,7 @@ class SubgoalRewardModel(RewardModel):
         reward = 0
         if len(robot_state["subgoals_achieved"]) < len(next_robot_state["subgoals_achieved"]):
             # achieved more subgoals, good
-            reward = 50.0
+            reward = 100.0  # In order for the robot to prioritize subgoal, the reward needs to be higher
         reward += super().argmax(state, action, next_state, **kwargs)
         return reward
 
@@ -139,7 +142,9 @@ class SubgoalPlanner(pomdp_py.Planner):
         # is not executed right now. We are just recording the subgoals
         next_mpe_state = transition_model.sample(tmp_agent.belief.mpe(), action)
         self._robot_state_with_subgoals = next_mpe_state.object_states[robot_id].copy()
-        
+
+        if isinstance(self._planner, pomdp_py.POUCT):
+            agent.tree = tmp_agent.tree
         return action
 
     def update(self, agent, action, observation):
@@ -151,5 +156,9 @@ class SubgoalPlanner(pomdp_py.Planner):
                 "After executing action, robot_state != robot_state_with_subgoals"
         self._planner.update(agent, action, observation)
         
-        
-            
+    @property
+    def last_num_sims(self):
+        if isinstance(self._planner, pomdp_py.POUCT):
+            return self._planner.last_num_sims
+        else:
+            return -1
