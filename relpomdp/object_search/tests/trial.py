@@ -3,6 +3,7 @@ from relpomdp.object_search.env import *
 from relpomdp.object_search.sensor import *
 from relpomdp.object_search.agent import *
 from relpomdp.object_search.greedy_planner import GreedyPlanner, RandomPlanner
+from relpomdp.object_search.subgoal_planner import SubgoalPlanner, ReachRoomSubgoal
 from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
 from relpomdp.object_search.relation import *
 from relpomdp.object_search.tests.result_types import *
@@ -73,18 +74,27 @@ class SingleObjectSearchTrial(Trial):
                                   init_belief)
 
         # Create planner
-        if self._config["planner_type"] == "pouct":
+        if self._config["planner_type"].startswith("pouct"):
             planner = pomdp_py.POUCT(max_depth=self._config["planner"]["max_depth"],
                                      discount_factor=self._config["planner"]["discount_factor"],
                                      num_sims=self._config["planner"]["num_sims"],
                                      exploration_const=self._config["planner"]["exploration_const"],
                                      rollout_policy=agent.policy_model)
             
-        elif self._config["planner_type"] == "greedy":
+        elif self._config["planner_type"].startswith("greedy"):
             planner = GreedyPlanner(ids)
             
-        elif self._config["planner_type"] == "random":
+        elif self._config["planner_type"].startswith("random"):
             planner = RandomPlanner(ids)
+
+        if self._config["planner_type"].endswith("subgoal"):
+            subgoals = {}
+            for subgoal_str in self._config["planner"]["subgoals"]:
+                # TODO: More types of subgoals?
+                sg = ReachRoomSubgoal(env.ids, subgoal_str, env.grid_map)
+                subgoals[sg.name] = sg
+            planner = SubgoalPlanner(env.ids, subgoals,
+                                     env.grid_map, planner)
 
         # Visualization
         viz = None
@@ -242,12 +252,13 @@ if __name__ == "__main__":
         "world": salt_pepper_1,
         "world_configs": {},
         "target_variable": "Salt_pose",
-        "planner_type": "pouct",
+        "planner_type": "pouct-subgoal",
         "planner": {
             "max_depth": 20,
             "discount_factor": 0.95,
             "num_sims": 200,
-            "exploration_const": 200
+            "exploration_const": 200,
+            "subgoals": ["Kitchen"]
         },
         "prior_type": "mrf",
         "using_mrf_belief_update": True,

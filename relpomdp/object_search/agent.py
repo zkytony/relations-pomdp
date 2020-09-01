@@ -13,7 +13,7 @@ class ObjectSearchAgent(OOAgent):
     def __init__(self, grid_map, sensor, ids,
                  init_belief):
         
-        mp = MotionPolicy(grid_map)        
+        mp = MotionPolicy(grid_map)
         cond_effects_t = {(CanMove(ids, mp), MoveEffect(ids)),
                           (CanPickup(ids), PickupEffect())}
         cond_effects_o = {(CanObserve(ids), ObjectObserveEffect(sensor, ids, epsilon=1e-12)),
@@ -23,6 +23,7 @@ class ObjectSearchAgent(OOAgent):
         # policy_model = PolicyModel(ids, mp)
         reward_model = RewardModel(ids)
         self.ids = ids
+        self.sensor = sensor
         super().__init__(init_belief, cond_effects_t, cond_effects_o,
                          policy_model, reward_model)
     

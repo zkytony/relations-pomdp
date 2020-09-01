@@ -447,6 +447,9 @@ class Relation(Edge):
         else:
             return "%s(%s,%s)" % (self.name, self.class1.name)
 
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def color(self):
         return "black"
@@ -465,6 +468,10 @@ class RelationGraph(Graph):
 class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
         self._cond_effects = cond_effects
+
+    @property
+    def cond_effects(self):
+        return self._cond_effects
 
     def _satisfied_effects(self, state, action):
         effects = []
