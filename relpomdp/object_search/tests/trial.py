@@ -30,7 +30,25 @@ class SingleObjectSearchTrial(Trial):
     def setup(self):
         world = self._config["world"]
         print("Creating map ...")
-        ids, grid_map, init_state, mrf, colors = world(**self._config["world_configs"])
+        ids, grid_map, init_state, colors = world(**self._config["world_configs"])
+        # Build relations
+        relations = []
+        for relclass, args, kwargs in self._config["relations"]:
+            relations.append(relclass(*args, grid_map, **kwargs))
+        # Check if the MRF already exists and if want to save            
+        mrfdir = self._config.get("mrfdir", "./mrf")
+        save_mrf = self._config.get("save_mrf", True)
+        mrf_filename = "salt_pepper-" + ("_".join([str(r) for r in relations])) + ".pkl"
+        mrf_path = os.path.join(mrfdir, mrf_filename)
+        if os.path.exists(mrf_path):
+            with open(mrf_path, "rb") as f:
+                mrf = pickle.load(f)
+        else:
+            mrf = relations_to_mrf(relations)
+            if save_mrf:
+                os.makedirs(mrfdir, exist_ok=True)
+                with open(mrf_path, "wb") as f:
+                    pickle.dump(mrf, f)
         
         target_id = ids["Target"][0]
         robot_id = ids["Robot"]
@@ -252,6 +270,12 @@ if __name__ == "__main__":
     config = {
         "world": salt_pepper_1,
         "world_configs": {},
+        "relations": [
+            (Near, ("Salt", "Pepper"), {}),
+            (Near, ("Salt", "Computer"), {"negate":True})
+            # (In, ("Salt", "Kitchen", "Room"), {}),
+            # (In, ("Salt", "Office", "Room"), {"negate":True}),
+        ],
         "target_variable": "Salt_pose",
         "planner_type": "pouct-subgoal",
         "planner": {
