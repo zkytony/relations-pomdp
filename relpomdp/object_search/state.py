@@ -1,6 +1,7 @@
 import numpy as np
 import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.oopomdp.abstraction import AbstractAttribute
 import relpomdp.object_search.utils as utils
 import copy
     
@@ -10,9 +11,7 @@ class Pose(oopomdp.Attribute):
         super().__init__("pose", value)
     def copy(self):
         if type(value) == tuple:
-            return self.__class__(tuple(value))
-        elif type(value) == int:
-            return self.__class__(value)
+            return Pose(tuple(value))
         else:
             return copy.deepcopy(self)
     def __getitem__(self, index):
