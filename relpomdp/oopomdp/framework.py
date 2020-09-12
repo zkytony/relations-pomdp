@@ -6,6 +6,39 @@ import copy
 from relpomdp.oopomdp.graph import *
 
 ########### State ###########
+class Attribute:
+    """
+    We make a class of Attribute so that there would be abstraction
+    over attributes.
+    """
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+        self._hashcode = hash((self.name, self.value))
+
+    def __hash__(self):
+        return self._hashcode
+
+    def __eq__(self, other):
+        if isinstance(other, Attribute):
+            return self.name == other.name\
+                and self.value == other.value
+        else:
+            return False
+
+    def copy(self):
+        """copy(self)
+        Copies the state."""
+        raise NotImplementedError
+    
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return '%s::(%s)' % (str(self.__class__.__name__),
+                                str(self.value))
+    
+
 class ObjectState(State):
     # Note: 08/22/2020 - it's a copy of the ObjectState from pomdp_py
     """
@@ -17,7 +50,7 @@ class ObjectState(State):
         """
         class: "class",
         attributes: {
-            "attr1": value,  # value should be hashable
+            "attr1": Attribute,
             ...
         }
         """
@@ -57,7 +90,6 @@ class ObjectState(State):
         """copy(self)
         Copies the state."""
         raise NotImplementedError
-
 
 class OOState(State):
 
@@ -136,6 +168,7 @@ class OOState(State):
     
     def __len__(self):
         return len(self.object_states)
+    
 
 ########### Observation ###########
 class NullObservation(Observation):
@@ -183,7 +216,8 @@ class ObjectObservation(Observation):
 class OOObservation(Observation):
     def __init__(self, object_observations):
         """
-        objects_observations: dictionary of dictionaries; Each dictionary represents an object observation:
+        objects_observations: dictionary of dictionaries;
+        Each dictionary represents an object observation:
             { ID: ObjectObservation }
         """
         # internally, objects are sorted by ID.

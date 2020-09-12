@@ -23,8 +23,9 @@ def office_floor1(init_robot_pose=(9,0,0)):
     object locations and the robot's location).
     """
     grid_map = small_map1()  # THiS IS FIXED - office_floor1 uses small_map1
-    init_salt_pose = (0,6)
-    init_pepper_pose = (1,5)
+    init_salt_pose = Pose((0,6))
+    init_pepper_pose = Pose((1,5))
+    init_robot_pose = Pose(init_robot_pose)
 
     salt_id = 10
     pepper_id = 15
@@ -36,7 +37,7 @@ def office_floor1(init_robot_pose=(9,0,0)):
     computer_poses = [(5,9), (6,2)]
     computer_states = []
     for pose in computer_poses:
-        computer_states.append(ItemState("Computer", pose))
+        computer_states.append(ItemState("Computer", Pose(pose)))
     init_state = {robot_id: robot_state,
                   pepper_id: pepper_state,
                   salt_id: salt_state}

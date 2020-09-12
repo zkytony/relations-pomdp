@@ -2,8 +2,25 @@ import numpy as np
 import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
 import relpomdp.object_search.utils as utils
+import copy
     
 # Object classes and attributes
+class Pose(oopomdp.Attribute):
+    def __init__(self, value):
+        super().__init__("pose", value)
+    def copy(self):
+        if type(value) == tuple:
+            return self.__class__(tuple(value))
+        elif type(value) == int:
+            return self.__class__(value)
+        else:
+            return copy.deepcopy(self)
+    def __getitem__(self, index):
+        if type(self.value) == tuple:
+            return self.value[index]
+        else:
+            raise ValueError("%s %s is not enumerable" % (self.__class__, str(self.value)))
+
 class PoseState(oopomdp.ObjectState):
     @property
     def pose(self):
@@ -52,16 +69,6 @@ class ContainerState(oopomdp.ObjectState):
     @property
     def footprint(self):
         return self["footprint"]
-
-# class RoomState(ContainerState):
-#     def __init__(self, name, category, footprint):
-#         """name, e.g. Room"""
-#         super().__init__("Room",
-#                          {"name": name,
-#                           "category": category,
-#                           "footprint": footprint})
-#         return self["category"]    
-
     
 class ItemState(PoseState):
     def __init__(self, name, pose, is_found=False):
