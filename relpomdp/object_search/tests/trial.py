@@ -79,7 +79,8 @@ class SingleObjectSearchTrial(Trial):
                                      discount_factor=self._config["planner"]["discount_factor"],
                                      num_sims=self._config["planner"]["num_sims"],
                                      exploration_const=self._config["planner"]["exploration_const"],
-                                     rollout_policy=agent.policy_model)
+                                     rollout_policy=agent.policy_model,
+                                     action_prior=agent.policy_model.action_prior)
             
         elif self._config["planner_type"].startswith("greedy"):
             planner = GreedyPlanner(ids)
@@ -256,7 +257,7 @@ if __name__ == "__main__":
         "planner": {
             "max_depth": 20,
             "discount_factor": 0.95,
-            "num_sims": 200,
+            "num_sims": 500,
             "exploration_const": 200,
             "subgoals": ["Kitchen"]
         },
