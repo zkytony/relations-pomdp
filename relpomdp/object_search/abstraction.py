@@ -111,8 +111,8 @@ class ReachRoomSubgoal(Subgoal):
         return room.room_type == self.room_type\
             and robot_state.pose[:2] == room.center_of_mass
 
-    def fail(self, state, action):
-        return isinstance(action, Pickup)
+    # def fail(self, state, action):
+    #     return isinstance(action, Pickup)
 
     def trigger_success(self, robot_state, action, observation):
         room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
@@ -133,18 +133,23 @@ class SearchRoomSubgoal(Subgoal):
         super().__init__("Search-%s" % room_name)
 
     def achieve(self, state, action):
+        robot_id = self.ids["Robot"]
+        robot_state = state.object_states[robot_id]
+        room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
+        if room_attr.room_name != self.room_name:
+            return False
         for objid in self.ids["Target"]:
             if state.object_states[objid]["is_found"]:
                 return True
         return False
 
-    def fail(self, state, action):
-        robot_id = self.ids["Robot"]
-        robot_state = state.object_states[robot_id]
-        room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
-        if room_attr.room_name != self.room_name:
-            return True
-        return False
+    # def fail(self, state, action):
+    #     robot_id = self.ids["Robot"]
+    #     robot_state = state.object_states[robot_id]
+    #     room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
+    #     if room_attr.room_name != self.room_name:
+    #         return True
+    #     return False
 
 def interpret_subgoal(string, **kwargs):
     ids = kwargs.get("ids", None)
@@ -206,7 +211,6 @@ class UpdateSubgoalStatus(oopomdp.DeterministicTEffect):
         next_robot_state["subgoals"] = subgoal_status
         return next_state
         
-
     
 class SubgoalRewardModel(RewardModel):
     """This is a generic Subgoal reward model
@@ -284,6 +288,9 @@ class SubgoalPlanner(pomdp_py.Planner):
                                    transition_model,
                                    agent.observation_model,
                                    reward_model)
+        if hasattr(agent, "tree"):
+            tmp_agent.tree = agent.tree
+        
         # Plan accordingly
         action = self._planner.plan(tmp_agent)
         

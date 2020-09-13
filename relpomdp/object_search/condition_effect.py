@@ -27,12 +27,11 @@ class MoveEffect(oopomdp.DeterministicTEffect):
     @classmethod
     def move_by(self, robot_pose, motion):
         dx, dy, th = motion
-        if len(robot_pose) == 2:
-            rx, ry = robot_pose
-            return (rx + dx, ry + dy)
+        if isinstance(robot_pose, Pose):
+            rx, ry = robot_pose.value[:2]
         else:
-            rx, ry, _ = robot_pose
-            return (rx + dx, ry + dy, th)
+            rx, ry = robot_pose[:2]
+        return Pose((rx + dx, ry + dy, th))
         
     def mpe(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""

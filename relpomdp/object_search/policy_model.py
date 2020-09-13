@@ -27,7 +27,7 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         else:
             robot_state = state.object_states[self.ids["Robot"]]
             motions = self.motion_policy.valid_motions(robot_state.pose)
-            return self._actions.intersection(motions)
+            return motions | {Pickup()}
 
     @property
     def all_motion_actions(self):

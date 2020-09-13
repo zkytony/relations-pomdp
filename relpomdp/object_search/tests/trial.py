@@ -75,7 +75,7 @@ class SingleObjectSearchTrial(Trial):
                 elif self._config["prior_type"] == "mrf":
                     target_hist[state] = target_phi.get_value({target_variable:(x,y)})
                 elif self._config["prior_type"] == "informed":
-                    if (x,y) != env.state.object_states[target_id].pose:
+                    if (x,y) != env.state.object_states[target_id].pose.value:
                         target_hist[state] = 0.0
                     else:
                         target_hist[state] = 1.0
@@ -159,6 +159,9 @@ class SingleObjectSearchTrial(Trial):
 
                 if hasattr(planner, "last_num_sims"):
                     print("   num sims: %d" % planner.last_num_sims)
+                    print(" **action values**")
+                    for a in agent.tree.children:
+                        print("   %s: %s" % (a, agent.tree.children[a].value))
                 else:
                     time.sleep(0.1)
 
@@ -278,13 +281,13 @@ if __name__ == "__main__":
         "target_variable": "Salt_pose",
         "planner_type": "pouct-subgoal",
         "planner": {
-            "max_depth": 20,
+            "max_depth": 30,
             "discount_factor": 0.95,
-            "num_sims": 500,
+            "num_sims": 200,
             "exploration_const": 200,
-            "subgoals": [("Reach_Kitchen")]
+            "subgoals": []#[("Reach_Kitchen")]
         },
-        "prior_type": "mrf",
+        "prior_type": "informed",
         "using_mrf_belief_update": True,
         "max_steps": 100,
         "visualize": True,
