@@ -111,6 +111,10 @@ class JointState(oopomdp.OOState):
     def obj_pose(self, objid):
         return self.object_states[objid]["pose"]
 
+    def __str__(self):
+        return "%s(%s)" % (self.__class__.__name__, str(self.object_states))
+    
+
 
 if __name__ == "__main__":
     robot_state = RobotState((10,5), (1,), "+x")

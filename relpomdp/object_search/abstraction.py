@@ -312,11 +312,11 @@ if __name__ == "__main__":
     sensor = Laser2DSensor(robot_id, env.grid_map, fov=90, min_range=1, max_range=2,
                            angle_increment=0.5)
     # Build a regular agent
-    init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist),
-                                     robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
+    init_belief = oopomdp.OOBelief({target_id: pomdp_py.Histogram(target_hist),
+                                     robot_id: pomdp_py.Histogram({env.robot_state:1.0})},
+                                   oo_state_class=JointState)
     agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
                               init_belief)
-    import pdb; pdb.set_trace()
 
     # Build the agent used for subgoal planning
     sg = ReachRoomSubgoal(ids, "Kitchen", grid_map)
@@ -327,9 +327,9 @@ if __name__ == "__main__":
         RobotStateWithSubgoals.from_state_without_subgoals(
             robot_state, subgoals=tuple((sg_name, Subgoal.IP)
                                         for sg_name in subgoals))
-    belief = pomdp_py.OOBelief({
-            robot_id:pomdp_py.Histogram({robot_state_with_subgoals.copy():1.0}),
-            target_id:agent.belief.object_beliefs[target_id]})    
+    belief = oopomdp.OOBelief({robot_id:pomdp_py.Histogram({robot_state_with_subgoals.copy():1.0}),
+                               target_id:agent.belief.object_beliefs[target_id]},
+                              oo_state_class=JointState) 
     transition_model = oopomdp.OOTransitionModel(
         set(agent.transition_model.cond_effects)\
         | {(AchievingSubgoals(ids, subgoals),

@@ -321,8 +321,64 @@ class CombinedObservation(Observation):
 
 ######### Belief ###########
 class OOBelief(GenerativeDistribution):
-    # TODO
-    pass
+
+    """
+    Belief factored by objects.
+    """
+    def __init__(self, object_beliefs, oo_state_class=OOState):
+        """
+        object_beliefs (objid -> GenerativeDistribution)
+        """
+        self._object_beliefs = object_beliefs
+        self._oo_state_class = oo_state_class
+
+    def __getitem__(self, state):
+        """__getitem__(self, state)
+        Returns belief probability of given state"""
+        if not isinstance(state, OOState):
+            raise ValueError("state must be OOState")
+        belief_prob = 1.0
+        for objid in self._object_beliefs:
+            object_state = state.object_states[objid]
+            belief_prob = belief_prob * self._object_beliefs[objid].probability(object_state)
+        return belief_prob
+
+    def mpe(self, **kwargs):
+        """mpe(self, **kwargs)
+        Returns most likely state."""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].mpe(**kwargs)
+        return self._oo_state_class(object_states)
+    
+    def random(self, **kwargs):
+        """random(self, **kwargs)
+        Returns a random state"""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].random(**kwargs)
+        return self._oo_state_class(object_states)        
+    
+    def __setitem__(self, oostate, value):
+        """__setitem__(self, oostate, value)
+        Sets the probability of a given `oostate` to `value`.
+        Note always feasible."""
+        raise NotImplemented
+        
+    def object_belief(self, objid):
+        """object_belief(self, objid)
+        Returns the belief (GenerativeDistribution) for the given object."""
+        return self._object_beliefs[objid]
+
+    def set_object_belief(self, objid, belief):
+        """set_object_belief(self, objid, belief)
+        Sets the belief of object to be the given `belief` (GenerativeDistribution)"""
+        self._object_beliefs[objid] = belief
+
+    @property
+    def object_beliefs(self):
+        """object_beliefs(self)"""
+        return self._object_beliefs
 
 ########### Condition and Effect ###########
 class Condition:
