@@ -8,6 +8,12 @@ class PolicyModel(pomdp_py.RolloutPolicy):
     def __init__(self, ids, motion_policy):
         self.ids = ids
         self.motion_policy = motion_policy
+        self.set_actions(motion_policy.all_motion_actions | {Pickup()})
+
+    def set_actions(self, actions):
+        self._actions = actions
+        self._motion_actions = {a for a in self._actions\
+                                if isinstance(a, Move)}
         
     def sample(self, state, **kwargs):
         return random.sample(self._get_all_actions(**kwargs), 1)[0]        
@@ -17,15 +23,15 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         get_all_actions(self, *args, **kwargs)
         Returns a set of all possible actions, if feasible."""
         if state is None:
-            return {MoveE, MoveW, MoveN, MoveS, Pickup()}
+            return self._actions
         else:
             robot_state = state.object_states[self.ids["Robot"]]
             motions = self.motion_policy.valid_motions(robot_state.pose)
-            return motions | {Pickup()}
+            return self._actions.intersection(motions)
 
     @property
     def all_motion_actions(self):
-        return {MoveE, MoveW, MoveN, MoveS}
+        return self._motion_actions
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]

@@ -44,6 +44,7 @@ class GridMap:
 class MotionPolicy:
     def __init__(self, grid_map, all_motion_actions={MoveN, MoveS, MoveE, MoveW}):
         # Compute the valid motion actions at every location
+        self.all_motion_actions = all_motion_actions
         self._legal_actions = {}  # maps from (x,y) to legal motion actions
         for x in range(grid_map.width):
             for y in range(grid_map.length):

@@ -3,7 +3,7 @@ from relpomdp.object_search.env import *
 from relpomdp.object_search.sensor import *
 from relpomdp.object_search.agent import *
 from relpomdp.object_search.greedy_planner import GreedyPlanner, RandomPlanner
-from relpomdp.object_search.abstraction import SubgoalPlanner, ReachRoomSubgoal
+from relpomdp.object_search.abstraction import *
 from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
 from relpomdp.object_search.relation import *
 from relpomdp.object_search.tests.result_types import *
@@ -110,7 +110,7 @@ class SingleObjectSearchTrial(Trial):
             subgoals = {}
             for subgoal_str in self._config["planner"]["subgoals"]:
                 # TODO: More types of subgoals?
-                sg = ReachRoomSubgoal(env.ids, subgoal_str, env.grid_map)
+                sg = interpret_subgoal(subgoal_str, ids=env.ids, grid_map=env.grid_map)
                 subgoals[subgoal_str] = sg
             planner = SubgoalPlanner(env.ids, subgoals, planner)
 
@@ -282,7 +282,7 @@ if __name__ == "__main__":
             "discount_factor": 0.95,
             "num_sims": 500,
             "exploration_const": 200,
-            "subgoals": ["Kitchen"]
+            "subgoals": [("Reach_Kitchen")]
         },
         "prior_type": "mrf",
         "using_mrf_belief_update": True,

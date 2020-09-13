@@ -11,6 +11,7 @@ from relpomdp.object_search.tests.worlds import *
 from relpomdp.object_search.world_specs.build_world import *
 import relpomdp.oopomdp.framework as oopomdp
 import time
+# TODO: Make this 
 
 
 class RoomAttr(AbstractAttribute):
@@ -53,6 +54,16 @@ class Subgoal:
         pass
     def __str__(self):
         return "%s(%s)" % (self.__class__.__name__, self.name)
+    def trigger_success(self, robot_state, action, observation):
+        """Called when this subgoal is achieved. Returns
+        the next subgoal (if needed); This is assumed to
+        be called during planner update."""
+        return None
+    def trigger_fail(self, robot_state, action, observation):
+        """Called when this subgoal is failed. Returns
+        the next subgoal (if needed)"""        
+        return None
+    
 
 class RobotStateWithSubgoals(RobotState):
     """This is needed for the robot to keep track
@@ -79,7 +90,7 @@ class RobotStateWithSubgoals(RobotState):
         return RobotStateWithSubgoals(tuple(robot_state.pose),
                                       robot_state.camera_direction,
                                       subgoals=subgoals)
-
+    
 
 class ReachRoomSubgoal(Subgoal):
     """
@@ -99,7 +110,15 @@ class ReachRoomSubgoal(Subgoal):
         room = self.grid_map.rooms[room_attr.room_name]
         return room.room_type == self.room_type\
             and robot_state.pose[:2] == room.center_of_mass
-    
+
+    def fail(self, state, action):
+        return isinstance(action, Pickup)
+
+    def trigger_success(self, robot_state, action, observation):
+        room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
+        subgoal = SearchRoomSubgoal(self.ids, room_attr.room_name, self.grid_map)
+        return subgoal
+            
 
 class SearchRoomSubgoal(Subgoal):
     """
@@ -126,6 +145,18 @@ class SearchRoomSubgoal(Subgoal):
         if room_attr.room_name != self.room_name:
             return True
         return False
+
+def interpret_subgoal(string, **kwargs):
+    ids = kwargs.get("ids", None)
+    grid_map = kwargs.get("grid_map", None)
+    if string.startswith("Reach"):
+        room_type = string.split("_")[1]
+        subgoal = ReachRoomSubgoal(ids, room_type, grid_map)
+    else:
+        room_name = string.split("_")[1]
+        subgoal = SearchRoomSubgoal(ids, room_name, grid_map)
+    return subgoal
+        
     
 # One more condition-effect pair for transition
 class AchievingSubgoals(oopomdp.Condition):
@@ -231,15 +262,14 @@ class SubgoalPlanner(pomdp_py.Planner):
         self._subgoals = subgoals
 
     def plan(self, agent):
+        print("Current subgoals: %s" % str(list(self._subgoals.keys())))
         robot_id = self.ids["Robot"]
         target_id = self.ids["Target"][0]
         robot_state = agent.belief.mpe().object_states[robot_id]
-        if self._robot_state_with_subgoals is None:
-            
-            self._robot_state_with_subgoals =\
-                RobotStateWithSubgoals.from_state_without_subgoals(
-                    robot_state, subgoals=tuple((sg_name, Subgoal.IP)
-                                                for sg_name in self._subgoals))
+        self._robot_state_with_subgoals =\
+            RobotStateWithSubgoals.from_state_without_subgoals(
+                robot_state, subgoals=tuple((sg_name, Subgoal.IP)
+                                            for sg_name in self._subgoals))
         # Create a temporary agent, with subgoal-aware transition/reward models
         belief = pomdp_py.OOBelief({
             robot_id:pomdp_py.Histogram({self._robot_state_with_subgoals.copy():1.0}),
@@ -273,6 +303,24 @@ class SubgoalPlanner(pomdp_py.Planner):
         if self._robot_state_with_subgoals is not None:
             assert robot_state == self._robot_state_with_subgoals.to_state_without_subgoals(),\
                 "After executing action, robot_state != robot_state_with_subgoals"
+            
+            # Check if any subgoal is achieved or failed. If so, call the trigger function
+            new_subgoals = {}
+            robot_state = self._robot_state_with_subgoals
+            for subgoal_name, status in robot_state["subgoals"]:
+                if status == Subgoal.SUCCESS:
+                    next_subgoal = self._subgoals[subgoal_name].trigger_success(robot_state, action, observation)
+                    if next_subgoal is not None:
+                        new_subgoals[next_subgoal.name] = next_subgoal
+
+                elif status == Subgoal.FAIL:
+                    next_subgoal = self._subgoals[subgoal_name].trigger_fail(robot_state, action, observation)
+                    if next_subgoal is not None:
+                        new_subgoals[next_subgoal.name] = next_subgoal                        
+
+                else:
+                    new_subgoals[subgoal_name] = self._subgoals[subgoal_name]    
+            self.update_subgoals(new_subgoals)
         self._planner.update(agent, action, observation)
         
     @property
