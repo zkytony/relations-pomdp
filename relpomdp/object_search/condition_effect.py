@@ -64,7 +64,7 @@ class PickupEffect(oopomdp.DeterministicTEffect):
         
     def mpe(self, state, action, picking_objid):
         """Returns an OOState after applying this effect on `state`"""
-        next_state = state.copy()
+        next_state = state
         next_state.object_states[picking_objid]["is_found"] = True
         return next_state
 

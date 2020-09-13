@@ -34,36 +34,25 @@ class RoomAttr(AbstractAttribute):
             room_name = grid_map.room_of(pose_attribute.value)
         return RoomAttr(room_name)
 
-class Subgoal(oopomdp.Attribute):
+class Subgoal:
     """Subgoal is like a condition that is True when it is achieved.
     Its achieve depends on s,a and it triggers a state transition."""
+    # Status
     IP = "IP"
     SUCCESS = "SUCCESS"
     FAIL = "FAIL"
     
-    def __init__(self, name, status="IP"):
+    def __init__(self, name):
         """
         status can be "IP": In Progress; "SUCCESS": achieved; or "FAIL": Failed
         """
         self.name = name
-        self.status = status
-        super().__init__(name, status)
     def achieve(self, state, action):
         pass
     def fail(self, state, action):
         pass
-    def __hash__(self):
-        return hash(self.name)
-    def copy(self):
-        return Subgoal(self.name, status=self.status)
-    def __eq__(self, other):
-        if isinstance(other, Subgoal):
-            return self.name == other.name\
-                and self.status == other.status
-        else:
-            return False
     def __str__(self):
-        return "%s(%s,%s)" % (self.__class__.__name__, self.name, self.status)
+        return "%s(%s)" % (self.__class__.__name__, self.name)
 
 class RobotStateWithSubgoals(RobotState):
     """This is needed for the robot to keep track
@@ -73,10 +62,10 @@ class RobotStateWithSubgoals(RobotState):
                            "Robot",
                            {"pose":pose,  # x,y,th
                             "camera_direction": camera_direction,
-                            "subgoals": subgoals})
+                            "subgoals": subgoals})   # stores (subgoal_name, status) tuples
     def copy(self):
         return self.__class__(tuple(self["pose"]), self.camera_direction,
-                              tuple(subgoal.copy() for subgoal in self["subgoals"]))
+                              tuple(self["subgoals"]))
 
     @property
     def subgoals(self):
@@ -93,14 +82,14 @@ class RobotStateWithSubgoals(RobotState):
 
 
 class ReachRoomSubgoal(Subgoal):
-    """n
+    """
     This subgoal is achieved when the robot reaches a particular room.
     """
-    def __init__(self, ids, room_type, grid_map, status="IP"):
+    def __init__(self, ids, room_type, grid_map):
         self.ids = ids
         self.grid_map = grid_map
         self.room_type = room_type
-        super().__init__("Reach-%s" % room_type, status=status)
+        super().__init__("Reach-%s" % room_type)
         
     def achieve(self, state, action):
         # Achieves the goal when the robot is at the center of mass of the room
@@ -110,10 +99,6 @@ class ReachRoomSubgoal(Subgoal):
         room = self.grid_map.rooms[room_attr.room_name]
         return room.room_type == self.room_type\
             and robot_state.pose[:2] == room.center_of_mass
-    
-    def copy(self):
-        return ReachRoomSubgoal(self.ids, self.room_type,
-                                self.grid_map, self.status)
     
 
 class SearchRoomSubgoal(Subgoal):
@@ -149,29 +134,31 @@ class AchievingSubgoals(oopomdp.Condition):
     in RobotStateWithSubgoals. Returns true whenever a new subgoal
     is achieved.
     """
-    def __init__(self, ids):
+    def __init__(self, ids, subgoals):
         # The subgoal here is the room type
         self.ids = ids
+        self.subgoals = subgoals
 
     def satisfy(self, state, action, *args):
         robot_id = self.ids["Robot"]
         robot_state = state.object_states[robot_id]
-        status = {}
         status_changed = False
-        for subgoal in robot_state.subgoals:
-            status[subgoal.name] = subgoal.status
-            if subgoal.status == Subgoal.IP:
+        start = time.time()
+        subgoals_status = []  # list of tuples (subgoal_name, status)
+        for goal_name, status in robot_state.subgoals:
+            tup = (goal_name, status)
+            if status == Subgoal.IP:
                 # If still in progress, then it may change
-                if subgoal.achieve(state, action):
-                    status[subgoal.name] = Subgoal.SUCCESS
-                    status_changed = True
-                elif subgoal.fail(state, action):
-                    status[subgoal.name] = Subgoal.FAIL
-                    status_changed = True
+                if self.subgoals[goal_name].achieve(state, action):
+                    tup = (goal_name, Subgoal.SUCCESS)
+                elif self.subgoals[goal_name].fail(state, action):
+                    tup = (goal_name, Subgoal.FAIL)
+                subgoals_status.append(tup)
+        # print(time.time() - start)
         if not status_changed:
-            return False, {}
+            return False, []
         else:
-            return True, status
+            return True, subgoals_status
 
 class UpdateSubgoalStatus(oopomdp.DeterministicTEffect):
     """
@@ -182,14 +169,12 @@ class UpdateSubgoalStatus(oopomdp.DeterministicTEffect):
         self.ids = ids
         super().__init__("constant")  # ? not really a reason to name the type this way
         
-    def mpe(self, state, action, new_status):
+    def mpe(self, state, action, subgoal_status):
         """Returns an OOState after applying this effect on `state`"""
         robot_id = self.ids["Robot"]
-        next_state = state.copy()
+        next_state = state  # no need to call .copy because state is already a copy
         next_robot_state = next_state.object_states[robot_id]
-        for subgoal in next_robot_state.subgoals:
-            if subgoal.name in new_status:
-                subgoal.status = new_status[subgoal.name]
+        next_robot_state["subgoals"] = subgoal_status
         return next_state
         
 
@@ -219,15 +204,15 @@ class SubgoalRewardModel(RewardModel):
         next_robot_state = next_state.object_states[robot_id]        
         reward = -1
 
-        cur_subgoals = {sg.name:sg for sg in robot_state.subgoals}
-        next_subgoals = {sg.name:sg for sg in next_robot_state.subgoals}
-        for subgoal_name in cur_subgoals:
-            sg = cur_subgoals[subgoal_name]
-            next_sg = next_subgoals[subgoal_name]
-            if sg.status == Subgoal.IP:
-                if next_sg.status == Subgoal.SUCCESS:
+        cur_subgoals = {sg_name:sg_status for sg_name, sg_status in robot_state.subgoals}
+        next_subgoals = {sg_name:sg_status for sg_name, sg_status in next_robot_state.subgoals}
+        for goal_name in cur_subgoals:
+            status = cur_subgoals[goal_name]
+            next_status = next_subgoals[goal_name]
+            if status == Subgoal.IP:
+                if next_status == Subgoal.SUCCESS:
                     reward += 100.0
-                elif next_sg.status == Subgoal.FAIL:
+                elif next_status == Subgoal.FAIL:
                     reward -= 100.0
         if self._overlay:
             reward += super().argmax(state, action, next_state, **kwargs)
@@ -252,16 +237,19 @@ class SubgoalPlanner(pomdp_py.Planner):
         target_id = self.ids["Target"][0]
         robot_state = agent.belief.mpe().object_states[robot_id]
         if self._robot_state_with_subgoals is None:
+            
             self._robot_state_with_subgoals =\
                 RobotStateWithSubgoals.from_state_without_subgoals(
-                    robot_state, subgoals=tuple(self._subgoals))
+                    robot_state, subgoals=tuple((sg.name, Subgoal.IP)
+                                                for sg in self._subgoals))
         # Create a temporary agent, with subgoal-aware transition/reward models
+        print("YAH")        
         belief = pomdp_py.OOBelief({
             robot_id:pomdp_py.Histogram({self._robot_state_with_subgoals.copy():1.0}),
             target_id:agent.belief.object_beliefs[target_id]})
         transition_model = oopomdp.OOTransitionModel(
             set(agent.transition_model.cond_effects)\
-            | {(AchievingSubgoals(self.ids),
+            | {(AchievingSubgoals(self.ids, self._subgoals),
                 UpdateSubgoalStatus(self.ids))})
         reward_model = SubgoalRewardModel(self.ids)
         tmp_agent = pomdp_py.Agent(belief,
@@ -274,6 +262,7 @@ class SubgoalPlanner(pomdp_py.Planner):
         
         # Record the subgoals achieved if execute this action; Note that the action
         # is not executed right now. We are just recording the subgoals
+        print("YUO")
         next_mpe_state = transition_model.sample(tmp_agent.belief.mpe(), action)
         self._robot_state_with_subgoals = next_mpe_state.object_states[robot_id].copy()
 
@@ -322,19 +311,40 @@ if __name__ == "__main__":
                                   init_state)
     sensor = Laser2DSensor(robot_id, env.grid_map, fov=90, min_range=1, max_range=2,
                            angle_increment=0.5)
+    # Build a regular agent
     init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist),
                                      robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
     agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
-                              init_belief)    
+                              init_belief)
+    import pdb; pdb.set_trace()
+
+    # Build the agent used for subgoal planning
+    sg = ReachRoomSubgoal(ids, "Kitchen", grid_map)
+    subgoals = {sg.name: sg}
+    robot_id = ids["Robot"]
+    robot_state = agent.belief.mpe().object_states[robot_id]    
+    robot_state_with_subgoals =\
+        RobotStateWithSubgoals.from_state_without_subgoals(
+            robot_state, subgoals=tuple((sg_name, Subgoal.IP)
+                                        for sg_name in subgoals))
+    belief = pomdp_py.OOBelief({
+            robot_id:pomdp_py.Histogram({robot_state_with_subgoals.copy():1.0}),
+            target_id:agent.belief.object_beliefs[target_id]})    
+    transition_model = oopomdp.OOTransitionModel(
+        set(agent.transition_model.cond_effects)\
+        | {(AchievingSubgoals(ids, subgoals),
+            UpdateSubgoalStatus(ids))})
+    reward_model = SubgoalRewardModel(ids)
+    tmp_agent = pomdp_py.Agent(belief,
+                               agent.policy_model,
+                               transition_model,
+                               agent.observation_model,
+                               reward_model)
 
     start = time.time()
     for i in range(100):
-        agent.transition_model.sample(env.state, MoveE)
+        next_state, observation, reward, _ = pomdp_py.sample_generative_model(
+            agent, init_belief.mpe(), MoveW)
     total_time = time.time() - start
-    print("Sampling transition model 100 times used %.9fs" % total_time)
-
-    start = time.time()
-    for i in range(100):
-        agent.reward_model.sample(env.state, MoveE, env.state)
-    total_time = time.time() - start
-    print("Sampling reward model 100 times used %.9fs" % total_time)    
+    print("Sampling generative model 100 times used %.9fs" % total_time)
+    print(next_state)

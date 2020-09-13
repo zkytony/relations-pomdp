@@ -10,15 +10,11 @@ class Pose(oopomdp.Attribute):
     def __init__(self, value):
         super().__init__("pose", value)
     def copy(self):
-        if type(value) == tuple:
-            return Pose(tuple(value))
-        else:
-            return copy.deepcopy(self)
+        assert type(self.value) == tuple
+        return Pose(tuple(self.value))
     def __getitem__(self, index):
-        if type(self.value) == tuple:
-            return self.value[index]
-        else:
-            raise ValueError("%s %s is not enumerable" % (self.__class__, str(self.value)))
+        assert type(self.value) == tuple        
+        return self.value[index]
 
 class PoseState(oopomdp.ObjectState):
     @property

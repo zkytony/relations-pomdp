@@ -280,7 +280,7 @@ if __name__ == "__main__":
         "planner": {
             "max_depth": 20,
             "discount_factor": 0.95,
-            "num_sims": 50,
+            "num_sims": 100,
             "exploration_const": 200,
             "subgoals": ["Kitchen"]
         },
