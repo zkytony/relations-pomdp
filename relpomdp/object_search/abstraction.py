@@ -142,7 +142,6 @@ class AchievingSubgoals(oopomdp.Condition):
     def satisfy(self, state, action, *args):
         robot_id = self.ids["Robot"]
         robot_state = state.object_states[robot_id]
-        status_changed = False
         start = time.time()
         subgoals_status = []  # list of tuples (subgoal_name, status)
         for goal_name, status in robot_state["subgoals"]:
@@ -154,8 +153,7 @@ class AchievingSubgoals(oopomdp.Condition):
                 elif self.subgoals[goal_name].fail(state, action):
                     tup = (goal_name, Subgoal.FAIL)
                 subgoals_status.append(tup)
-        # print(time.time() - start)
-        if not status_changed:
+        if len(subgoals_status) == 0:
             return False, []
         else:
             return True, subgoals_status
@@ -243,7 +241,6 @@ class SubgoalPlanner(pomdp_py.Planner):
                     robot_state, subgoals=tuple((sg_name, Subgoal.IP)
                                                 for sg_name in self._subgoals))
         # Create a temporary agent, with subgoal-aware transition/reward models
-        print("YAH")        
         belief = pomdp_py.OOBelief({
             robot_id:pomdp_py.Histogram({self._robot_state_with_subgoals.copy():1.0}),
             target_id:agent.belief.object_beliefs[target_id]})
@@ -262,7 +259,6 @@ class SubgoalPlanner(pomdp_py.Planner):
         
         # Record the subgoals achieved if execute this action; Note that the action
         # is not executed right now. We are just recording the subgoals
-        print("YUO")
         next_mpe_state = transition_model.sample(tmp_agent.belief.mpe(), action)
         self._robot_state_with_subgoals = next_mpe_state.object_states[robot_id].copy()
 
