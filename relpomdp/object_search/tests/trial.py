@@ -285,9 +285,9 @@ if __name__ == "__main__":
             "discount_factor": 0.95,
             "num_sims": 200,
             "exploration_const": 200,
-            "subgoals": []#[("Reach_Kitchen")]
+            "subgoals": [("Reach_Kitchen")]
         },
-        "prior_type": "informed",
+        "prior_type": "mrf",
         "using_mrf_belief_update": True,
         "max_steps": 100,
         "visualize": True,

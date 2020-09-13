@@ -32,7 +32,7 @@ class RoomAttr(AbstractAttribute):
         if type(pose_attribute) == tuple:
             room_name = grid_map.room_of(pose_attribute[:2])
         else:  # Pose class
-            room_name = grid_map.room_of(pose_attribute.value)
+            room_name = grid_map.room_of(pose_attribute.value[:2])
         return RoomAttr(room_name)
 
 class Subgoal:
@@ -111,8 +111,8 @@ class ReachRoomSubgoal(Subgoal):
         return room.room_type == self.room_type\
             and robot_state.pose[:2] == room.center_of_mass
 
-    # def fail(self, state, action):
-    #     return isinstance(action, Pickup)
+    def fail(self, state, action):
+        return isinstance(action, Pickup)
 
     def trigger_success(self, robot_state, action, observation):
         room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
