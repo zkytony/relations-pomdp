@@ -107,11 +107,11 @@ class SingleObjectSearchTrial(Trial):
             planner = RandomPlanner(ids)
 
         if self._config["planner_type"].endswith("subgoal"):
-            subgoals = []
+            subgoals = {}
             for subgoal_str in self._config["planner"]["subgoals"]:
                 # TODO: More types of subgoals?
                 sg = ReachRoomSubgoal(env.ids, subgoal_str, env.grid_map)
-                subgoals.append(sg)
+                subgoals[subgoal_str] = sg
             planner = SubgoalPlanner(env.ids, subgoals, planner)
 
         # Visualization

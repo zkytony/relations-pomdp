@@ -145,7 +145,7 @@ class AchievingSubgoals(oopomdp.Condition):
         status_changed = False
         start = time.time()
         subgoals_status = []  # list of tuples (subgoal_name, status)
-        for goal_name, status in robot_state.subgoals:
+        for goal_name, status in robot_state["subgoals"]:
             tup = (goal_name, status)
             if status == Subgoal.IP:
                 # If still in progress, then it may change
@@ -240,8 +240,8 @@ class SubgoalPlanner(pomdp_py.Planner):
             
             self._robot_state_with_subgoals =\
                 RobotStateWithSubgoals.from_state_without_subgoals(
-                    robot_state, subgoals=tuple((sg.name, Subgoal.IP)
-                                                for sg in self._subgoals))
+                    robot_state, subgoals=tuple((sg_name, Subgoal.IP)
+                                                for sg_name in self._subgoals))
         # Create a temporary agent, with subgoal-aware transition/reward models
         print("YAH")        
         belief = pomdp_py.OOBelief({
@@ -344,7 +344,7 @@ if __name__ == "__main__":
     start = time.time()
     for i in range(100):
         next_state, observation, reward, _ = pomdp_py.sample_generative_model(
-            agent, init_belief.mpe(), MoveW)
+            tmp_agent, tmp_agent.belief.mpe(), MoveW)
     total_time = time.time() - start
     print("Sampling generative model 100 times used %.9fs" % total_time)
     print(next_state)
