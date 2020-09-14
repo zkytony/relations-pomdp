@@ -1,14 +1,8 @@
-from relpomdp.object_search.world_specs.build_world import *
-from relpomdp.object_search.env import *
-from relpomdp.object_search.sensor import *
-from relpomdp.object_search.agent import *
-from relpomdp.object_search.greedy_planner import GreedyPlanner, RandomPlanner
-from relpomdp.object_search.abstraction import *
 from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
-from relpomdp.object_search.relation import *
 from relpomdp.object_search.tests.result_types import *
 from relpomdp.object_search.tests.result_types import *
 from relpomdp.object_search.tests.worlds import *
+from relpomdp.object_search import *
 import networkx as nx
 import matplotlib.pyplot as plt
 from pgmpy.inference import BeliefPropagation
@@ -283,7 +277,7 @@ if __name__ == "__main__":
         "planner": {
             "max_depth": 30,
             "discount_factor": 0.95,
-            "num_sims": 200,
+            "num_sims": 500,
             "exploration_const": 200,
             "subgoals": [("Reach_Kitchen")]
         },
