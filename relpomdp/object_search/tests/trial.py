@@ -67,7 +67,12 @@ class SingleObjectSearchTrial(Trial):
                 if self._config["prior_type"] == "uniform":
                     target_hist[state] = 1.0
                 elif self._config["prior_type"] == "mrf":
-                    target_hist[state] = target_phi.get_value({target_variable:(x,y)})
+                    if len(target_phi.no_to_name[target_variable]) == grid_map.width*grid_map.length:
+                        target_hist[state] = target_phi.get_value({target_variable:(x,y)})
+                    elif len(target_phi.no_to_name[target_variable]) == len(grid_map.rooms):
+                        room_name = grid_map.room_of((x,y))
+                        target_hist[state] = target_phi.get_value({target_variable:room_name})
+                        
                 elif self._config["prior_type"] == "informed":
                     if (x,y) != env.state.object_states[target_id].pose.value:
                         target_hist[state] = 0.0
@@ -83,7 +88,7 @@ class SingleObjectSearchTrial(Trial):
         sensor = Laser2DSensor(robot_id, env.grid_map, fov=90, min_range=1, max_range=2,
                                angle_increment=0.5)
         agent = ObjectSearchAgent(env.grid_map, sensor, env.ids,
-                                  init_belief)
+                                  init_belief, mrf)
 
         # Create planner
         if self._config["planner_type"].startswith("pouct"):
@@ -100,13 +105,17 @@ class SingleObjectSearchTrial(Trial):
         elif self._config["planner_type"].startswith("random"):
             planner = RandomPlanner(ids)
 
-        if self._config["planner_type"].endswith("subgoal"):
+        if self._config["planner_type"].endswith("subgoal-manual"):
             subgoals = {}
             for subgoal_str in self._config["planner"]["subgoals"]:
                 # TODO: More types of subgoals?
                 sg = interpret_subgoal(subgoal_str, ids=env.ids, grid_map=env.grid_map)
                 subgoals[subgoal_str] = sg
             planner = SubgoalPlanner(env.ids, subgoals, planner)
+        elif self._config["planner_type"].endswith("subgoal-auto"):
+            rooms = env.grid_map.rooms
+            room_types = set(rooms[room_name].room_type for room_name in rooms)
+            planner = AutoSubgoalPlanner(env.ids, target_variable, room_types, planner)
 
         # Visualization
         viz = None
@@ -197,7 +206,7 @@ class SingleObjectSearchTrial(Trial):
         target_id = agent.ids["Target"][0]
         robot_id = agent.ids["Robot"]
         target_variable = self._config["target_variable"]
-        target_class = target_variable.split("_")[0]        
+        target_class = target_variable.split("_")[0]
         if self._config["using_mrf_belief_update"]:
             updating_mrf = False
             target_hist_mrf = {}
@@ -248,8 +257,6 @@ class SingleObjectSearchTrial(Trial):
 
             transition_prob = current_target_hist[next_target_state]
             new_histogram[next_target_state] = mrf_prob * observation_prob * transition_prob
-            if next_target_state.pose == (0,0):
-                print(mrf_prob, observation_prob, transition_prob)
             total_prob += new_histogram[next_target_state]
 
         # Normalize
@@ -267,22 +274,23 @@ if __name__ == "__main__":
         "world": salt_pepper_1,
         "world_configs": {},
         "relations": [
-            (Near, ("Salt", "Pepper"), {}),
-            (Near, ("Salt", "Computer"), {"negate":True})
-            # (In, ("Salt", "Kitchen", "Room"), {}),
-            # (In, ("Salt", "Office", "Room"), {"negate":True}),
+            # (GroundLevelNear, ("Salt", "Pepper"), {}),
+            # (GroundLevelNear, ("Salt", "Computer"), {"negate":True})
+            (In, ("Salt", "Kitchen", "Room"), {"container_level": True}),
+            (In, ("Salt", "Office", "Room"), {"negate":True,
+                                              "container_level":True}),
         ],
         "target_variable": "Salt_pose",
-        "planner_type": "pouct-subgoal",
+        "planner_type": "pouct-subgoal-auto",
         "planner": {
             "max_depth": 20,
             "discount_factor": 0.99,
-            "num_sims": 500,
+            "num_sims": 30,
             "exploration_const": 50,
             "subgoals": [("Reach_Kitchen")]
         },
         "prior_type": "mrf",
-        "using_mrf_belief_update": True,
+        "using_mrf_belief_update": False,
         "max_steps": 100,
         "visualize": True,
         "user_control": False,

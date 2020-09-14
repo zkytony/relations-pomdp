@@ -2,8 +2,11 @@ import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.object_search.state import *
 from relpomdp.planning.subgoal import Subgoal
+from relpomdp.object_search.subgoals import ReachRoomSubgoal
 from relpomdp.object_search.reward_model import RewardModel
 from relpomdp.object_search.subgoal_cond_effect import *
+from relpomdp.utils import perplexity
+from pgmpy.factors.discrete import DiscreteFactor
 
 class RobotStateWithSubgoals(RobotState):
     """This is needed for the robot to keep track
@@ -157,3 +160,67 @@ class SubgoalPlanner(pomdp_py.Planner):
             return self._planner.last_num_sims
         else:
             return -1
+
+
+class AutoSubgoalPlanner(SubgoalPlanner):
+    def __init__(self, ids, target_variable, room_types, planner):
+        """
+        Args:
+            room_types (list): list of room strings
+        """
+        super().__init__(ids, [], planner)
+        self.room_types = room_types
+        self.target_variable = target_variable  # The MRF variable for the target location
+
+    def plan(self, agent):
+        # If currently there is no subgoal, generate one.
+        if self._robot_state_with_subgoals is None:
+            self._subgoals = self.generate_subgoals(agent)
+        return super().plan(agent)
+            
+        # If currently there is one, still evaluate how good the other
+        # subgoals are. If better, then switch.
+
+    def generate_subgoals(self, agent):
+
+        # get the distribution of target from the agent in belief
+        target_id = self.ids["Target"][0]
+        target_dist = agent.belief.object_beliefs[target_id]
+        
+        target_dist_rooms = {}  # maps from room to prob
+        total_prob = 0.0
+        for state in target_dist:
+            room = agent.grid_map.room_of(state.pose)
+            if room not in target_dist_rooms:
+                target_dist_rooms[room] = 0
+            target_dist_rooms[room] += 1
+            total_prob += 1
+        for room in target_dist_rooms:
+            target_dist_rooms[room] /= total_prob
+
+        # Create a factor for this distribution
+        potentials = []
+        for room in agent.mrf.values(self.target_variable):
+            potentials.append(target_dist_rooms[room])
+        target_phi = DiscreteFactor([self.target_variable],
+                                    cardinality=[len(target_dist_rooms)],
+                                    values=potentials,
+                                    state_names={self.target_variable: agent.mrf.values(self.target_variable)})
+
+        # massage this factor into the MRF
+        G = agent.mrf.G.copy()
+        G.add_factors(target_phi)
+        mrf = SemanticMRF(G, agent.mrf.value_to_name)
+
+        # Select a room as the subgoal
+        lowest_prp = float('inf')
+        chosen_room = None
+        for room in self.room_types:
+            if agent.mrf.valid_var(room):
+                phi = agent.mrf.query(variables=[room, self.target_variable])
+                prp = perplexity(phi.values.flatten())
+                if prp < lowest_prp:
+                    lowest_prp = prp
+                    chosen_room = room
+        subgoal = ReachRoomSubgoal(self.ids, chosen_room, agent.grid_map)
+        return {subgoal.name:subgoal}

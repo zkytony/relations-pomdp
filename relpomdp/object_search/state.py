@@ -67,6 +67,9 @@ class ContainerState(oopomdp.ObjectState):
     @property
     def footprint(self):
         return self["footprint"]
+    def same_type(self, string):
+        return string == self.category
+    
     
 class ItemState(PoseState):
     def __init__(self, name, pose, is_found=False):

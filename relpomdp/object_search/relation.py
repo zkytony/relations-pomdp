@@ -75,8 +75,7 @@ is_on = On("PoseObject", "PoseObject")
 class Near(oopomdp.InfoRelation):
     def __init__(self,
                  class1, class2,
-                 grid_map, pose_attr="pose", negate=False):
-        self.grid_map = grid_map
+                 pose_attr="pose", negate=False):
         self.pose_attr = pose_attr
         self.negate = negate  # True if "not near"
         super().__init__("near",
@@ -91,18 +90,10 @@ class Near(oopomdp.InfoRelation):
             return self.is_near(object_state1.pose[:2], object_state2.pose[:2])
         return False
 
-    def is_near(self, pose1, pose2):
-        same_room = (self.grid_map.room_of(pose1)\
-                         == self.grid_map.room_of(pose2))
-        return same_room\
-            and euclidean_dist(pose1, pose2) <= 2
-
-    def to_factor(self):
+    def to_factor(self, locations1, locations2, is_near_func):
         """Return a DiscreteFactor representation of the grounded factor"""
-        locations = [(x,y)
-                     for x in range(self.grid_map.width)\
-                     for y in range(self.grid_map.length)]
-        card = len(locations)
+        card1 = len(locations1)
+        card2 = len(locations2)
         variables = ["%s_%s" % (self.class1.name, self.pose_attr),
                      "%s_%s" % (self.class2.name, self.pose_attr)]
         edges = [[variables[0], variables[1]]]
@@ -114,16 +105,16 @@ class Near(oopomdp.InfoRelation):
         # indexed by an integer. Here we are recording the actual meaning
         # of that integer (e.g. 12 could mean the location (4,14))
         value_names = {
-            variables[i]: list(locations)
-            for i in range(len(variables))
+            variables[0]: list(locations1),
+            variables[1]: list(locations2),            
         }
         
         # semantics = {}  # tabular entry (i,j) to semantic meaning (val_i, val_j)
         # index_to_semantics = []
-        for i, loc_i in enumerate(locations):
-            for j, loc_j in enumerate(locations):
+        for i, loc_i in enumerate(locations1):
+            for j, loc_j in enumerate(locations2):
                 # semantics[(i,j)] = (loc_i, loc_j)
-                near = self.is_near(loc_i, loc_j)
+                near = is_near_func(loc_i, loc_j)
                 if not self.negate:
                     potential = 1.0-1e-9 if near else 1e-9
                 else:
@@ -135,27 +126,61 @@ class Near(oopomdp.InfoRelation):
                                 values=potentials, state_names=value_names)
         return factor
         
-    def to_mrf(self):
-        factor = self.to_factor()
-        G = MarkovModel()
-        G.add_nodes_from(variables)
-        G.add_edges_from(edges)
-        G.add_factors(factor)
-        assert G.check_model()
-        return SemanticMRF(G, value_names)
 
+class GroundLevelNear(Near):
+    def __init__(self, class1, class2,
+                 grid_map, pose_attr="pose", negate=False):
+        self.grid_map = grid_map
+        super().__init__(class1, class2,
+                         pose_attr=pose_attr, negate=negate)
+        
+    def is_near(self, pose1, pose2):
+        same_room = (self.grid_map.room_of(pose1)\
+                         == self.grid_map.room_of(pose2))
+        return same_room\
+            and euclidean_dist(pose1, pose2) <= 2
+
+    def to_factor(self):
+        locations = {(x,y)
+                     for x in range(self.grid_map.width)
+                     for y in range(self.grid_map.length)}
+        return super().to_factor(locations, locations, self.is_near)
+
+class RoomLevelNear(Near):
+    def __init__(self, class1, class2,
+                 grid_map, pose_attr="pose", negate=False):
+        self.grid_map = grid_map
+        super().__init__(class1, class2,
+                         pose_attr=pose_attr, negate=negate)
+        
+    def is_near(self, pose1, pose2):
+        same_room = (self.grid_map.room_of(pose1)\
+                         == self.grid_map.room_of(pose2))
+        return same_room
+
+    def to_factor(self):
+        rooms = self.grid_map.containers("Room")
+        locations = [name for name in rooms]
+        return super().to_factor(locations, locations, self.is_near)    
 
 
 class In(oopomdp.InfoRelation):
     def __init__(self,
                  item_class, container_class, container_type,
-                 grid_map, pose_attr="pose", negate=False):
+                 grid_map, pose_attr="pose", negate=False,
+                 container_level=False):
+        """
+        Args:
+            container_level (bool): If True, then the factor will be joining
+                the item and container both at the granularity of the container.
+        """
         self.grid_map = grid_map
         self.pose_attr = pose_attr
         self.negate = negate
         self.item_class = item_class
         self.container_class = container_class
         self.container_type = container_type
+        self.container_level = container_level
         super().__init__("in",
                          item_class, container_class)
 
@@ -167,17 +192,24 @@ class In(oopomdp.InfoRelation):
 
     def is_in(self, pose, container):
         """container (ContainerState)"""
-        return pose in container.footprint
+        if self.container_level:
+            # pose is at container level (i.e. it is a container name)
+            return pose == container.name
+        else:
+            return pose in container.footprint
 
     def to_factor(self):
         # For right now, we will assume the robot knows that the grid map
         # contains a fixed number of containers. So basically the factor
         # is an enumeration of those containers.
-        locations = [(x,y)
-                     for x in range(self.grid_map.width)\
-                     for y in range(self.grid_map.length)]
-        item_card = len(locations)
         containers = self.grid_map.containers(self.container_type)
+        if self.container_level:
+            locations = [name for name in containers]
+        else:
+            locations = [(x,y)
+                         for x in range(self.grid_map.width)\
+                         for y in range(self.grid_map.length)] 
+        item_card = len(locations)
         container_card = len(containers)
         variables = ["%s_%s" % (self.item_class, self.pose_attr),
                      "%s" % (self.container_class)]
@@ -205,6 +237,15 @@ class In(oopomdp.InfoRelation):
         factor = DiscreteFactor(variables, cardinality=[item_card, container_card],
                                 values=potentials, state_names=value_names)
         return factor                
+                 
         
-        
+
+    # def to_mrf(self):
+    #     factor = self.to_factor()
+    #     G = MarkovModel()
+    #     G.add_nodes_from(variables)
+    #     G.add_edges_from(edges)
+    #     G.add_factors(factor)
+    #     assert G.check_model()
+    #     return SemanticMRF(G, value_names)
         

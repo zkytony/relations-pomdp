@@ -42,12 +42,18 @@ class SemanticMRF:
     def factors(self):
         return self.G.factors
 
+    @property
+    def variables(self):
+        return list(self.name_to_value.keys())
+
     def query(self, variables, evidence=None):
         """
         evidence is a mapping from variable to value_name. The value_name
             is the semantic one - e.g. for location, it's (x,y). Its
             integer index value in the MRF model will be used for
             actual inference.
+        Returns:
+            DiscreteFactor
         """
         for variable in variables:
             if not self.valid_var(variable):

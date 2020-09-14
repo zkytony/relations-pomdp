@@ -11,7 +11,7 @@ import pomdp_py
 
 class ObjectSearchAgent(OOAgent):
     def __init__(self, grid_map, sensor, ids,
-                 init_belief):
+                 init_belief, mrf):
         
         mp = MotionPolicy(grid_map)
         cond_effects_t = [(CanMove(ids, mp), MoveEffect(ids)),
@@ -24,6 +24,8 @@ class ObjectSearchAgent(OOAgent):
         reward_model = RewardModel(ids)
         self.ids = ids
         self.sensor = sensor
+        self.grid_map = grid_map
+        self.mrf = mrf
         super().__init__(init_belief, cond_effects_t, cond_effects_o,
                          policy_model, reward_model)
     
