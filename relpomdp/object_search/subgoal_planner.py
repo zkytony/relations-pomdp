@@ -99,9 +99,9 @@ class SubgoalPlanner(pomdp_py.Planner):
             robot_id:pomdp_py.Histogram({self._robot_state_with_subgoals.copy():1.0}),
             target_id:agent.belief.object_beliefs[target_id]})
         transition_model = oopomdp.OOTransitionModel(
-            set(agent.transition_model.cond_effects)\
-            | {(AchievingSubgoals(self.ids, self._subgoals),
-                UpdateSubgoalStatus(self.ids))})
+            agent.transition_model.cond_effects
+                + [(AchievingSubgoals(self.ids, self._subgoals),
+                    UpdateSubgoalStatus(self.ids))])
         reward_model = SubgoalRewardModel(self.ids)
         tmp_agent = pomdp_py.Agent(belief,
                                    agent.policy_model,
@@ -148,6 +148,7 @@ class SubgoalPlanner(pomdp_py.Planner):
                 else:
                     new_subgoals[subgoal_name] = self._subgoals[subgoal_name]    
             self.update_subgoals(new_subgoals)
+            print(self._robot_state_with_subgoals)
         self._planner.update(agent, action, observation)
         
     @property

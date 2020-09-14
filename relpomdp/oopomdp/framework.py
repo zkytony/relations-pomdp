@@ -557,37 +557,37 @@ class RelationGraph(Graph):
 ########### Object-Oriented Transition Model ###########        
 class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
+        """
+        cond_effects (list): List of (Condition, Effect) pairs; The order matters.
+            The condition evaluated later uses the state after applying the previous
+            effect. Assumption: Later effects will NOT modify the same attribute as
+            any prior effect.
+        """
         self._cond_effects = cond_effects
 
     @property
     def cond_effects(self):
         return self._cond_effects
 
-    def _satisfied_effects(self, state, action):
-        effects = []
-        for condition, effect in self._cond_effects:
-            res = condition.satisfy(state, action)
-            if type(res) == tuple:
-                satisfied, byproduct = res
-            else:
-                satisfied = res
-                byproduct = None
-            if satisfied:
-                effects.append((effect, byproduct))
-        return effects
-
     def sample(self, state, action, argmax=False):
         """sample(self, state, action, **kwargs)
         Samples the next state by applying effects with satisfying cond_effects
         """
-        effects = self._satisfied_effects(state, action)
-        next_state = state.copy()
-        for effect, byproduct in effects:
-            if argmax:
-                next_state = effect.mpe(next_state, action, byproduct)
+        interm_state = state.copy()
+        for condition, effect in self._cond_effects:
+            res = condition.satisfy(interm_state, action)
+            if type(res) == tuple:
+                satisfied, byproduct = res
             else:
-                next_state = effect.random(next_state, action, byproduct)
-        return next_state
+                satisfied, byproduct = res, None
+                
+            if satisfied:
+                if argmax:
+                    interm_state = effect.mpe(interm_state, action, byproduct)
+                else:
+                    interm_state = effect.random(interm_state, action, byproduct)
+
+        return interm_state  # intermediate state becomes next state
         
     def probability(self, next_state, state, action, **kwargs):
         """
@@ -598,10 +598,17 @@ class OOTransitionModel(TransitionModel):
         This is still -- a solution -- not part of the problem definition (as M.Littman would say?)
         TODO: What if effects are not independent?
         """
-        effects = self._satisfied_effects(state, action)        
         prob = 1.0
-        for effect, byproduct in effects:
-            prob *= effect.probability(next_state, state, action, byproduct)
+        interm_state = state
+        for condition, effect in self._cond_effects:
+            res = condition.satisfy(next_state, action)
+            if type(res) == tuple:
+                satisfied, byproduct = res
+            else:
+                satisfied, byproduct = res, None
+
+            if satisfied:
+                prob *= effect.probability(next_state, state, action, byproduct)
         return prob
     
     def argmax(self, state, action):

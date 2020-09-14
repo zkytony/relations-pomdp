@@ -275,10 +275,10 @@ if __name__ == "__main__":
         "target_variable": "Salt_pose",
         "planner_type": "pouct-subgoal",
         "planner": {
-            "max_depth": 30,
-            "discount_factor": 0.95,
+            "max_depth": 20,
+            "discount_factor": 0.99,
             "num_sims": 500,
-            "exploration_const": 200,
+            "exploration_const": 50,
             "subgoals": [("Reach_Kitchen")]
         },
         "prior_type": "mrf",

@@ -17,6 +17,8 @@ class AchievingSubgoals(oopomdp.Condition):
         self.subgoals = subgoals
 
     def satisfy(self, state, action, *args):
+        """It is assumed that if action is move, `state` has
+        already incorporated that action"""
         robot_id = self.ids["Robot"]
         robot_state = state.object_states[robot_id]
         subgoals_status = []  # list of tuples (subgoal_name, status)
