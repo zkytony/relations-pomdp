@@ -85,7 +85,8 @@ class ObjectObserveEffect(oopomdp.DeterministicOEffect):
         """Returns the probability of getting `observation` if applying
         this effect on `state` given `action`."""
         expected_observation = self.mpe(next_state, action)
-        modeled_objs = list(expected_observation.object_observations.keys())
+        modeled_objs = [objid for objid in next_state.object_states\
+                        if isinstance(next_state.object_states[objid], PoseState)]
         if expected_observation == observation.for_objs(modeled_objs):
             return 1.0 - self.epsilon
         else:
