@@ -143,13 +143,16 @@ class SearchRoomSubgoal(Subgoal):
                 return True
         return False
 
-    # def fail(self, state, action):
-    #     robot_id = self.ids["Robot"]
-    #     robot_state = state.object_states[robot_id]
-    #     room_attr = RoomAttr.abstractify(robot_state.pose, self.grid_map)
-    #     if room_attr.room_name != self.room_name:
-    #         return True
-    #     return False
+    def fail(self, state, action):
+        robot_id = self.ids["Robot"]        
+        robot_state = state.object_states[robot_id]
+        if isinstance(action, Pickup):
+            for objid in self.ids["Target"]:
+                objstate = state.object_states[objid]
+                if not (objstate.pose == robot_state.pose[:2]\
+                        and not objstate["is_found"]):
+                    return True
+        return False
 
 def interpret_subgoal(string, **kwargs):
     ids = kwargs.get("ids", None)

@@ -19,7 +19,10 @@ class Pose(oopomdp.Attribute):
 class PoseState(oopomdp.ObjectState):
     @property
     def pose(self):
-        return self["pose"]
+        if isinstance(self["pose"], Pose):
+            return self["pose"].value
+        else:
+            return self["pose"]
     
 class WallState(PoseState):
     def __init__(self, pose, direction):
