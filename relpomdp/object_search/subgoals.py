@@ -1,5 +1,6 @@
 from relpomdp.oopomdp.framework import Class
 from relpomdp.object_search.state import *
+from relpomdp.object_search.observation import *
 
 class Subgoal:
     """Subgoal is like a condition that is True when it is achieved.
@@ -14,39 +15,66 @@ class Subgoal:
         status can be "IP": In Progress; "SUCCESS": achieved; or "FAIL": Failed
         """
         self.name = name
-    def valid(self, next_state, action):
+    def valid(self, robot_belief):
         """Is this subgoal valid for evaluation (sort of like initiation set of option)"""
         pass
     def achieve(self, next_state, action):
         pass
     def fail(self, state, action):
         pass
-    def effect(self, agent_belief):
+    def effect(self, robot_belief):
         """
-        Once a subgoal is achieved, there will be some effects. We consider
-        such effects as potential values assigned to variables. The variables
-        could be in the state space or the observation space. In either case,
-        they can be regarded as ``evidence'' if you assume the subgoal is
-        achieved. You will return a mapping of these variables' joint assignment
-        to probability
+        Once a subgoal is achieved, there will be some effects. We consider an effect
+        to be observation about classes. For example, "reach kitchen" will produce an
+        observation about 'Kitchen' (a class type) which is a RoomObservation. Each
+        of this observation is associated with a probability value (unnormalized).
+        They can be regarded as ``evidence'' if you assume the subgoal is achieved.
 
         Returns:
-            a mapping {(var1, var2, ...) -> prob}
+            a mapping {(object_class, observation) -> prob}
 
             For example, one can have a "ReachKitchen" subgoal, which will likely
-            output {(robot_pose(1,2), Kitchen(1,2)) -> 1.0 ...}
+            output {(Kitchen, RoomObservation(Kitchen)) -> 1.0 ...}
 
         Args:
-            agent_belief (Generativedistribution): Belief used to determine
+            robot_belief (Generativedistribution): Belief used to determine
                 effects on that will happen.
         """
         pass
-    
+
+    def __repr__(self):
+        return str(self)
     def __str__(self):
         return "%s(%s)" % (self.__class__.__name__, self.name)
 
+class ItemClass(Class):
+    def __init__(self, name):
+        super().__init__(name)
+        self.grid_map = None
+    
+    def observation_variations(self):
+        """Returns a list of all possible object configurations
+        for this class that are basically object observations;
+        This may not be feasible in some cases."""        
+        variations = []
+        for x in range(self.grid_map.width):
+            for y in range(self.grid_map.length):
+                objobs = ItemObservation(self.name, (x,y))
+                variations.append(objobs)
+        return variations
+
+    def ground(self, grid_map):
+        self.grid_map = grid_map
+
+    @property
+    def grounded(self):
+        return self.grid_map is not None
+
 class SubgoalClass(Class):
     def __init__(self, name, verb_to_subgoal):
+        # verb_to_subgoal, before grounding, is a map
+        # from verb (string) to SubgoalClass (class)
+        # but afterwards maps from verb to a list of subgoals.
         self.verb_to_subgoal = verb_to_subgoal
         super().__init__(name)
     @property
@@ -55,10 +83,17 @@ class SubgoalClass(Class):
     def subgoal_for(self, verb):
         return self.verb_to_subgoal[verb]
     @property
-    def grounded(self):
-        raise NotImplementedError
-    def ground(self, *args, **kwargs):
-        raise NotImplementedError
+    def subgoals(self):
+        """Returns a mapping from subgoal name to subgoals"""
+        res = {}
+        for verb in self.verb_to_subgoal:
+            if type(self.verb_to_subgoal[verb]) == list:
+                for sg in self.verb_to_subgoal[verb]:
+                    res[sg.name] = sg
+            else:
+                sg = self.verb_to_subgoal[verb]
+                res[sg.name] = sg
+        return res
 
 class RoomClass(SubgoalClass):
 
@@ -69,6 +104,7 @@ class RoomClass(SubgoalClass):
             "Search": SearchRoomSubgoal
         }
         self.room_type = room_type
+        self._knows_room_types = None
         super().__init__(room_type, verb_to_subgoal)
 
     @property
@@ -97,7 +133,23 @@ class RoomClass(SubgoalClass):
             searches.append(sg)
         self.verb_to_subgoal["Reach"] = reaches
         self.verb_to_subgoal["Search"] = searches
+        self._knows_room_types = knows_room_types        
         assert self.grounded is True
+
+    def observation_variations(self):
+        """Returns a list of all possible object configurations
+        for this class that are basically object observations;
+        This may not be feasible in some cases."""        
+        variations = []
+        for room_name in self.grid_map.rooms:
+            if self._knows_room_types:
+                if grid_map.rooms[room_name].room_type != self.room_type:
+                    continue
+            objobs = RoomObservation(room_name)
+            variations.append(objobs)
+        return variations
+    
+        
 
 class ReachRoomSubgoal(Subgoal):
     """
@@ -127,27 +179,26 @@ class ReachRoomSubgoal(Subgoal):
     def fail(self, state, action):
         return isinstance(action, Pickup)
     
-    def valid(self, state, action):
+    def valid(self, robot_belief):
         return True
 
-    def effect(self, agent_belief):
+    def effect(self, robot_belief):
         """The effect of reaching a room type is:
         Change of robot pose; Change of robot room name,
         And observing Kitchen room"""
         values = {}
         # Achieving this subgoal means the robot is at one
-        # of certain room's center of mass        
+        # of certain room's center of mass, and it 
         for room_name in self.grid_map.rooms:
             room = self.grid_map.rooms[room_name]
             location = room.center_of_mass
-            robot_state = RobotState(location, None, room_name)
             room_observation = RoomObservation(room_name)
             if self.knows_room_types:
                 if room.room_type == self.room_type:
                     # If the robot is assumed to know the type of every room,
-                    values[(robot_state, room_observation)] = 1.0
+                    values[(self.room_type, room_observation)] = 1.0
             else:
-                values[(robot_state, room_observation)] = 1.0
+                values[(self.room_type, room_observation)] = 1.0
         return values
 
     
@@ -181,24 +232,22 @@ class SearchRoomSubgoal(Subgoal):
                     return True
         return False
 
-    def valid(self, state, action):
+    def valid(self, robot_belief):
         robot_id = self.ids["Robot"]
-        robot_state = state.object_states[robot_id]
-        room_name = grid_map.room_of(robot_state.pose[:2])
+        robot_state = robot_belief.mpe().object_states[robot_id]
+        room_name = self.grid_map.room_of(robot_state.pose[:2])
         return room_name == self.room_name
 
-    def effect(self, agent_belief):
+    def effect(self, robot_belief):
         """The effect of finding the target is:
         Change of the target state to be found
         Observation of target; The target must be found within the room."""
         values = {}
         target_id = self.ids["Target"][0]
-        target_belief = agent_belief.object_beliefs[target_id]
+        target_belief = robot_belief.object_beliefs[target_id]
         for target_state in target_belief:
-            if grid_map.room_of(target_state.pose) == self.room_name:
-                target_state_copy = target_state.copy()
-                target_state_copy["is_found"] = True
+            if self.grid_map.room_of(target_state.pose) == self.room_name:
                 observation = ItemObservation(target_state.objclass,
                                               target_state.pose)
-                values[(target_state_copy, observation)] = target_belief[target_state]
+                values[(target_state.objclass, observation)] = target_belief[target_state]
         return values    

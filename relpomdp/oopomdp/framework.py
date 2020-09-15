@@ -469,7 +469,8 @@ class DeterministicOEffect(OEffect):
         
 ########### Class and Relation ###########    
 class Class(Node):
-    """A node, which could have an (x,y) location"""
+    """A node
+    TODO: You should have attributes for classes"""
     def __init__(self, name):
         """
         The name is expected to be unique in the graph.
@@ -486,6 +487,19 @@ class Class(Node):
     def __hash__(self):
         return hash(self.id)
 
+    def observation_variations(self):
+        """Returns a list of all possible object configurations
+        for this class that are basically object observations;
+        This may not be feasible in some cases."""
+        raise NotImplementedError
+
+    @property
+    def grounded(self):
+        raise NotImplementedError
+    
+    def ground(self, *args, **kwargs):
+        raise NotImplementedError
+    
     
 class Relation(Edge):
     """
@@ -526,6 +540,14 @@ class Relation(Edge):
             return self.nodes[1]
         else:
             return None
+
+    def class_by_name(self, class_name):
+        if self.class1.name == class_name:
+            return self.class1
+        elif self.class2.name == class_name:
+            return self.class2
+        else:
+            raise ValueError("Invalid class name %s" % class_name)
             
     def __repr__(self):
         if self.data is None:
@@ -551,10 +573,10 @@ class InfoRelation(Relation):
     def probability(self, observation1, observation2):
         pass
 
-    def values(self, class_name):
-        """Returns the values {attribute -> values} of a class_name,
-        which is one of the two classes"""
-        pass
+    # def values(self, class_name):
+    #     """Returns the values {attribute -> values} of a class_name,
+    #     which is one of the two classes"""
+    #     pass
     def ground(self, *args, **kwargs):
         """ground this relation to the world"""
         pass

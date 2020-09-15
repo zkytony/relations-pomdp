@@ -26,11 +26,13 @@ def office_floor1(init_robot_pose=(9,0,0)):
     init_salt_pose = Pose((0,6))
     init_pepper_pose = Pose((1,5))
     init_robot_pose = Pose(init_robot_pose)
+    start_room = grid_map.rooms[grid_map.room_of(init_robot_pose[:2])]
 
     salt_id = 10
     pepper_id = 15
     robot_id = 1    
-    robot_state = RobotState(init_robot_pose, "-x")
+    robot_state = RobotState(init_robot_pose, "-x",
+                             start_room.room_type)
     salt_state = ItemState("Salt", init_salt_pose)
     pepper_state = ItemState("Pepper", init_pepper_pose)
     
