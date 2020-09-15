@@ -86,21 +86,26 @@ class ItemState(PoseState):
         return self["is_found"]
 
 class RobotState(PoseState):
-    def __init__(self, pose, camera_direction):
+    def __init__(self, pose, camera_direction, room_type):
         """
         pose (tuple): x,y,th
         objects_found (tuple): objects found
         camera_direction (string): direction of looking
+        room_type (string): The room the robot is currently at
         """
         super().__init__("Robot",
                          {"pose":pose,  # x,y,th
-                          "camera_direction": camera_direction})
+                          "camera_direction": camera_direction,
+                          "room_type": room_type})
     @property
     def objects_found(self):
         return self["objects_found"]
     @property
     def camera_direction(self):
         return self["camera_direction"]
+    @property
+    def room_type(self):
+        return self["room_type"]    
     def copy(self):
         return self.__class__(tuple(self["pose"]), self.camera_direction)
 

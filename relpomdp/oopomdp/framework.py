@@ -481,7 +481,7 @@ class Class(Node):
         return self.data
 
     def __repr__(self):
-        return "%s(%d)" % (type(self).__name__, self.id)
+        return "%s(%s)" % (type(self).__name__, str(self.id))
 
     def __hash__(self):
         return hash(self.id)
@@ -545,9 +545,22 @@ class Relation(Edge):
         return "black"
 
 class InfoRelation(Relation):
-    def to_factor(self):
+    """Two classes are related in a way that influences the
+    state estimation of objects of either class. A probability
+    function is defined over observations of either class."""
+    def probability(self, observation1, observation2):
         pass
-    def to_mrf(self, *args, **kwargs):
+
+    def values(self, class_name):
+        """Returns the values {attribute -> values} of a class_name,
+        which is one of the two classes"""
+        pass
+    def ground(self, *args, **kwargs):
+        """ground this relation to the world"""
+        pass
+    @property
+    def grounded(self):
+        """Returns true if this relation is grounded"""
         pass
 
 class RelationGraph(Graph):
