@@ -117,4 +117,4 @@ class RoomObserveEffect(oopomdp.DeterministicOEffect):
         # (unrealistic assumption)
         robot_state = next_state.object_states[self.ids["Robot"]]
         room_name = self.grid_map.room_of(robot_state.pose[:2])
-        return RoomObservation(room_name)
+        return RoomObservation(room_name, self.grid_map.rooms[room_name].room_type)

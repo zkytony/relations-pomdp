@@ -22,8 +22,8 @@ class ItemObservation(PoseObservation):
         return {"%s_pose" % (self.name): self["pose"]}
 
 class RoomObservation(oopomdp.ObjectObservation):
-    def __init__(self, room_name):
-        super().__init__(room_name.split("-")[0],  # get the category
+    def __init__(self, room_name, room_type):
+        super().__init__(room_type,
                          {"name": room_name})
     @property
     def room_type(self):

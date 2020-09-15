@@ -4,6 +4,7 @@ from relpomdp.oopomdp.framework import Class
 from relpomdp.object_search.subgoals import *
 from relpomdp.object_search.info_relations import *
 from relpomdp.utils import perplexity
+import numpy as np
 
 class SubgoalGraph(Graph):
     def __init__(self, relations):
@@ -46,19 +47,23 @@ class SubgoalGraph(Graph):
                 if subgoal.valid(robot_belief):
                     candidates.append(subgoal)
 
+        class_node = self.nodes[target_class]
+
         best_subgoal = None
         lowest_plx = float("inf")
         for subgoal in candidates:
             # Values maps from (obs_class, observation) -> probability
             final_dist = {}
-            values = subgoal.effect(robot_belief)
-            for obs_class, observation in values:
-                prob = values[(obs_class, observation)]
+            effects = subgoal.effect(robot_belief)
+            for obs_class, observation in effects:
+                confidence = effects[(obs_class, observation)]
                 dist = self.query(target_class, {obs_class:observation})
-                for target_observation in dist:
+                for target_observation in class_node.observation_variations():
+                    rel_prob = dist.get(target_observation, 1e-9)
                     final_dist[target_observation] =\
                         final_dist.get(target_observation, 1.0)\
-                        * prob * dist[target_observation]
+                        * confidence * rel_prob
+            
             total_prob = 0.0
             for o in final_dist:
                 total_prob += final_dist[o]
@@ -66,7 +71,9 @@ class SubgoalGraph(Graph):
             for o in final_dist:
                 final_dist[o] /= total_prob
                 probs.append(final_dist[o])
+            
             plx = perplexity(probs)
+            print(subgoal, plx)
             if plx < lowest_plx:
                 best_subgoal = subgoal
                 lowest_plx = plx

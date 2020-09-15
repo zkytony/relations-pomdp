@@ -192,7 +192,7 @@ class ReachRoomSubgoal(Subgoal):
         for room_name in self.grid_map.rooms:
             room = self.grid_map.rooms[room_name]
             location = room.center_of_mass
-            room_observation = RoomObservation(room_name)
+            room_observation = RoomObservation(room_name, self.room_type)
             if self.knows_room_types:
                 if room.room_type == self.room_type:
                     # If the robot is assumed to know the type of every room,
