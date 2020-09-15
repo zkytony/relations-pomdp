@@ -122,7 +122,7 @@ class Near(oopomdp.InfoRelation):
                     potential = 1e-9 if near else 1.0-1e-9
                 potentials.append(potential)
                     
-        factor = DiscreteFactor(variables, cardinality=[card, card],
+        factor = DiscreteFactor(variables, cardinality=[card1, card2],
                                 values=potentials, state_names=value_names)
         return factor
         
