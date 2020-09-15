@@ -62,13 +62,14 @@ class SubgoalClass(Class):
 
 class RoomClass(SubgoalClass):
 
-    def __init__(self, name):
+    def __init__(self, room_type):
         # When grounded, this should be a map from verb to subgoal objects
         verb_to_subgoal = {
             "Reach": ReachRoomSubgoal,
             "Search": SearchRoomSubgoal
         }
-        super().__init__(name, verb_to_subgoal)
+        self.room_type = room_type
+        super().__init__(room_type, verb_to_subgoal)
 
     @property
     def grounded(self):
@@ -76,15 +77,22 @@ class RoomClass(SubgoalClass):
         return isinstance(self.verb_to_subgoal[self.accepted_verbs[0]], Subgoal)\
             or isinstance(self.verb_to_subgoal[self.accepted_verbs[0]], list)
     
-    def ground(self, grid_map, ids, room_types, knows_room_types=False):
+    def ground(self, grid_map, ids, knows_room_types=False):
         # ground to grid map
-        reaches = []
-        for room_type in room_types:
-            sg = ReachRoomSubgoal(ids, room_type, grid_map, knows_room_types=knows_room_types)
-            reaches.append(sg)
+        sg = ReachRoomSubgoal(ids, self.room_type, grid_map,
+                              knows_room_types=knows_room_types)
+        reaches = [sg]
 
+        # If assume knows the type of a room, then only add subgoals
+        # to search in those rooms of the desired type; Otherwise,
+        # add subgoal to search in all rooms. TODO: You should have
+        # an update function that modifies these subgoals as observations
+        # come in.
         searches = []
         for room_name in grid_map.rooms:
+            if knows_room_types:
+                if grid_map.rooms[room_name].room_type != self.room_type:
+                    continue
             sg = SearchRoomSubgoal(ids, room_name, grid_map)
             searches.append(sg)
         self.verb_to_subgoal["Reach"] = reaches

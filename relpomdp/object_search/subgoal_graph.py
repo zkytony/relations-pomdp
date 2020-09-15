@@ -12,10 +12,21 @@ class SubgoalGraph(Graph):
             if isinstance(self.nodes[nid], SubgoalClass):
                 self.subgoal_class_nodes.append(nid)
 
-
+    def ground(self, class_to_args):
+        """
+        Grounds this graph
+        Args:
+            class_to_args (dict): Maps from string (corresponding to a SubgoalClass)
+                to a tuple (args, kwargs) needed to ground this subgoal class.
+        """
+        for c in class_to_args:
+            if isinstance(self.nodes[c], SubgoalClass):
+                args, kwargs = class_to_args[c]
+                self.nodes[c].ground(*args, **kwargs)
 
 # Test
 def unittest():
+    from relpomdp.object_search.world_specs.build_world import small_map1
     kitchen = RoomClass("Kitchen")
     office = RoomClass("Office")
     salt = Class("Salt")
@@ -44,6 +55,24 @@ def unittest():
     print(graph.edges)
     print("---- Nodes ----")    
     print(graph.nodes)
+    for nid in graph.nodes:
+        if isinstance(graph.nodes[nid], SubgoalClass):
+            print(nid, graph.nodes[nid].grounded)
 
+    print("** Grounding **")
+    ids = {"Pepper": [15],
+           "Salt": [10],
+           "Robot": 5,
+           "Target": [10]}
+    grid_map = small_map1()
+    cargs = {
+        "Kitchen": ([grid_map, ids], {"knows_room_types": False}),
+        "Office": ([grid_map, ids], {"knows_room_types": False})
+    }
+    graph.ground(cargs)
+    for nid in graph.nodes:
+        if isinstance(graph.nodes[nid], SubgoalClass):
+            print(nid, graph.nodes[nid].grounded)    
+    
 if __name__ == "__main__":
     unittest()
