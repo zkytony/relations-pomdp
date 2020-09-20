@@ -4,6 +4,7 @@ from relpomdp.object_search.sensor import *
 from relpomdp.object_search.agent import *
 from relpomdp.object_search.greedy_planner import GreedyPlanner, RandomPlanner
 from relpomdp.object_search.subgoal_planner import SubgoalPlanner, ReachRoomSubgoal
+from relpomdp.object_search.utils import save_images_and_compress
 from relpomdp.pgm.mrf import SemanticMRF, relations_to_mrf
 from relpomdp.object_search.relation import *
 from relpomdp.object_search.tests.result_types import *
@@ -16,6 +17,7 @@ import pomdp_py
 import pygame
 import time
 import copy
+import subprocess
 from sciex import Trial, Event
 
 class SingleObjectSearchTrial(Trial):
@@ -99,6 +101,7 @@ class SingleObjectSearchTrial(Trial):
 
         # Visualization
         viz = None
+        game_states = []
         if self._config["visualize"]:
             print("Creating visualization ...")
             objcolors = {}
@@ -114,12 +117,13 @@ class SingleObjectSearchTrial(Trial):
             viz.on_init()
             viz.on_render()
             viz.update({target_id:target_hist})
-            viz.on_render()                    
+            img = viz.on_render()
+            game_states.append(img)
 
-        return env, agent, planner, mrf, viz
+        return env, agent, planner, mrf, viz, game_states
 
     def run(self, logging=False):
-        env, agent, planner, mrf, viz = self.setup()
+        env, agent, planner, mrf, viz, game_states = self.setup()
         target_id = env.ids["Target"][0]
         robot_id = env.ids["Robot"]        
         
@@ -162,7 +166,8 @@ class SingleObjectSearchTrial(Trial):
             if viz is not None:
                 viz.update({target_id: agent.belief.object_beliefs[target_id]})
                 viz.on_loop()
-                viz.on_render()
+                img = viz.on_render()
+                game_states.append(img)
             
             # Record result
             _History.append((copy.deepcopy(env.state),
@@ -172,6 +177,14 @@ class SingleObjectSearchTrial(Trial):
             # Terminates
             if env.state.object_states[target_id].is_found:
                 break
+
+        save_game_states = self.config.get("save_game_states", False)
+        game_states_save_dir = self.config.get("game_states_save_dir", "./")
+        if save_game_states:
+            print("Saving images...")
+            save_images_and_compress(game_states,
+                                     game_states_save_dir)
+            subprocess.Popen(["nautilus", game_states_save_dir])
             
         if viz is not None:
             viz.on_cleanup()
@@ -266,7 +279,9 @@ if __name__ == "__main__":
         "max_steps": 100,
         "visualize": True,
         "user_control": False,
-        "img_path": "../imgs"
+        "img_path": "../imgs",
+        "save_game_states": True,
+        "game_states_save_dir": "saved_trials",
     }
     trial = SingleObjectSearchTrial("salt_pepper",
                                     config, verbose=True)
