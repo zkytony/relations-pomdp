@@ -2,6 +2,7 @@ from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation
 from pgmpy.sampling import GibbsSampling
+import time
 
 
 # Definition:
@@ -42,7 +43,7 @@ class SemanticMRF:
     def factors(self):
         return self.G.factors
 
-    def query(self, variables, evidence=None):
+    def query(self, variables, evidence=None, verbose=False):
         """
         evidence is a mapping from variable to value_name. The value_name
             is the semantic one - e.g. for location, it's (x,y). Its
@@ -52,7 +53,11 @@ class SemanticMRF:
         for variable in variables:
             if not self.valid_var(variable):
                 raise ValueError("Variable %s is not in the model" % variable)
+        start_time = time.time()
         phi = self.bp.query(variables, evidence=evidence)
+        if verbose:
+            print("·····Query (%s|%s) took: %.5fs" % (str(variables), str(evidence),
+                                                      time.time() - start_time))
         return phi
 
     def sample(self, evidence=None, size=1):

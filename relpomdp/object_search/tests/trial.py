@@ -46,7 +46,7 @@ class SingleObjectSearchTrial(Trial):
         target_class = target_variable.split("_")[0]
 
         if self._config["prior_type"] == "mrf":
-            target_phi = mrf.query(variables=[target_variable])        
+            target_phi = mrf.query(variables=[target_variable], verbose=True)
 
         # Obtain prior
         target_hist = {}
@@ -224,7 +224,7 @@ class SingleObjectSearchTrial(Trial):
                         
             if len(evidence) > 0:
                 target_phi = mrf.query(variables=[target_variable],
-                                       evidence=evidence)
+                                       evidence=evidence, verbose=True)
                 target_phi.normalize()
                 for loc in mrf.values(target_variable):
                     state = ItemState(target_class, loc)

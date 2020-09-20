@@ -69,7 +69,9 @@ def office_floor1(init_robot_pose=(9,0,0),
         with open(mrf_path, "rb") as f:
             mrf = pickle.load(f)
     else:
+        start_time = time.time()
         mrf = relations_to_mrf(relations)
+        print("Building MRF took %.5fs" % (time.time() - start_time))
         if save_mrf:
             os.makedirs(mrfdir, exist_ok=True)
             with open(mrf_path, "wb") as f:
