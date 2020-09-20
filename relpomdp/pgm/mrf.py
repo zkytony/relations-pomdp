@@ -32,7 +32,7 @@ class SemanticMRF:
         # I have no clue why it happens. But it seems like the consequence is
         # the result of the sampling will be in value_index instead of value_name.
         # Therefore a conversion is needed in the "sample()" function below>.
-        self.gibbs = GibbsSampling(self.markov_model)
+        # self.gibbs = GibbsSampling(self.markov_model)  # Gibbs sampling is NOT NECESSARY for now.
 
     @property
     def G(self):
