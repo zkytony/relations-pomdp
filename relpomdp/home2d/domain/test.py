@@ -4,7 +4,7 @@ from relpomdp.home2d.env import *
 if __name__ == "__main__":
     # Build a world
     print("Creating world ...")    
-    grid_map = big_world1(50, 50)
+    grid_map = big_world_1(50, 50)
     # grid_map = small_world1()    
 
     # Arbitrary states

@@ -6,37 +6,37 @@ import copy
 from relpomdp.oopomdp.graph import *
 
 ########### State ###########
-class Attribute:
-    """
-    We make a class of Attribute so that there would be abstraction
-    over attributes.
-    """
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-        self._hashcode = hash((self.name, self.value))
+# class Attribute:
+#     """
+#     We make a class of Attribute so that there would be abstraction
+#     over attributes.
+#     """
+#     def __init__(self, name, value):
+#         self.name = name
+#         self.value = value
+#         self._hashcode = hash((self.name, self.value))
 
-    def __hash__(self):
-        return self._hashcode
+#     def __hash__(self):
+#         return self._hashcode
 
-    def __eq__(self, other):
-        if isinstance(other, Attribute):
-            return self.name == other.name\
-                and self.value == other.value
-        else:
-            return False
+#     def __eq__(self, other):
+#         if isinstance(other, Attribute):
+#             return self.name == other.name\
+#                 and self.value == other.value
+#         else:
+#             return False
 
-    def copy(self):
-        """copy(self)
-        Copies the state."""
-        raise NotImplementedError
+#     def copy(self):
+#         """copy(self)
+#         Copies the state."""
+#         raise NotImplementedError
     
-    def __repr__(self):
-        return self.__str__()
+#     def __repr__(self):
+#         return self.__str__()
 
-    def __str__(self):
-        return '%s::(%s)' % (str(self.__class__.__name__),
-                             str(self.value))
+#     def __str__(self):
+#         return '%s::(%s)' % (str(self.__class__.__name__),
+#                              str(self.value))
     
 
 class ObjectState(State):
@@ -46,16 +46,21 @@ class ObjectState(State):
     in an OO-POMDP is made up of ObjectState(s), each with
     an `object class` (str) and a set of `attributes` (dict).
     """
-    def __init__(self, objclass, attributes):
+    def __init__(self, objclass, attributes, nested=False):
         """
         class: "class",
         attributes: {
             "attr1": Attribute,
             ...
         }
+        nested (bool): True if any of the attributes is itself an object;
+            that means, copying this ObjectState requires deepcopy.
+            If False, then copying this object state means passing the
+            attributes to the constructor.
         """
         self.objclass = objclass
         self.attributes = attributes
+        self._nested = nested
         self._hashcode = hash(frozenset(self.attributes.items()))
 
     def __repr__(self):
@@ -89,7 +94,11 @@ class ObjectState(State):
     def copy(self):
         """copy(self)
         Copies the state."""
-        raise NotImplementedError
+        if self._nested:
+            return copy.deepcopy(self)
+        else:
+            return ObjectState(self.objclass, dict(self.attributes), nested=False)
+
 
 class OOState(State):
 
@@ -153,9 +162,9 @@ class OOState(State):
         return self.object_states[objid][attr]
 
     def copy(self):
-        """copy(self)
-        Copies the state."""
-        raise NotImplementedError
+        object_states = {objid : self.object_states[objid].copy()
+                         for objid in self.object_states}
+        return OOState(object_states)    
 
     def obj(self, objid):
         return self.get_object_state(objid)

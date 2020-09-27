@@ -1,6 +1,6 @@
 import numpy as np
-from relpomdp.home2d.state import WallState, ContainerState
-from relpomdp.home2d.grid_map import GridMap
+from relpomdp.home2d.domain.state import WallState
+from relpomdp.home2d.domain.maps.grid_map import GridMap
 import random
 import pickle
 
@@ -17,8 +17,8 @@ class Room:
         mean = np.mean(np.array([*self.locations]),axis=0)
         self._center_of_mass = tuple(np.round(mean).astype(int))
         
-    def to_state(self):
-        return ContainerState(self.room_type, self.name, tuple(self.locations))
+    # def to_state(self):
+    #     return ContainerState(self.room_type, self.name, tuple(self.locations))
 
     @property
     def center_of_mass(self):
@@ -108,71 +108,3 @@ def walls_to_states(walls, base_id=1000):
         wall_states[base_id+i] = WallState((x,y), direction)
     return wall_states
 
-############## Actual maps; Returning GridMap objects ##########
-def small_map0(seed=100):
-    walls = init_map(5,5)
-    room1 = make_room("room-1", 0,0,3,3)
-    rooms = [room1]
-    corridor1, rooms = make_corridor("corridor-1", 3, 0, 2, 5, rooms, seed=seed)
-    corridor2, rooms, corridors = make_corridor("corridor-2", 0, 3, 3, 2, rooms,
-                                                [corridor1], seed=seed)
-    corridors.append(corridor2)
-
-    for room in rooms:
-        walls |= set(room.walls)
-    for cr in corridors:
-        walls |= set(cr.walls)
-    wall_states = walls_to_states(walls)
-    return GridMap(5, 5, wall_states, rooms + corridors)
-
-
-def small_map1(seed=100):
-    walls = init_map(10,10)
-    room1 = make_room("Bathroom-1", 0,7,3,3)
-    room2 = make_room("Kitchen-2", 0,0,3,7)
-    room3 = make_room("Office-3", 5,7,5,3)
-    room4 = make_room("Office-4", 5,0,5,4)
-    rooms = [room1, room2, room3, room4]
-    corridor1, rooms = make_corridor("Corridor-1", 3, 0, 2, 10, rooms, seed=seed)
-    corridor2, rooms, corridors = make_corridor("Corridor-2", 5, 4, 5, 3, rooms, [corridor1], seed=seed)
-    corridors.append(corridor2)
-
-    for room in rooms:
-        walls |= set(room.walls)
-    for cr in corridors:
-        walls |= set(cr.walls)
-    wall_states = walls_to_states(walls)
-    return GridMap(10, 10, wall_states, rooms + corridors)
-
-
-def big_map1(width=50, length=50, seed=100):
-    walls = init_map(width, length)
-
-    # layers
-    corridor_width = width
-    corridor_length = 3    
-    room_width = width // 10
-    room_length = length // 5 - corridor_length
-
-    rooms = []
-    for i in range(length // (corridor_length + room_length)):
-        for j in range(width // room_width):
-            x = j*room_width
-            y = i * (corridor_length + room_length)
-            room = make_room("room-%d" % (len(rooms)+1), x, y, room_width, room_length)
-            rooms.append(room)
-
-    corridors = []
-    for k in range(length // (corridor_length + room_length)):
-        x = 0
-        y = k * (corridor_length + room_length) + room_length
-        corridor, rooms = make_corridor("corridor-%d" % (len(corridors)+1), x, y,
-                                        corridor_width, corridor_length, rooms, seed=seed)
-        corridors.append(corridor)
-
-    for room in rooms:
-        walls |= set(room.walls)
-    for cr in corridors:
-        walls |= set(cr.walls)
-    wall_states = walls_to_states(walls)
-    return GridMap(width, length, wall_states, rooms + corridors)
