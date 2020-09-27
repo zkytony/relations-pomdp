@@ -1,5 +1,5 @@
-from relpomdp.object_search.world_specs.build_world import *
-from relpomdp.object_search.env import *
+from relpomdp.home2d.worlds.build_world import *
+from relpomdp.home2d.env import *
 
 if __name__ == "__main__":
     # Build a world

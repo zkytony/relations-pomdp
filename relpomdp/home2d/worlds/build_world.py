@@ -1,6 +1,6 @@
 import numpy as np
-from relpomdp.object_search.state import WallState, ContainerState
-from relpomdp.object_search.grid_map import GridMap
+from relpomdp.home2d.state import WallState, ContainerState
+from relpomdp.home2d.grid_map import GridMap
 import random
 import pickle
 

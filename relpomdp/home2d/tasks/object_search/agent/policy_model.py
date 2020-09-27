@@ -1,6 +1,6 @@
 import pomdp_py
-from relpomdp.object_search.action import *
-from relpomdp.object_search.utils import euclidean_dist
+from relpomdp.home2d.action import *
+from relpomdp.home2d.utils import euclidean_dist
 import random
 
 class PolicyModel(pomdp_py.RolloutPolicy):

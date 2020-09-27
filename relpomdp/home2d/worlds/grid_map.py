@@ -1,9 +1,9 @@
 import pomdp_py
 import copy
-from relpomdp.object_search.relation import *
-from relpomdp.object_search.state import *
-from relpomdp.object_search.action import *
-from relpomdp.object_search.condition_effect import *
+from relpomdp.home2d.relation import *
+from relpomdp.home2d.state import *
+from relpomdp.home2d.action import *
+from relpomdp.home2d.condition_effect import *
 import sys
 
 class GridMap:

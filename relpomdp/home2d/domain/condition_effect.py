@@ -1,8 +1,8 @@
 import relpomdp.oopomdp.framework as oopomdp
-from relpomdp.object_search.relation import *
-from relpomdp.object_search.action import *
-from relpomdp.object_search.state import *
-from relpomdp.object_search.observation import *
+from relpomdp.home2d.relation import *
+from relpomdp.home2d.action import *
+from relpomdp.home2d.state import *
+from relpomdp.home2d.observation import *
 
 # Conditions and effects
 class CanMove(oopomdp.Condition):

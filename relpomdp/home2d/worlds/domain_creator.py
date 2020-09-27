@@ -1,8 +1,8 @@
 import yaml
 from relpomdp.pgm.mrf import SemanticMRF
-from relpomdp.object_search.world_specs.build_world import small_world1
-from relpomdp.object_search.relation import Near
-from relpomdp.object_search.state import *
+from relpomdp.home2d.worlds.build_world import small_world1
+from relpomdp.home2d.relation import Near
+from relpomdp.home2d.state import *
 from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation

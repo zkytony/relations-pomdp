@@ -9,8 +9,8 @@ import numpy as np
 import random
 import os
 from pomdp_py import util
-from relpomdp.object_search.state import *
-from relpomdp.object_search.action import *
+from relpomdp.home2d.state import *
+from relpomdp.home2d.action import *
 
 # colors
 def lighter(color, percent):

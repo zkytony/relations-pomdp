@@ -1,5 +1,5 @@
 import pomdp_py
-from relpomdp.object_search.action import *
+from relpomdp.home2d.action import *
 
 class RewardModel(pomdp_py.RewardModel):
     def __init__(self, ids):

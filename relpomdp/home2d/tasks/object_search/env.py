@@ -14,13 +14,13 @@
 #   of object classes. This is to facilitate abstraction/hierarchical
 #   POMDP planning.
 #
-from relpomdp.object_search.action import *
-from relpomdp.object_search.state import *
-from relpomdp.object_search.reward_model import *
-from relpomdp.object_search.condition_effect import *
-from relpomdp.object_search.relation import *
-from relpomdp.object_search.grid_map import *
-from relpomdp.object_search.visual import ObjectSearchViz
+from relpomdp.home2d.action import *
+from relpomdp.home2d.state import *
+from relpomdp.home2d.reward_model import *
+from relpomdp.home2d.condition_effect import *
+from relpomdp.home2d.relation import *
+from relpomdp.home2d.grid_map import *
+from relpomdp.home2d.visual import ObjectSearchViz
 from relpomdp.oopomdp.framework import *
 import pomdp_py
 

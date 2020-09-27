@@ -2,7 +2,7 @@ import numpy as np
 import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.oopomdp.abstraction import AbstractAttribute
-import relpomdp.object_search.utils as utils
+import relpomdp.home2d.utils as utils
 import copy
     
 # Object classes and attributes
@@ -15,16 +15,8 @@ class Pose(oopomdp.Attribute):
     def __getitem__(self, index):
         assert type(self.value) == tuple        
         return self.value[index]
-
-class PoseState(oopomdp.ObjectState):
-    @property
-    def pose(self):
-        if isinstance(self["pose"], Pose):
-            return self["pose"].value
-        else:
-            return self["pose"]
     
-class WallState(PoseState):
+class WallState(oopomdp.ObjectState):
     def __init__(self, pose, direction):
         """direction can be 'H' or 'V'"""
         super().__init__("Wall",
@@ -47,44 +39,14 @@ class WallState(PoseState):
             wall_pose2 = (self.pose[0]-0.5, self.pose[1]+0.5)
         wall_seg = [wall_pose1, wall_pose2]
         return utils.intersect(wall_seg, (src, dst))
-
-class ContainerState(oopomdp.ObjectState):
-    def __init__(self, container_type, name, footprint):
-        """name, e.g. Room"""
-        super().__init__(container_type,
-                         {"name": name,
-                          "footprint": footprint})
-    def copy(self):
-        return self.__class__(self.category, self.name, tuple(self.footprint))
-    @property
-    def name(self):
-        return self["name"]
-    @property
-    def category(self):
-        return self.objclass        
-    def copy(self):
-        return self.__class__(self.container_type, tuple(self.footprint))
-    @property
-    def footprint(self):
-        return self["footprint"]
-    def same_type(self, string):
-        return string == self.category
     
+    @property
+    def pose(self):
+        if isinstance(self["pose"], Pose):
+            return self["pose"].value
+        else:
+            return self["pose"]
     
-class ItemState(PoseState):
-    def __init__(self, name, pose, is_found=False):
-        super().__init__(name,
-                         {"pose": pose,
-                          "is_found": is_found})                          
-    @property
-    def name(self):
-        return self.objclass
-    def copy(self):
-        return self.__class__(self.name, tuple(self["pose"]), self["is_found"])
-    @property
-    def is_found(self):
-        return self["is_found"]
-
 class RobotState(PoseState):
     def __init__(self, pose, camera_direction):
         """

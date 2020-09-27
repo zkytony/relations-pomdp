@@ -1,6 +1,8 @@
 import pomdp_py
 import math
 
+# Primitive actions that the robot can perform in a home2d task
+
 class Action(pomdp_py.Action):
     def __init__(self, name):
         self.name = name
@@ -37,3 +39,16 @@ MoveS = Move("S", Move.SOUTH)
 class Pickup(Action):
     def __init__(self):
         super().__init__("pickup")
+
+
+# Unittest
+def unittest():
+    assert Pickup() == Pickup()
+    assert MoveE == Move("E", Move.EAST)
+    assert MoveW == Move("W", Move.WEST)
+    assert MoveN == Move("N", Move.NORTH)
+    assert MoveS == Move("S", Move.SOUTH)
+    print("Passed.")
+
+if __name__ == "__main__":
+    unittest()
