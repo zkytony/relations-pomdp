@@ -27,10 +27,10 @@ class GridMap:
 
     def room_of(self, position):
         if position in self.xy_to_room:
-            return self.xy_to_room[position]
+            return self.rooms[self.xy_to_room[position]]
         else:
             return None
-            
+
     def within_bounds(self, position):
         if not (position[0] >= 0 and position[0] < self.width\
                 and position[1] >= 0 and position[1] < self.length):

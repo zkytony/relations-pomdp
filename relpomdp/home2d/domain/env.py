@@ -53,9 +53,9 @@ class Home2DEnvironment(OOEnvironment):
                      touch_W,
                      touch_E,
                      is_on}
-        legal_motions = grid_map.compute_legal_motions({MoveN, MoveS, MoveE, MoveW})
+        self.legal_motions = grid_map.compute_legal_motions({MoveN, MoveS, MoveE, MoveW})
         # Basic condition/effects
-        cond_effects = [(CanMove(robot_id, legal_motions), MoveEffect(robot_id))]
+        cond_effects = [(CanMove(robot_id, self.legal_motions), MoveEffect(robot_id))]
         super().__init__(init_state, relations, cond_effects, reward_model)
 
     @property
