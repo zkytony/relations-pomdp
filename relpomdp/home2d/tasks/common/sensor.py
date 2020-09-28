@@ -2,9 +2,6 @@
 
 import math
 import numpy as np
-from relpomdp.home2d.action import *
-from relpomdp.home2d.state import *
-from relpomdp.home2d.observation import *
 
 # Utility functions
 def euclidean_dist(p1, p2):

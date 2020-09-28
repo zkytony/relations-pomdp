@@ -120,9 +120,6 @@ class MotionPolicy:
         return neighbors
 
 
-# class Pickup(Action):
-#     def __init__(self):
-#         super().__init__("pickup")
 
 
 # Unittest

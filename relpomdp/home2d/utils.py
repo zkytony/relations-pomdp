@@ -6,6 +6,7 @@ from datetime import datetime as dt
 import cv2
 import os
 import pomdp_py
+import relpomdp.oopomdp.framework as oopomdp
 
 # Utility functions
 def euclidean_dist(p1, p2):
@@ -127,6 +128,13 @@ def draw_belief(img, belief, r, size, colors):
 #     ObjectSearchViz.draw_belief(img, self._last_belief, r, r//3, self._colors)
 
                 
-## POMDP UTILS
+## POMDP UTILS; Short hands for object creations
 def objstate(obj_class, **attrs):
-    return pomdp_py.ObjectState(obj_class, attrs)
+    return oopomdp.ObjectState(obj_class, attrs)
+
+
+def objobs(obj_class, **attrs):
+    return oopomdp.ObjectObservation(obj_class, attrs)
+
+def ooobs(obs):
+    return oopomdp.OOObservation(obs)

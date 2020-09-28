@@ -184,9 +184,10 @@ class NullObservation(Observation):
     pass
 
 class ObjectObservation(Observation):
-    def __init__(self, objclass, attributes):
+    def __init__(self, objclass, attributes, nested=False):
         self.objclass = objclass
         self.attributes = attributes
+        self._nested = nested
         self._hashcode = hash(frozenset(self.attributes.items()))
 
     def __repr__(self):
@@ -220,7 +221,11 @@ class ObjectObservation(Observation):
     def copy(self):
         """copy(self)
         Copies the state."""
-        raise NotImplementedError
+        if self._nested:
+            return copy.deepcopy(self)
+        else:
+            return ObjectObservation(self.objclass, dict(self.attributes), nested=False)        
+
 
 class OOObservation(Observation):
     def __init__(self, object_observations):
@@ -280,10 +285,18 @@ class OOObservation(Observation):
     def copy(self):
         """copy(self)
         Copies the observation."""
-        raise NotImplementedError
+        object_observations = {objid : self.object_observations[objid].copy()
+                               for objid in self.object_observations}
+        return OOObservation(object_observations)            
 
     def obj(self, objid):
         return self.get_object_observation(objid)
+
+    def for_objs(self, objids):
+        object_observations = {objid : self.object_observations[objid].copy()
+                               for objid in objids\
+                               if objid in self.object_observations}
+        return OOObserfvation(object_observations)    
 
     def __getitem__(self, objid):
         return self.get_object_observation(objid)
@@ -661,7 +674,7 @@ class OOObservationModel(ObservationModel):
         if len(observations) == 0:
             return NullObservation()
         elif len(observations) == 1:
-            return observations[0]
+            return observation
         else:
             return CombinedObservation(observations)
         

@@ -16,7 +16,12 @@ class CanMove(oopomdp.Condition):
         if not isinstance(action, Move):
             return False
         robot_state = state.object_states[self.robot_id]
-        return action in self.legal_motions[robot_state["pose"][:2]]
+        if self.legal_motions is None:
+            # Perhaps the agent doesn't have a map so it doesn't know what motion
+            # is legal or not.
+            return True
+        else:
+            return action in self.legal_motions[robot_state["pose"][:2]]
     
 class MoveEffect(oopomdp.DeterministicTEffect):
     """Deterministically move"""
@@ -39,30 +44,6 @@ class MoveEffect(oopomdp.DeterministicTEffect):
         next_robot_state["camera_direction"] = action.name
         return next_state
 
-# class CanPickup(oopomdp.Condition):
-#     def __init__(self, robot_id):
-#         self.robot_id = robot_id
-        
-#     def satisfy(self, state, action):
-#         if not isinstance(action, Pickup):
-#             return False
-#         robot_state = state.object_states[self.robot_id["Robot"]]
-#         for objid in self.ids["Target"]:
-#             if is_on(robot_state, state.object_states[objid])\
-#                and not state.object_states[objid].is_found:
-#                 return True, objid
-#         return False
-            
-# class PickupEffect(oopomdp.DeterministicTEffect):
-#     """Deterministically move"""
-#     def __init__(self):
-#         super().__init__("constant")  # ? not really a reason to name the type this way
-        
-#     def mpe(self, state, action, picking_objid):
-#         """Returns an OOState after applying this effect on `state`"""
-#         next_state = state
-#         next_state.object_states[picking_objid]["is_found"] = True
-#         return next_state
 
 
 # # Observation condition / effects
