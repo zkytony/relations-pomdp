@@ -23,7 +23,8 @@ class CanStop(oopomdp.Condition):
         return isinstance(action, Stop)
 
 class StopEffect(oopomdp.DeterministicTEffect):
-    def __init__(self, robot_id, room_type, grid_map=None):
+    """assumes robot has access to room layout map"""
+    def __init__(self, robot_id, room_type, grid_map):
         self.robot_id = robot_id
         self.room_type = room_type
         self.grid_map = grid_map
@@ -32,14 +33,10 @@ class StopEffect(oopomdp.DeterministicTEffect):
         next_state = state  # copy has already happened
         robot_state = next_state.object_states[self.robot_id]
         room_state = next_state.object_states[self.room_type]
-        if self.grid_map is None:
-            if robot_state["pose"][:2] == room_state["pose"]:
-                room_state["reached"] = True
-        else:
-            robot_room = self.grid_map.room_of(robot_state["pose"][:2])
-            room_room = self.grid_map.room_of(room_state["pose"])
-            if robot_room.name == room_room.name:
-                room_state["reached"] = True
+        robot_room = self.grid_map.room_of(robot_state["pose"][:2])
+        room_room = self.grid_map.room_of(room_state["pose"])
+        if robot_room.name == room_room.name:
+            room_state["reached"] = True
         return next_state
     
     
@@ -166,7 +163,8 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
             neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
                          for action in self.legal_motions[robot_state["pose"][:2]]}
             for next_robot_pose in neighbors:
-                # # Prefer action to move into a different room
+                # Prefer action to move into the room where
+                # the sampled target state is located
                 action = neighbors[next_robot_pose]
                 next_room = self.grid_map.room_of(next_robot_pose[:2])
                 object_room = self.grid_map.room_of(room_state["pose"])

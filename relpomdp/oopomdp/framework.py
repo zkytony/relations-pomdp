@@ -181,7 +181,12 @@ class OOState(State):
 
 ########### Observation ###########
 class NullObservation(Observation):
-    pass
+    def __eq__(self, other):
+        return isinstance(other, NullObservation)
+
+    def __hash__(self):
+        return hash(None)
+    
 
 class ObjectObservation(Observation):
     def __init__(self, objclass, attributes, nested=False):

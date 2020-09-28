@@ -64,10 +64,10 @@ def setup():
     agent = task.to_agent(init_belief)
 
     # Create planner and make a plan
-    planner = pomdp_py.POUCT(max_depth=30,
+    planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
-                             num_sims=200,
-                             exploration_const=100,
+                             num_sims=500,
+                             exploration_const=10,
                              rollout_policy=agent.policy_model)
 
     viz = SearchRoomViz(env,
