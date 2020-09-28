@@ -296,7 +296,7 @@ class OOObservation(Observation):
         object_observations = {objid : self.object_observations[objid].copy()
                                for objid in objids\
                                if objid in self.object_observations}
-        return OOObserfvation(object_observations)    
+        return OOObservation(object_observations)    
 
     def __getitem__(self, objid):
         return self.get_object_observation(objid)

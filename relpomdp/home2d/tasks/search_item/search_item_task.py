@@ -63,7 +63,8 @@ class ObjectObserveEffect(oopomdp.DeterministicOEffect):
         this effect on `state` given `action`."""
         expected_observation = self.mpe(next_state, action)
         modeled_objs = [objid for objid in next_state.object_states\
-                        if isinstance("pose" in next_state.object_states[objid].attributes)]
+                        if "pose" in next_state.object_states[objid].attributes\
+                        and objid != self.robot_id]
         if expected_observation == observation.for_objs(modeled_objs):
             return 1.0 - self.epsilon
         else:
@@ -75,7 +76,7 @@ class ObjectObserveEffect(oopomdp.DeterministicOEffect):
         obs = {}
         for objid in next_state.object_states:
             objstate = next_state.object_states[objid]
-            if "pose" in objstate.attributes:
+            if "pose" in objstate.attributes and objid != self.robot_id:
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"]):
                     observation = objobs(objstate.objclass, pose=objstate["pose"])
                     obs[objid] = observation
@@ -138,7 +139,9 @@ class SearchItemTask(Task):
 
         cond_effects_o = [(CanObserve(), ObjectObserveEffect(sensor, robot_id, epsilon=1e-12))]
         observation_model = oopomdp.OOObservationModel(cond_effects_o)
-        policy_model = PolicyModel(robot_id, motions=motions, other_actions={Pickup()})
+        policy_model = PolicyModel(robot_id, motions=motions,
+                                   other_actions={Pickup()},
+                                   grid_map=grid_map)
         reward_model = RewardModel(robot_id, target_id)
         super().__init__(transition_model,
                          observation_model,

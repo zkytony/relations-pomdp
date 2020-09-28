@@ -14,9 +14,9 @@ class PolicyModel(pomdp_py.RolloutPolicy):
                  other_actions=set(),
                  grid_map=None):
         self.robot_id = robot_id
-        self.legal_actions = None
+        self.legal_motions = None
         if grid_map is not None:
-            self.legal_actions = grid_map.compute_legal_actions(motions)
+            self.legal_motions = grid_map.compute_legal_motions(motions)
         self._motion_actions = motions  # motion actions only
         self._other_actions = other_actions
         self._actions = self._motion_actions | other_actions  # all actions
@@ -28,11 +28,11 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         """
         get_all_actions(self, *args, **kwargs)
         Returns a set of all possible actions, if feasible."""
-        if state is None or self.legal_actions is None:
+        if state is None or self.legal_motions is None:
             return self._actions
         else:
-            robot_state = state.object_states[robot_id]
-            motions = self.motion_policy.valid_motions(robot_state["pose"])
+            robot_state = state.object_states[self.robot_id]
+            motions = self.legal_motions[robot_state["pose"][:2]]
             return motions | self._other_actions
 
     @property

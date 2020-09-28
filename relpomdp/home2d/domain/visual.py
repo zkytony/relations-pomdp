@@ -119,13 +119,6 @@ class Home2DViz:
             cv2.circle(img, (y+shift, x+shift), radius, color, thickness=-1)
             cv2.circle(img, (y+shift, x+shift), radius//2, lighter(color, 0.4), thickness=-1)
 
-    def update(self, belief):
-        """
-        Update the visualization after there is new real action and observation
-        and updated belief.
-        """
-        self._last_belief = belief
-
     # PyGame interface functions
     def on_init(self):
         """pygame init"""
