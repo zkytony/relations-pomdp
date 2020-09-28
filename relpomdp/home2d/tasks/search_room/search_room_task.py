@@ -1,18 +1,12 @@
-# Search room task.
-# The robot either has access to the full grid map
-# (in which case the problem is essentially an MDP),
-# a grid map with only room layout, or no grid map.
-# In the first two cases, the robot gets to observe
-# the room ID it is in. In the first case, the robot
-# gets to additionally observe the room type.
-
-
+# Search room task. The robot is assumed to have access to
+# room layout but not room types. If one wants to just
+# reach a room then set the prior to be that room.
 
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.condition_effect import MoveEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.tasks.task import Task
-from relpomdp.home2d.tasks.common.policy_model import PolicyModel
+from relpomdp.home2d.tasks.common.policy_model import *
 from relpomdp.home2d.tasks.common.sensor import *
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.condition_effect import *
@@ -22,14 +16,37 @@ from relpomdp.home2d.utils import objstate, objobs, ooobs
 class Stop(Action):
     def __init__(self):
         super().__init__("stop")
-    
-class RewardModel(pomdp_py.RewardModel):
-    def __init__(self, robot_id, room_type,
-                 grid_map=None, knows_room_type=False):
+
+class CanStop(oopomdp.Condition):
+    """Pick up condition"""
+    def satisfy(self, state, action):
+        return isinstance(action, Stop)
+
+class StopEffect(oopomdp.DeterministicTEffect):
+    def __init__(self, robot_id, room_type, grid_map=None):
         self.robot_id = robot_id
         self.room_type = room_type
         self.grid_map = grid_map
-        self.knows_room_type = knows_room_type
+        
+    def mpe(self, state, action, byproduct=None):
+        next_state = state  # copy has already happened
+        robot_state = next_state.object_states[self.robot_id]
+        room_state = next_state.object_states[self.room_type]
+        if self.grid_map is None:
+            if robot_state["pose"][:2] == room_state["pose"]:
+                room_state["reached"] = True
+        else:
+            robot_room = self.grid_map.room_of(robot_state["pose"][:2])
+            room_room = self.grid_map.room_of(room_state["pose"])
+            if robot_room.name == room_room.name:
+                room_state["reached"] = True
+        return next_state
+    
+    
+class RewardModel(pomdp_py.RewardModel):
+    def __init__(self, robot_id, room_type):
+        self.robot_id = robot_id
+        self.room_type = room_type
     
     def sample(self, state, action, next_state, **kwargs):
         return self.argmax(state, action, next_state)
@@ -39,24 +56,16 @@ class RewardModel(pomdp_py.RewardModel):
         argmax(self, state, action, next_state, **kwargs)
         Returns the most likely reward"""
         if isinstance(action, Stop):
-            robot_state = state.object_states[self.robot_id]
-            next_robot_state = next_state.object_states[self.robot_id]
-            if self.grid_map is None or self.knows_room_type is False:
-                # The robot has no access to grid map or doesn't
-                # know room types; So it can only check based on the state
-                if next_robot_state["room_type"] == self.room_type:
+            room_state = state.object_states[self.room_type]
+            next_room_state = next_state.object_states[self.room_type]
+            if next_room_state["reached"]:
+                if not room_state["reached"]:
                     return 100.0
                 else:
-                    return -100.0
+                    return -1.0
             else:
-                # The robot does have access to the grid map
-                cur_room = self.grid_map.room_of(robot_state["pose"][:2])
-                next_room = self.grid_map.room_of(next_robot_state["pose"][:2])
-                if next_room.room_type == self.room_type:
-                    return 100.0
-                else:
-                    return -100.0
-        return -1
+                return -100.0
+        return -1.0
 
 class CanObserve(oopomdp.Condition):
     """Condition to observe"""
@@ -64,29 +73,110 @@ class CanObserve(oopomdp.Condition):
         return True  # always can
 
 class RoomObserveEffect(oopomdp.DeterministicOEffect):
-    def __init__(self, robot_id, epsilon=1e-9):
+    """If the robot state and the room state
+    are in the same room then the robot gets
+    the observation of the room type; Requires no
+    access to room type;
+    
+    See comment below in mpe() regarding observation parts."""
+    def __init__(self, robot_id, room_type, grid_map,
+                 epsilon=1e-9, for_env=False):
+        """knows_room_type (bool): True if robot knows room types. Default False.
+        for_env (bool) True if this is used to simulate environment
+            observation; that is the robot gets to see the room type."""
         self.robot_id = robot_id
+        self.room_type = room_type
+        self.grid_map = grid_map
+        self.for_env = for_env
         super().__init__("sensing", epsilon=epsilon)  # ? not really a reason to name the type this way
+
+    def probability(self, observation, next_state, action, byproduct=None):
+        """
+        observation: Observation actually received (should be the room
+            type of where the robot is at). 
+        """
+        room_state = next_state.object_states[self.room_type]
+        robot_state = next_state.object_states[self.robot_id]
+        room_room = self.grid_map.room_of(room_state["pose"])
+        robot_room = self.grid_map.room_of(robot_state["pose"][:2])
+
+        if room_room == robot_room:
+            expected_observation = self.mpe(next_state, action)
+            if expected_observation == observation:
+                return 1.0 - self.epsilon
+            else:
+                return self.epsilon
+        else:
+            # We will receive null observation (omitted) for other rooms
+            # and we expect mpe() to generate such an observation too,
+            # as implemented below 'objobs("null")'. Therefore, just return 1.0
+            # Caveat though.. When we have observed the desired room type,
+            # all other places become unnecessary; so marking them zero to
+            # facilitate planning (i.e. stopping at the observed room)
+            if observation.objclass == self.room_type:
+                return self.epsilon
+            else:
+                return 1.0 - self.epsilon
         
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
+        room_state = next_state.object_states[self.room_type]
         robot_state = next_state.object_states[self.robot_id]
-        return objobs("room", room_type=robot_state["room_type"])
 
-class MoveEffectRoom(oopomdp.DeterministicOEffect):
-    """Should only be used in the case where the robot knows the room type;
-    Must happen after MoveEffect."""
-    def __init__(self, robot_id, grid_map, epsilon=1e-12):
+        room_room = self.grid_map.room_of(room_state["pose"])
+        robot_room = self.grid_map.room_of(robot_state["pose"][:2])
+
+        # There are two parts of an observation:
+        # - The first part is the type of room the robot is in now
+        # - The second part is a null observation for "other areas";
+        # The second part is omitted, because it will always be null.
+        if self.for_env:
+            # for environment, we can access the room type the robot is in
+            return objobs(robot_room.room_type)
+
+        # Otherwise, the robot observes the room when in the same  room
+        if room_room == robot_room:
+            return objobs(self.room_type)
+        else:
+            return objobs("null")
+
+
+class GreedyActionPrior(pomdp_py.ActionPrior):
+    """greedy action prior for 'xy' motion scheme;
+    Requires knowledge of grid map"""
+    def __init__(self, robot_id, room_type, grid_map,
+                 num_visits_init, val_init, motions={MoveE, MoveW, MoveN, MoveS}):
         self.robot_id = robot_id
+        self.room_type = room_type
         self.grid_map = grid_map
-        super().__init__("move", epsilon=epsilon)        
+        self.legal_motions = grid_map.compute_legal_motions(motions)
+        self.motions = motions
+        self.num_visits_init = num_visits_init
+        self.val_init = val_init
+
+    def get_preferred_actions(self, state, history):
+        """Get preferred actions. This can be used by a rollout policy as well."""
+        robot_state = state.object_states[self.robot_id]
+        cur_room = self.grid_map.room_of(robot_state["pose"][:2])
+        preferences = set()
+
+        room_state = state.object_states[self.room_type]
+        if room_state["reached"] is False:
+            cur_dist = euclidean_dist(robot_state["pose"][:2], room_state["pose"])
+            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
+                         for action in self.legal_motions[robot_state["pose"][:2]]}
+            for next_robot_pose in neighbors:
+                # # Prefer action to move into a different room
+                action = neighbors[next_robot_pose]
+                next_room = self.grid_map.room_of(next_robot_pose[:2])
+                object_room = self.grid_map.room_of(room_state["pose"])
+                if object_room == next_room\
+                   and euclidean_dist(next_robot_pose, room_state["pose"]) < cur_dist:
+                    preferences.add((action,
+                                     self.num_visits_init, self.val_init))
+        return preferences
+
         
-    def mpe(self, state, action, byproduct=None):
-        next_state = state  # copy has already happened
-        next_room_type = self.grid_map.room_of(
-            state.object_states[self.robot_id]["pose"][:2]).room_type
-        next_state.object_states[self.robot_id]["room_type"] = next_room_type
-        return next_state
 
 class SearchRoomTask(Task):
     """
@@ -95,8 +185,7 @@ class SearchRoomTask(Task):
     def __init__(self,
                  robot_id,
                  room_type,
-                 grid_map=None,
-                 knows_room_type=False):
+                 grid_map=None):
         self.robot_id = robot_id
         self.room_type = room_type
         motions = {MoveN, MoveS, MoveE, MoveW}
@@ -107,19 +196,24 @@ class SearchRoomTask(Task):
         else:
             legal_motions = grid_map.compute_legal_motions(motions)
             cond_effects_t.append((CanMove(robot_id, legal_motions), MoveEffect(robot_id)))
-            if knows_room_type:
-                cond_effects_t.append((CanMove(robot_id, legal_motions), MoveEffectRoom(robot_id, grid_map)))
-            
+        cond_effects_t.append((CanStop(), StopEffect(robot_id, room_type, grid_map)))
         transition_model = oopomdp.OOTransitionModel(cond_effects_t)
 
-        cond_effects_o = [(CanObserve(), RoomObserveEffect(robot_id, epsilon=1e-12))]
+        cond_effects_o = [(CanObserve(),
+                           RoomObserveEffect(robot_id, room_type, epsilon=1e-12,
+                                             grid_map=grid_map))]
         observation_model = oopomdp.OOObservationModel(cond_effects_o)
 
-        reward_model = RewardModel(robot_id, room_type,
-                                   grid_map=grid_map, knows_room_type=knows_room_type)
-        policy_model = PolicyModel(robot_id, motions=motions,
-                                   other_actions={Stop()},
-                                   grid_map=grid_map)
+        reward_model = RewardModel(robot_id, room_type)
+
+        if grid_map is not None:
+            action_prior = GreedyActionPrior(robot_id, room_type, grid_map, 10, 100)
+            policy_model = PreferredPolicyModel(action_prior,
+                                                other_actions={Stop()})
+        else:
+            policy_model = PolicyModel(robot_id, motions=motions,
+                                       other_actions={Stop()},
+                                       grid_map=grid_map)
         
         super().__init__(transition_model,
                          observation_model,
