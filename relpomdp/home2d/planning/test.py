@@ -18,15 +18,15 @@ import pomdp_py
 discount_factor = 0.95
 
 
-def office_floor1(init_robot_pose=(9,9,0)):
+def office_floor1(init_robot_pose=(9,0,0)):
     """
     Office floor with salt, pepper, and computers
     This describes the full environment configuration (i.e. all
     object locations and the robot's location).
     """
     grid_map = all_maps["map_small_1"]()    
-    init_salt_pose = (8,6)
-    init_pepper_pose = (8,7)
+    init_salt_pose = (0,6)
+    init_pepper_pose = (1,5)
     init_robot_pose = init_robot_pose
 
     salt_id = 10
@@ -76,11 +76,11 @@ def office_floor1(init_robot_pose=(9,9,0)):
     not_near_cs = Near(computer, salt, negate=True)    
     in_sk = In(salt, kitchen)
     in_pk = In(pepper, kitchen)
-    in_co = In(computer, office)
-    not_in_ck = In(computer, kitchen, negate=True)    
+    # in_co = In(computer, office)
+    # not_in_ck = In(computer, kitchen, negate=True)    
     not_in_so = In(salt, office, negate=True)
     graph = RelationGraph({near_ps, near_sp, not_near_sc, not_near_cs,
-                           in_sk, in_pk, not_in_so, not_in_ck, in_co})    
+                           in_sk, in_pk, not_in_so})#, not_in_ck, in_co})    
 
     return ids, grid_map, init_state, colors, graph
 
@@ -151,7 +151,6 @@ def item_search_belief_update(task, agent, observation,
                         for objid in observation.object_observations
                         if objid != task.robot_id] + evidence_from_subtasks
     for o in all_observations:
-        import pdb; pdb.set_trace()
         if o.objclass == task.target_class:
             # You just observed the target. MRF isn't useful here.
             continue

@@ -53,9 +53,9 @@ class Near(InfoRelation):
             near = same_room\
                 and euclidean_dist(pose1, pose2) <= 2
             if self.negate:
-                return (1. - 1e-9) if not is_near else 1e-9
+                return not near
             else:
-                return (1. - 1e-9) if is_near else 1e-9
+                return near
             
         d1 = GridDomain(self.attr1, grid_map.width, grid_map.length)
         d2 = GridDomain(self.attr2, grid_map.width, grid_map.length)        
@@ -81,9 +81,9 @@ class In(InfoRelation):
 
             is_in = pose1 == pose2
             if self.negate:
-                return (1. - 1e-9) if not is_in else 1e-9
+                return not is_in
             else:
-                return (1. - 1e-9) if is_in else 1e-9
+                return is_in
 
         if isinstance(self.attr1, PoseAttr):
             d1 = GridDomain(self.attr1, grid_map.width, grid_map.length)
