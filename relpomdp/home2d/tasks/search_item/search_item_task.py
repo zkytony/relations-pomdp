@@ -211,7 +211,7 @@ class SearchItemTask(Task):
     def is_done(self, env, *args):
         return env.state.object_states[self.target_id]["is_found"]
 
-    def get_prior(self, grid_map, prior_type="uniform", env=None):
+    def get_prior(self, grid_map, prior_type="uniform", env=None, **kwargs):
         target_hist = {}
         total_prob = 0
         for x in range(grid_map.width):
@@ -228,9 +228,19 @@ class SearchItemTask(Task):
         # Normalize
         for state in target_hist:
             target_hist[state] /= total_prob
-        return pomdp_py.Histogram(target_hist)
+
+        # Return OOBelief, or just histogram            
+        if "robot_state" in kwargs:
+            robot_state = kwargs["robot_state"]
+            return pomdp_py.OOBelief({self.target_id: pomdp_py.Histogram(target_hist),
+                                      self.robot_id: pomdp_py.Histogram({robot_state:1.0})})
+        else:
+            return pomdp_py.Histogram(target_hist)            
 
     def step(self, env, agent, planner):
+        """
+        The agent is assumed to be using an OOBelief
+        """
         action = planner.plan(agent)
         reward = env.state_transition(action, execute=True)
         observation = agent.observation_model.sample(env.state, action)
@@ -256,7 +266,22 @@ class SearchItemTask(Task):
         planner.update(agent, action, observation)
         return action, observation, reward
 
-
+    def get_env(self, global_env=None, **kwargs):
+        """
+        Returns a Home2DEnvironment for this task (with suitable initial state)
+        given a global task environment. If global task environment
+        is not provided, then there needs to be appropriate arguments in kwargs
+        """
+        if global_env is None:
+            init_state = kwargs.get("init_state", None) # dict from id to state
+            grid_map = kwargs.get("grid_map", None) # dict from id to state
+        else:
+            init_state = env.state
+            grid_map = env.grid_map
+        env = Home2DEnvironment(self.robot_id,
+                                grid_map, init_state,
+                                reward_model=self.reward_model)
+        return env
 
 # Unittest
 def unittest():

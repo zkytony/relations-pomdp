@@ -86,5 +86,5 @@ class In(InfoRelation):
         if isinstance(self.attr2, PoseAttr):
             d2 = GridDomain(grid_map.width, grid_map.length)
         elif isinstance(self.attr2, RoomAttr):
-            d2 = RoomDomain(grid_map.rooms)
+            d2 = RoomsDomain(grid_map.rooms)
         super().ground(d1, d2, is_in)

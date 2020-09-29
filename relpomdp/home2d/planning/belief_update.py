@@ -21,12 +21,12 @@ from relpomdp.oopomdp.infograph import *
 from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist
 import pomdp_py
 
-def belief_update(belief,
-                  b_attr,
-                  relgraph,
-                  observation,
-                  o_attr,
-                  grid_map):
+def relation_belief_update(belief,
+                           b_attr,
+                           relgraph,
+                           observation,
+                           o_attr,
+                           grid_map):
     
     # TODO: Implement the case for indirect connection
     edges = relgraph.edges_between(b_attr.id, o_attr.id)
@@ -60,7 +60,7 @@ def unittest():
     in2 = In(salt, kitchen)
     graph = RelationGraph({in1, in2, near1, near2})
     grid_map = all_maps["map_small_1"]()    
-    belief_update(None, salt, graph, objobs("Pepper", pose=(0,1)), pepper, grid_map)
+    relation_belief_update(None, salt, graph, objobs("Pepper", pose=(0,1)), pepper, grid_map)
 
 if __name__ == "__main__":
     unittest()    

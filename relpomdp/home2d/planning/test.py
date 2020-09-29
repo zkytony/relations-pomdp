@@ -1,6 +1,6 @@
 from relpomdp.home2d.domain.maps import all_maps
 from relpomdp.home2d.planning.relations import *
-from relpomdp.home2d.planning.belief_update import belief_update
+from relpomdp.home2d.planning.belief_update import relation_belief_update
 from relpomdp.home2d.planning.grounding import next_grounding_task
 from relpomdp.oopomdp.infograph import *
 from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
@@ -12,6 +12,7 @@ from relpomdp.home2d.tasks.common.sensor import *
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.tasks.search_item.search_item_task import *
 from relpomdp.home2d.tasks.search_item.visual import SearchItemViz
+from relpomdp.utils import perplexity
 import pomdp_py
 
 
@@ -83,40 +84,23 @@ def setup():
     robot_id = ids["Robot"]
     salt_id = ids["Salt"][0]
 
+    target_id = salt_id
+    target_class = init_state[target_id].objclass
+    
     sensor = Laser2DSensor(robot_id, grid_map,  # the sensor uses the grid map for wall blocking
                            fov=90, min_range=1, max_range=2,
                            angle_increment=0.5)    
-    task = SearchItemTask(robot_id, salt_id, sensor, grid_map=grid_map)
-    
+    task = SearchItemTask(robot_id, target_id, target_class, sensor, grid_map=grid_map)    
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state,
                             reward_model=task.reward_model)
 
-    target_id = salt_id
-    target_class = "Salt"
     env.state.object_states[salt_id]["is_found"] = False
     
     # Obtain prior
     prior_type = "uniform"
-    target_hist = {}
-    total_prob = 0
-    for x in range(grid_map.width):
-        for y in range(grid_map.length):
-            state = objstate(target_class, pose=(x,y), is_found=False)
-            if prior_type == "uniform":
-                target_hist[state] = 1.0
-            elif prior_type == "informed":
-                if (x,y) != env.state.object_states[target_id]["pose"]:
-                    target_hist[state] = 0.0
-                else:
-                    target_hist[state] = 1.0
-            total_prob += target_hist[state]
-    # Normalize
-    for state in target_hist:
-        target_hist[state] /= total_prob
-
-    init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist),
+    init_belief = pomdp_py.OOBelief({target_id: task.get_prior(grid_map, prior_type=prior_type),
                                      robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
     
     # Make agent
@@ -125,7 +109,7 @@ def setup():
                                               PickupEffect()))
 
     # Create planner and make a plan
-    planner = pomdp_py.POUCT(max_depth=10,
+    planner = pomdp_py.POUCT(max_depth=15,
                              discount_factor=0.95,
                              num_sims=100,
                              exploration_const=100,
@@ -139,9 +123,48 @@ def setup():
             objcolors[objid] = colors[s_o.objclass]    
     viz = SearchItemViz(env,
                         objcolors,
-                        res=30)
+                        res=30,
+                        img_path="../imgs")
     return env, agent, task, planner, viz, graph
 
+
+def item_search_belief_update(task, agent, observation,
+                              action, robot_state, used_cues=set()):
+    target_belief = agent.belief.object_beliefs[task.target_id]
+    for objid in observation.object_observations:
+        o_obj = observation.object_observations[objid]
+        if objid != task.robot_id and objid not in used_cues:
+            if o_obj.objclass == task.target_class:
+                # You just observed the target. MRF isn't useful here.
+                continue
+
+            b_attr = graph.nodes["%s-pose" % task.target_class]
+            if "pose" in o_obj.attributes:
+                o_attr = graph.nodes["%s-pose" % (o_obj.objclass)]
+
+            target_belief = relation_belief_update(target_belief,
+                                                   b_attr,
+                                                   graph,
+                                                   o_obj,
+                                                   o_attr,
+                                                   env.grid_map)
+
+    target_oo_belief = pomdp_py.Histogram({
+        oopomdp.OOState({task.target_id: target_state,
+                         task.robot_id: robot_state}) : target_belief[target_state]
+        for target_state in agent.belief.object_beliefs[task.target_id]})
+    new_belief = pomdp_py.update_histogram_belief(target_oo_belief,
+                                                  action, observation,
+                                                  agent.observation_model,
+                                                  agent.transition_model,
+                                                  static_transition=True)
+    # Take just the target state from this
+    new_belief = pomdp_py.Histogram({state.object_states[task.target_id]:
+                                     new_belief[state]
+                                     for state in new_belief})
+    agent.belief.set_object_belief(task.target_id, new_belief)
+    agent.belief.set_object_belief(task.robot_id, pomdp_py.Histogram({robot_state:1.0}))
+    
 
 def solve(env, agent, task, planner, viz, graph):
     viz.on_init()
@@ -149,51 +172,52 @@ def solve(env, agent, task, planner, viz, graph):
     viz.on_render()
 
     used_cues = set()
+
+    subtask = None
+    subtask_agent = None
+    subtask_env = None
+    subtask_planner = None    
     
     for step in range(100):
         print("---- Step %d ----" % step)
-        action = planner.plan(agent)
+        if subtask is None:
+            target_belief = agent.belief.object_beliefs[task.target_id]
+            b_attr = graph.nodes["%s-pose" % task.target_class]
+            subtask, plx_sub = next_grounding_task(target_belief,
+                                                   b_attr,
+                                                   graph,
+                                                   env.grid_map,
+                                                   task.robot_id)
+            plx_global = perplexity([target_belief[s] for s in target_belief])
+            if plx_global > plx_sub:
+                # Doing a subtask is worth it
+                subtask_prior = subtask.get_prior(env.grid_map, prior_type="uniform",
+                                                  robot_state=env.robot_state)
+                subtask_agent = subtask.to_agent(subtask_prior)
+                subtask_env = subtask.get_env(env)
+                subtask_planner = pomdp_py.POUCT(max_depth=15,
+                                                 discount_factor=0.95,
+                                                 num_sims=100,
+                                                 exploration_const=100,
+                                                 rollout_policy=subtask_agent.policy_model)
+            else:
+                subtask = None
+                subtask_agent = None
+                subtask_env = None
+                subtask_planner = None
+
+        if subtask_agent is not None:
+            print("SOLVING SUBTASK %s" % subtask)
+            action, _, _ = subtask.step(subtask_env, subtask_agent, subtask_planner)
+        else:
+            action = planner.plan(agent)
+        # Still, obtain reward and observation for global task
         reward = env.state_transition(action, execute=True)
         observation = agent.observation_model.sample(env.state, action)
 
         # Belief update
         robot_state = env.state.object_states[task.robot_id]
-
-        target_belief = agent.belief.object_beliefs[task.target_id]
-        target_class = env.state.object_states[task.target_id].objclass        
-        for objid in observation.object_observations:
-            o_obj = observation.object_observations[objid]
-            if objid != task.robot_id and objid not in used_cues:
-                if o_obj.objclass == target_class:
-                    # You just observed the target. MRF isn't useful here.
-                    continue
-
-                b_attr = graph.nodes["%s-pose" % target_class]
-                if "pose" in o_obj.attributes:
-                    o_attr = graph.nodes["%s-pose" % (o_obj.objclass)]
-                
-                target_belief = belief_update(target_belief,
-                                              b_attr,
-                                              graph,
-                                              o_obj,
-                                              o_attr,
-                                              env.grid_map)
-        
-        target_oo_belief = pomdp_py.Histogram({
-            oopomdp.OOState({task.target_id: target_state,
-                             task.robot_id: robot_state}) : target_belief[target_state]
-            for target_state in agent.belief.object_beliefs[task.target_id]})
-        new_belief = pomdp_py.update_histogram_belief(target_oo_belief,
-                                                      action, observation,
-                                                      agent.observation_model,
-                                                      agent.transition_model,
-                                                      static_transition=True)
-        # Take just the target state from this
-        new_belief = pomdp_py.Histogram({state.object_states[task.target_id]:
-                                         new_belief[state]
-                                         for state in new_belief})
-        agent.belief.set_object_belief(task.target_id, new_belief)
-        agent.belief.set_object_belief(task.robot_id, pomdp_py.Histogram({robot_state:1.0}))
+        item_search_belief_update(task, agent, observation, action, robot_state, used_cues)
         planner.update(agent, action, observation)
         
         print("     action: %s" % str(action.name))        
@@ -205,8 +229,13 @@ def solve(env, agent, task, planner, viz, graph):
         viz.on_loop()
         viz.on_render()
 
-        if env.state.object_states[task.target_id]["is_found"]:
+        if task.is_done(env):
             break
+        if subtask is not None and subtask.is_done(env, action):
+            subtask = None
+            subtask_agent = None
+            subtask_env = None            
+            subtask_planner = None            
     print("Done.")
 
 

@@ -10,12 +10,13 @@ def next_grounding_task(belief,
                         b_attr,  # attribute in the belief that wants to be grounded
                         rel_graph,
                         grid_map,
+                        robot_id,
                         current_tasks=set()):
     # Get neighbors
-    scores = {}  # Choose one with lowest score
+    perps = {}  # Choose one with lowest score
     for eid in rel_graph.edges_from(b_attr.id):
         edge = rel_graph.edges[eid]
-        other_attr = edge.other_node(b_attr.id)
+        other_attr = rel_graph.nodes[edge.other_node(b_attr.id)]
         if edge.potential is None:
             edge.ground_on_map(grid_map)  # ground this edge
             potential = edge.grounding_to_potential()        
@@ -36,13 +37,13 @@ def next_grounding_task(belief,
         #     difficulty = 100
         if isinstance(other_attr, RoomAttr):
         #     difficulty = 50
-            scores[eid] = plx
+            perps[eid] = plx
 
-    chosen_eid = min(scores, key=lambda eid:scores[eid])
+    chosen_eid = min(perps, key=lambda eid:perps[eid])
     edge = rel_graph.edges[chosen_eid]
-    other_attr = edge.other_node(b_attr.id)    
+    other_attr = rel_graph.nodes[edge.other_node(b_attr.id)]
     # if isinstance(other_attr, PoseAttr):
     #     task = SearchItemTask
     if isinstance(other_attr, RoomAttr):
-        task = SearchRoomTask(other_attr.clas)
-    return task
+        task = SearchRoomTask(robot_id, other_attr.clas, grid_map=grid_map)
+    return task, perps[chosen_eid]

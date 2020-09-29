@@ -19,26 +19,9 @@ def setup():
     # Make task
     task = SearchRoomTask(robot_id, room_type, grid_map=grid_map)
 
-    room = None
-    for room_name in grid_map.rooms:
-        if grid_map.rooms[room_name].room_type == room_type:
-            room = grid_map.rooms[room_name]
-            break
-    
     # Make environment
-    init_state = {robot_id: robot_state,
-                  room_type: objstate(room_type, pose=room.center_of_mass, reached=False)}
-    env = Home2DEnvironment(robot_id,
-                            grid_map, init_state,
-                            reward_model=task.reward_model)
-    env.transition_model.cond_effects.append(
-        (CanStop(), StopEffect(robot_id, room_type, grid_map))
-    )
-    cond_effects_o = [(CanObserve(),
-                       RoomObserveEffect(robot_id, room_type, epsilon=1e-12,
-                                         grid_map=grid_map,
-                                         for_env=True))]
-    env.observation_model = oopomdp.OOObservationModel(cond_effects_o)
+    env = task.get_env(robot_state=robot_state,
+                       grid_map=grid_map)
 
     # Obtain prior
     prior_type = "uniform"

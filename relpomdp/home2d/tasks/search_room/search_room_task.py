@@ -249,9 +249,54 @@ class SearchRoomTask(Task):
         # Normalize
         for state in room_hist:
             room_hist[state] /= total_prob
-        return pomdp_py.Histogram(room_hist)
+
+        # Return OOBelief, or just histogram
+        if "robot_state" in kwargs:
+            robot_state = kwargs["robot_state"]
+            return pomdp_py.OOBelief({self.room_type: pomdp_py.Histogram(room_hist),
+                                      self.robot_id: pomdp_py.Histogram({robot_state:1.0})})
+        else:
+            return pomdp_py.Histogram(room_hist)
+
+    def get_env(self, global_env=None, **kwargs):
+        """
+        Returns a Home2DEnvironment for this task (with suitable initial state)
+        given a global task environment. If global task environment
+        is not provided, then there needs to be appropriate arguments in kwargs
+        """
+        if global_env is None:
+            robot_state = kwargs.get("robot_state", None)
+            grid_map = kwargs.get("grid_map", None)
+        else:
+            robot_state = global_env.robot_state
+            grid_map = global_env.grid_map
+
+        room = None
+        for room_name in grid_map.rooms:
+            if grid_map.rooms[room_name].room_type == self.room_type:
+                room = grid_map.rooms[room_name]
+                break
+        init_state = {self.robot_id: robot_state,
+                      self.room_type: objstate(self.room_type,
+                                          pose=room.center_of_mass, reached=False)}
+        env = Home2DEnvironment(self.robot_id,
+                                grid_map, init_state,
+                                reward_model=self.reward_model)
+        env.transition_model.cond_effects.append(
+            (CanStop(), StopEffect(self.robot_id, self.room_type, grid_map))
+        )
+        cond_effects_o = [(CanObserve(),
+                           RoomObserveEffect(self.robot_id, self.room_type, epsilon=1e-12,
+                                             grid_map=grid_map,
+                                             for_env=True))]
+        env.observation_model = oopomdp.OOObservationModel(cond_effects_o)
+        return env
+        
         
     def step(self, env, agent, planner):
+        """
+        The agent is assumed to be using an OOBelief
+        """        
         action = planner.plan(agent)
         for a in agent.tree.children:
             print(a, agent.tree.children[a].value)

@@ -30,8 +30,8 @@ def setup():
     init_state = {robot_id: robot_state,
                   salt_id: salt_state,
                   pepper_id: pepper_state}
-    env = Home2DEnvironment(robot_id,
-                            grid_map, init_state, reward_model=task.reward_model)
+    env = task.get_env(init_state=init_state,
+                       grid_map=grid_map)
 
     target_id = salt_id
     target_class = task.target_class
