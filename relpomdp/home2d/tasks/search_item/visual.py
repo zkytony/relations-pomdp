@@ -16,12 +16,15 @@ class SearchItemViz(Home2DViz):
     def render_env(self, display_surf):
         # Draw belief
         r = self._res  # Not radius!
-        img = super().render_env(display_surf)
+        draw_funcs = []
+        draw_funcs_args = {}
         if self._last_belief is not None:
-            SearchItemViz.draw_belief(img, self._last_belief, r, r//3, self._colors)
-        # Draw robot (again)
-        rx, ry, rth = self._env.robot_state["pose"]
-        Home2DViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)            
+            args = ([self._last_belief, r//3, self._colors], {})
+            draw_funcs = [SearchItemViz.draw_belief]
+            draw_funcs_args = [args]
+
+        img = super().render_env(display_surf, draw_funcs=draw_funcs,
+                                 draw_funcs_args=draw_funcs_args)
         return img
 
     def update(self, belief):
@@ -32,7 +35,7 @@ class SearchItemViz(Home2DViz):
         self._last_belief = belief
 
     @staticmethod
-    def draw_belief(img, belief, r, size, colors):
+    def draw_belief(img, r, belief, size, colors):
         """belief (OOBelief)"""
         radius = int(round(r / 2))
 
@@ -74,3 +77,4 @@ class SearchItemViz(Home2DViz):
                     count +=1
                     if last_val <= 0:
                         break
+        return img

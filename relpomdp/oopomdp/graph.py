@@ -17,7 +17,7 @@ class Node:
         self.data = data
 
     def __repr__(self):
-        return "%s(%d)" % (type(self).__name__, self.id)
+        return "%s(%s)" % (type(self).__name__, str(self.id))
 
     def __hash__(self):
         return hash(self.id)
@@ -37,6 +37,14 @@ class Edge:
 
         self.data = data
 
+    def other_node(self, nid):
+        if nid == self.nodes[0].id:
+            return self.nodes[1].id
+        elif nid == self.nodes[1].id:
+            return self.nodes[0].id
+        else:
+            raise ValueError("nid %d does not exist in this edge.")
+        
     @property
     def degenerate(self):
         return len(self.nodes) == 1
@@ -47,9 +55,9 @@ class Edge:
         else:
             data = self.data
         if not self.degenerate:
-            return "#%d[<%d>%s<%d>]" % (self.id, self.nodes[0].id, str(data), self.nodes[1].id)
+            return "#%s[<%s>%s<%s>]" % (str(self.id), str(self.nodes[0].id), str(data), str(self.nodes[1].id))
         else:
-            return "#%d[<%d>]" % (self.id, self.nodes[0].id)
+            return "#%s[<%s>]" % (str(self.id), str(self.nodes[0].id))
 
     @property
     def color(self):
@@ -274,3 +282,52 @@ class Graph(EdgeNodeSet):
             if eid not in other.edges:
                 edges[eid] = copy.deepcopy(self.edges[eid])
         return self.__class__(edges)
+
+    def dijkstra(self, nid1, nid2, edge_weight=None):
+        """
+        Returns the path from node1 to node2 using dijkstra's algorithm.
+        The `edge_weight(edge)` function returns a float used as
+        the edge cost. If None, then all edges have equal weight
+        """
+        components = self.connected_components()
+        graph = None
+        for comp in components:
+            if nid1 in comp.nodes and nid2 in comp.nodes:
+                graph = comp
+        if graph is None:
+            print("Warning: Nodes %d and %d are not on the same connected component"\
+                  % (nid1, nid2))
+            return []
+        if nid1 == nid2:
+            return []
+        
+        V = set(graph.nodes.keys())
+        S = set()
+        d = {v:float("inf")
+             for v in V
+             if v != nid1}
+        d[nid1] = 0
+        prev = {nid1: None}
+        while len(S) < len(V):
+            diff_set = V - S
+            v = min(diff_set, key=lambda v: d[v])
+            S.add(v)
+            neighbors = graph.edges_from(v)
+            for eid in neighbors:
+                if edge_weight is None:
+                    cost = 1
+                else:
+                    cost = edge_weight(graph.edges[eid])
+                w = graph.edges[eid].other_node(v)
+                if d[v] + cost < d[w]:
+                    d[w] = d[v] + cost
+                    prev[w] = (v, eid)
+        # Return a path
+        path = []
+        pair = prev[nid2]
+        while pair is not None:
+            path.append(pair)
+            pair = prev[pair[0]]
+        return list(reversed(path))
+            
+        

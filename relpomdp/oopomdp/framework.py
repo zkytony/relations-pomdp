@@ -4,6 +4,7 @@ from pomdp_py.framework.basics import POMDP, State, Action, Observation,\
     ObservationModel, TransitionModel, GenerativeDistribution, Environment, Agent
 import copy
 from relpomdp.oopomdp.graph import *
+from relpomdp.oopomdp.infograph import RelationGraph
 
 ########### State ###########
 # class Attribute:

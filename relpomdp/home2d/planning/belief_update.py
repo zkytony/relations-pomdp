@@ -12,13 +12,14 @@
 #    to produce the new probability distribution
 #
 # Relevant paper: https://www.ijcai.org/Proceedings/2018/0692.pdf
-from relpomdp.pgm.mrf import SemanticMRF
+from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
 from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation
 from relpomdp.home2d.planning.relations import *
 from relpomdp.oopomdp.infograph import *
 from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist
+import pomdp_py
 
 def belief_update(belief,
                   b_attr,
@@ -28,18 +29,26 @@ def belief_update(belief,
                   grid_map):
     
     # TODO: Implement the case for indirect connection
-    import pdb; pdb.set_trace()
     edges = relgraph.edges_between(b_attr.id, o_attr.id)
     if edges is None or len(edges) > 1:
         raise ValueError("This case is not implemented yet.")
 
     edge = relgraph.edges[list(edges)[0]]  # TODO: change
-    edge.ground_on_map(grid_map)  # ground this edge
-
-    potential = edge.grounding_to_potential()
+    if edge.potential is None:
+        edge.ground_on_map(grid_map)  # ground this edge
+        potential = edge.grounding_to_potential()
     # Build MRF potential
+    print("Building MRF")
+    mrf = factors_to_mrf([edge.potential])
+    print("Inference")
+    phi = mrf.query([b_attr.id], evidence={o_attr.id:observation[o_attr.name]})
 
-
+    new_belief = {}
+    for s in belief:
+        new_belief[s] = phi.get_value({b_attr.id:s[b_attr.name]}) * belief[s]
+    return pomdp_py.Histogram(new_belief)
+    
+#### Unit test
 def unittest():
     from relpomdp.home2d.domain.maps import all_maps    
     pepper = PoseAttr("Pepper")

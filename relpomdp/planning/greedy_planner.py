@@ -77,3 +77,58 @@ class RandomPlanner(ManualPlanner):
             valid_motions = motion_policy.valid_motions(agent_state.pose)
             return random.sample(valid_motions, 1)[0]
         
+
+
+    def path_between(self, position1, position2, return_actions=True):
+        """Note that for the return_actions=True case to return reasonable
+        actions, the motion actions scheme needs to be `xy`, i.e. along the axes"""
+        # Finds a path between position1 and position2.
+        # Uses the Dijkstra's algorithm.
+        V = set({(x,y)    # all valid positions
+                 for x in range(self._grid_map.width) 
+                 for y in range(self._grid_map.length)
+                 if self._grid_map.within_bounds((x,y))})
+        position1 = position1[:2]  # If it is robot pose then it has length 3.
+        S = set({})
+        d = {v:float("inf")
+             for v in V
+             if v != position1}
+        d[position1] = 0
+        prev = {position1: None}
+        while len(S) < len(V):
+            diff_set = V - S
+            v = min(diff_set, key=lambda v: d[v])
+            S.add(v)
+            neighbors = self.get_neighbors(v)
+            for w in neighbors:
+                motion_action = neighbors[w]
+                cost_vw = motion_action.distance_cost
+                if d[v] + cost_vw < d[w[:2]]:
+                    d[w[:2]] = d[v] + cost_vw
+                    prev[w[:2]] = (v, motion_action)
+
+        # Return a path
+        path = []
+        pair = prev[position2[:2]]
+        if pair is None:
+            if not return_actions:
+                path.append(position2)
+        else:
+            while pair is not None:
+                position, action = pair
+                if return_actions:
+                    # Return a sequence of actions that moves the robot from position1 to position2.
+                    path.append(action)
+                else:
+                    # Returns the grid cells along the path
+                    path.append(position)
+                pair = prev[position]
+        return list(reversed(path))
+
+    def get_neighbors(self, robot_pose):
+        neighbors = {MoveEffect.move_by(robot_pose, action.motion):action
+                     for action in self.valid_motions(robot_pose)}
+        return neighbors
+        
+        
+        

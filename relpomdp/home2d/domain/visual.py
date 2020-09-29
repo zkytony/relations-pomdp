@@ -194,11 +194,16 @@ class Home2DViz:
             self.on_render()
         self.on_cleanup()
 
-    def render_env(self, display_surf):
+    def render_env(self, display_surf, draw_funcs=[], draw_funcs_args=[]):
         """Child classes can call this function to render
         the environment and build on top of it"""
         img = np.copy(self._img)
         r = self._res  # Not radius!
+
+        for i, func in enumerate(draw_funcs):
+            func = draw_funcs[i]
+            args, kwargs = draw_funcs_args[i]
+            img = func(img, r, *args, **kwargs)
         
         # Draw objects
         for objid in self._env.state.object_states:

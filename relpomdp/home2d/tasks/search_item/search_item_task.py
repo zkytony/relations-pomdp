@@ -87,9 +87,11 @@ class RewardModel(pomdp_py.RewardModel):
     """
     Reward model for search item task
     """
-    def __init__(self, robot_id, target_id):
+    def __init__(self, robot_id, target_id, grid_map=None, within_room=False):
         self.robot_id = robot_id
         self.target_id = target_id
+        self.grid_map = grid_map
+        self.within_room = within_room
     
     def sample(self, state, action, next_state, **kwargs):
         return self.argmax(state, action, next_state)
@@ -99,6 +101,12 @@ class RewardModel(pomdp_py.RewardModel):
         argmax(self, state, action, next_state, **kwargs)
         Returns the most likely reward"""
         # Reward is 100 if picked up a target, -100 if wrong. -1 otherwise
+        if self.within_room:
+            cur_room = self.grid_map.room_of(state.object_states[self.robot_id]["pose"][:2])
+            next_room = self.grid_map.room_of(next_state.object_states[self.robot_id]["pose"][:2])
+            if next_room != cur_room:
+                return -100.0
+                    
         if isinstance(action, Pickup):
             found = state.object_states[self.target_id]["is_found"]
             next_found = next_state.object_states[self.target_id]["is_found"]
@@ -123,7 +131,8 @@ class SearchItemTask(Task):
                  robot_id,
                  target_id,
                  sensor,
-                 grid_map=None):  # If None, then the agent does not know the map at all
+                 grid_map=None,  # If None, then the agent does not know the map at all
+                 within_room=False):  # If True, searches only within the current room
         self.robot_id = robot_id
         self.target_id = target_id
         motions = {MoveN, MoveS, MoveE, MoveW}
@@ -142,7 +151,7 @@ class SearchItemTask(Task):
         policy_model = PolicyModel(robot_id, motions=motions,
                                    other_actions={Pickup()},
                                    grid_map=grid_map)
-        reward_model = RewardModel(robot_id, target_id)
+        reward_model = RewardModel(robot_id, target_id, grid_map=grid_map, within_room=within_room)
         super().__init__(transition_model,
                          observation_model,
                          reward_model,

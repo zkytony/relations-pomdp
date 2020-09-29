@@ -82,16 +82,19 @@ class SemanticMRF:
 
 def relations_to_mrf(relations):
     """Here, relations is a list of Relation objects"""    
-    factors = []
+    factors = [relation.to_factor()  # MRF factor
+               for relation in relations]
+    return factors_to_mrf(factors)
+
+def factors_to_mrf(factors):
+    """Here, relations is a list of Relation objects"""    
     variables = []
     edges = []
     value_to_names = {}  # {variable -> {value_index -> value_name}}
-    for relation in relations:
-        factor = relation.to_factor()  # MRF factor
+    for factor in factors:
         value_to_names.update(factor.no_to_name)
         variables.extend(factor.variables)
         edges.append([factor.variables[0], factor.variables[1]])
-        factors.append(factor)
     G = MarkovModel()
     G.add_nodes_from(variables)
     G.add_edges_from(edges)
