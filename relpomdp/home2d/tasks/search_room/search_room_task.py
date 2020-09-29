@@ -250,3 +250,34 @@ class SearchRoomTask(Task):
             room_hist[state] /= total_prob
         return pomdp_py.Histogram(room_hist)
         
+    def step(self, env, agent, planner):
+        action = planner.plan(agent)
+        for a in agent.tree.children:
+            print(a, agent.tree.children[a].value)
+        
+        reward = env.state_transition(action, execute=True)
+        observation = env.observation_model.sample(env.state, action)
+
+        # Belief update
+        robot_state = env.state.object_states[self.robot_id]
+        room_types = set(env.grid_map.rooms[r].room_type
+                         for r in env.grid_map.rooms)
+        # Create a next state space on top of new robot pose, and all room types.
+        cur_belief = pomdp_py.Histogram({
+            oopomdp.OOState({self.room_type: room_state,
+                             self.robot_id: robot_state}) : agent.belief.object_beliefs[self.room_type][room_state]
+            for room_state in agent.belief.object_beliefs[self.room_type]})        
+        new_belief = pomdp_py.update_histogram_belief(cur_belief,
+                                                      action, observation,
+                                                      agent.observation_model,
+                                                      agent.transition_model,
+                                                      static_transition=True)
+        # Take just the room state from this
+        new_belief = pomdp_py.Histogram({state.object_states[self.room_type]:
+                                         new_belief[state]
+                                         for state in new_belief})
+        agent.belief.set_object_belief(self.room_type, new_belief)        
+        agent.belief.set_object_belief(self.robot_id, pomdp_py.Histogram({robot_state:1.0}))
+        observation_planner = agent.observation_model.sample(env.state, action)
+        planner.update(agent, action, observation_planner)
+        return action, observation, reward

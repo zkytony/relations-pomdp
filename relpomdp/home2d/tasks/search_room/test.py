@@ -67,40 +67,7 @@ def solve(env, agent, task, planner, viz):
 
     for step in range(100):
         print("---- Step %d ----" % step)
-        action = planner.plan(agent)
-        for a in agent.tree.children:
-            print(a, agent.tree.children[a].value)
-        
-        reward = env.state_transition(action, execute=True)
-        observation = env.observation_model.sample(env.state, action)
-
-        # Belief update
-        robot_state = env.state.object_states[task.robot_id]
-        room_types = set(env.grid_map.rooms[r].room_type
-                         for r in env.grid_map.rooms)
-        # Create a next state space on top of new robot pose, and all room types.
-        cur_belief = pomdp_py.Histogram({
-            oopomdp.OOState({task.room_type: room_state,
-                             task.robot_id: robot_state}) : agent.belief.object_beliefs[task.room_type][room_state]
-            for room_state in agent.belief.object_beliefs[task.room_type]})        
-        new_belief = pomdp_py.update_histogram_belief(cur_belief,
-                                                      action, observation,
-                                                      agent.observation_model,
-                                                      agent.transition_model,
-                                                      static_transition=True)
-        # Take just the room state from this
-        new_belief = pomdp_py.Histogram({state.object_states[task.room_type]:
-                                         new_belief[state]
-                                         for state in new_belief})
-        agent.belief.set_object_belief(task.room_type, new_belief)        
-        agent.belief.set_object_belief(task.robot_id, pomdp_py.Histogram({robot_state:1.0}))
-        observation_planner = agent.observation_model.sample(env.state, action)
-        planner.update(agent, action, observation_planner)
-        
-        print("     action: %s" % str(action.name))        
-        print("     reward: %s" % str(reward))
-        print("observation: %s" % str(observation))
-        print("robot state: %s" % str(robot_state))
+        action, observation, reward = task.step(env, agent, planner)
 
         time.sleep(1)
         
