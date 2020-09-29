@@ -3,7 +3,8 @@ from relpomdp.home2d.utils import euclidean_dist
 
 
 class GridDomain(Domain):
-    def __init__(self, width, length):
+    def __init__(self, attr, width, length):
+        self.attr = attr        
         self._locs = {(x,y)
                       for x in range(width)
                       for y in range(length)}
@@ -19,8 +20,9 @@ class GridDomain(Domain):
         return self._locs
 
 class RoomsDomain(Domain):
-    def __init__(self, rooms):
+    def __init__(self, attr, rooms):
         self._rooms = rooms
+        self.attr = attr
 
     def __contains__(self, value):
         if type(value) != str:
@@ -51,12 +53,13 @@ class Near(InfoRelation):
             near = same_room\
                 and euclidean_dist(pose1, pose2) <= 2
             if self.negate:
-                return not near
+                return (1. - 1e-9) if not is_near else 1e-9
             else:
-                return near
+                return (1. - 1e-9) if is_near else 1e-9
             
-        gd = GridDomain(grid_map.width, grid_map.length)
-        super().ground(gd, gd, is_near)
+        d1 = GridDomain(self.attr1, grid_map.width, grid_map.length)
+        d2 = GridDomain(self.attr2, grid_map.width, grid_map.length)        
+        super().ground(d1, d2, is_near)
         
 
 class In(InfoRelation):
@@ -67,6 +70,10 @@ class In(InfoRelation):
                  
     def ground_on_map(self, grid_map):
         def is_in(pose1, pose2):
+            """
+            This is the probability func; it should map from x1,x2
+            to a probability value
+            """
             if type(pose1) == tuple:
                 pose1 = grid_map.room_of(pose1).name
             if type(pose2) == tuple:
@@ -74,17 +81,17 @@ class In(InfoRelation):
 
             is_in = pose1 == pose2
             if self.negate:
-                return not is_in
+                return (1. - 1e-9) if not is_in else 1e-9
             else:
-                return is_in           
+                return (1. - 1e-9) if is_in else 1e-9
 
         if isinstance(self.attr1, PoseAttr):
-            d1 = GridDomain(grid_map.width, grid_map.length)
+            d1 = GridDomain(self.attr1, grid_map.width, grid_map.length)
         elif isinstance(self.attr1, RoomAttr):
-            d1 = RoomDomain(grid_map.rooms)
+            d1 = RoomDomain(self.attr1, list(grid_map.rooms.keys()))
             
         if isinstance(self.attr2, PoseAttr):
-            d2 = GridDomain(grid_map.width, grid_map.length)
+            d2 = GridDomain(self.attr2, grid_map.width, grid_map.length)
         elif isinstance(self.attr2, RoomAttr):
-            d2 = RoomsDomain(grid_map.rooms)
+            d2 = RoomsDomain(self.attr2, list(grid_map.rooms.keys()))
         super().ground(d1, d2, is_in)

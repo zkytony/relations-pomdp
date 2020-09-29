@@ -21,6 +21,8 @@ from relpomdp.oopomdp.infograph import *
 from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist
 import pomdp_py
 
+# TODO:
+# - Right now only direct relation is considered
 def relation_belief_update(belief,
                            b_attr,
                            relgraph,
@@ -31,7 +33,8 @@ def relation_belief_update(belief,
     # TODO: Implement the case for indirect connection
     edges = relgraph.edges_between(b_attr.id, o_attr.id)
     if edges is None or len(edges) > 1:
-        raise ValueError("This case is not implemented yet.")
+        print("WARNING: This case is not implemented yet.")
+        return belief
 
     edge = relgraph.edges[list(edges)[0]]  # TODO: change
     if edge.potential is None:

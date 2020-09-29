@@ -60,21 +60,25 @@ def office_floor1(init_robot_pose=(9,0,0)):
     colors = {"Salt": (128, 128, 128),
               "Pepper": (200, 10, 10)}
 
+    # Attributes
     pepper = PoseAttr("Pepper")
     salt = PoseAttr("Salt")
     computer = PoseAttr("Computer")
     kitchen = RoomAttr("Kitchen")
     office = RoomAttr("Office")
-    
+
+    # Relations
     near_ps = Near(pepper, salt)
     near_sp = Near(salt, pepper)
     not_near_sc = Near(salt, computer, negate=True)
     not_near_cs = Near(computer, salt, negate=True)    
     in_sk = In(salt, kitchen)
     in_pk = In(pepper, kitchen)
+    in_co = In(computer, office)
+    not_in_ck = In(computer, kitchen, negate=True)    
     not_in_so = In(salt, office, negate=True)
     graph = RelationGraph({near_ps, near_sp, not_near_sc, not_near_cs,
-                           in_sk, in_pk, not_in_so})    
+                           in_sk, in_pk, not_in_so, not_in_ck, in_co})    
 
     return ids, grid_map, init_state, colors, graph
 
@@ -207,9 +211,10 @@ def solve(env, agent, task, planner, viz, graph):
                 subtask_planner = None
 
         if subtask_agent is not None:
-            print("SOLVING SUBTASK %s" % subtask)
+            print("SOLVING _SUBTASK_ %s" % subtask)
             action, _, _ = subtask.step(subtask_env, subtask_agent, subtask_planner)
         else:
+            print("SOLVING G L O B A L task %s" % task)
             action = planner.plan(agent)
         # Still, obtain reward and observation for global task
         reward = env.state_transition(action, execute=True)
