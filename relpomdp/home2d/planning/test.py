@@ -133,25 +133,38 @@ def setup():
 
 
 def item_search_belief_update(task, agent, observation,
-                              action, robot_state, used_cues=set()):
+                              action, robot_state, used_cues=set(),
+                              evidence_from_subtasks=[]):
+    """
+    used_cues (set): Stores identifiers of the evidence that
+        have already been used for belief update, so they
+        shouldn't be used again. [IS THIS NECESSARY?]
+    evidence_from_subtasks (list): List of evidence obtained
+        when subtasks are finished (they are individual observations
+        which can be used to update the belief).
+    """
     target_belief = agent.belief.object_beliefs[task.target_id]
-    for objid in observation.object_observations:
-        o_obj = observation.object_observations[objid]
-        if objid != task.robot_id and objid not in used_cues:
-            if o_obj.objclass == task.target_class:
-                # You just observed the target. MRF isn't useful here.
-                continue
 
-            b_attr = graph.nodes["%s-pose" % task.target_class]
-            if "pose" in o_obj.attributes:
-                o_attr = graph.nodes["%s-pose" % (o_obj.objclass)]
+    all_observations = [observation.object_observations[objid]
+                        for objid in observation.object_observations
+                        if objid != task.robot_id] + evidence_from_subtasks
+    for o in all_observations:
+        if o.objclass == task.target_class:
+            # You just observed the target. MRF isn't useful here.
+            continue
 
-            target_belief = relation_belief_update(target_belief,
-                                                   b_attr,
-                                                   graph,
-                                                   o_obj,
-                                                   o_attr,
-                                                   env.grid_map)
+        b_attr = graph.nodes["%s-pose" % task.target_class]
+        if "pose" in o.attributes:
+            o_attr = graph.nodes["%s-pose" % (o.objclass)]
+        elif "room_id" in o.attributes:
+            o_attr = graph.nodes["%s-room_id" % (o.objclass)]
+
+        target_belief = relation_belief_update(target_belief,
+                                               b_attr,
+                                               graph,
+                                               o,
+                                               o_attr,
+                                               env.grid_map)
 
     target_oo_belief = pomdp_py.Histogram({
         oopomdp.OOState({task.target_id: target_state,
@@ -180,7 +193,9 @@ def solve(env, agent, task, planner, viz, graph):
     subtask = None
     subtask_agent = None
     subtask_env = None
-    subtask_planner = None    
+    subtask_planner = None
+
+    evidence_from_subtasks = []  # evidence accumulated after solving subgoals
     
     for step in range(100):
         print("---- Step %d ----" % step)
@@ -222,7 +237,9 @@ def solve(env, agent, task, planner, viz, graph):
 
         # Belief update
         robot_state = env.state.object_states[task.robot_id]
-        item_search_belief_update(task, agent, observation, action, robot_state, used_cues)
+        item_search_belief_update(task, agent, observation, action, robot_state,
+                                  used_cues,
+                                  evidence_from_subtasks=evidence_from_subtasks)
         planner.update(agent, action, observation)
         
         print("     action: %s" % str(action.name))        
@@ -237,10 +254,13 @@ def solve(env, agent, task, planner, viz, graph):
         if task.is_done(env):
             break
         if subtask is not None and subtask.is_done(env, action):
+            # TODO: Is this call of "get_result" generalizable?
+            evidence_from_subtasks.append(subtask.get_result(subtask_agent, env.grid_map))
             subtask = None
             subtask_agent = None
             subtask_env = None            
-            subtask_planner = None            
+            subtask_planner = None
+            
     print("Done.")
 
 

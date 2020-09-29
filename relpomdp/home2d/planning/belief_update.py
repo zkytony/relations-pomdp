@@ -23,6 +23,19 @@ import pomdp_py
 
 # TODO:
 # - Right now only direct relation is considered
+# - Need a mechnism for the situation where a subtask evidence
+#   no longer contributes to solving the global task --- This
+#   could be done by giving the evidence to the next_grounding_subtask
+#   function, and also specifying that obtaining the same evidence
+#   does not solve the task, when creating the subtask in next_grounding_subtask.
+#   This would then require modification to the SearchRoomTask class (for example).
+#   to account for the already observed evidence.
+# - Right now the evidence_from_subtask only allows one evidence per subtask.
+#   If say, we want to use the evidence of two office rooms, then we need to
+#   operate on the grounded relational graph where there are two office room nodes...
+#   This seems complicated. Maybe the old evidence have already contributed
+#   to the belief update, so we don't need to use them again, and we only need
+#   to track the most recent evidence for an attribute.
 def relation_belief_update(belief,
                            b_attr,
                            relgraph,

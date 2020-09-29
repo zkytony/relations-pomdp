@@ -12,6 +12,8 @@ import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
 from relpomdp.home2d.utils import objstate, objobs, ooobs
+from relpomdp.home2d.planning.relations import RoomAttr
+
 
 class Stop(Action):
     def __init__(self):
@@ -229,8 +231,12 @@ class SearchRoomTask(Task):
            env.grid_map.room_of(env.robot_state["pose"][:2]).room_type == self.room_type
 
     def get_result(self, agent, grid_map):
+        """Get result in the form of an object observation"""
+        # The observation is that the type of room appears in the room id,
+        # as believed by the agent.        
         room_state = agent.belief.object_beliefs[self.room_type].mpe()
-        return grid_map.room_of(room_state["pose"])
+        return objobs(self.room_type, 
+                      room_id=grid_map.room_of(room_state["pose"]).name)  # name === room_id
 
     def get_prior(self, grid_map, prior_type="uniform", **kwargs):
         room_hist = {}
