@@ -15,16 +15,18 @@ from relpomdp.home2d.tasks.search_item.visual import SearchItemViz
 from relpomdp.utils import perplexity
 import pomdp_py
 
+discount_factor = 0.95
 
-def office_floor1(init_robot_pose=(9,0,0)):
+
+def office_floor1(init_robot_pose=(9,9,0)):
     """
     Office floor with salt, pepper, and computers
     This describes the full environment configuration (i.e. all
     object locations and the robot's location).
     """
     grid_map = all_maps["map_small_1"]()    
-    init_salt_pose = (0,6)
-    init_pepper_pose = (1,5)
+    init_salt_pose = (8,6)
+    init_pepper_pose = (8,7)
     init_robot_pose = init_robot_pose
 
     salt_id = 10
@@ -114,7 +116,7 @@ def setup():
 
     # Create planner and make a plan
     planner = pomdp_py.POUCT(max_depth=15,
-                             discount_factor=0.95,
+                             discount_factor=discount_factor,
                              num_sims=100,
                              exploration_const=100,
                              rollout_policy=agent.policy_model)
@@ -149,6 +151,7 @@ def item_search_belief_update(task, agent, observation,
                         for objid in observation.object_observations
                         if objid != task.robot_id] + evidence_from_subtasks
     for o in all_observations:
+        import pdb; pdb.set_trace()
         if o.objclass == task.target_class:
             # You just observed the target. MRF isn't useful here.
             continue
@@ -166,6 +169,7 @@ def item_search_belief_update(task, agent, observation,
                                                o_attr,
                                                env.grid_map)
 
+    
     target_oo_belief = pomdp_py.Histogram({
         oopomdp.OOState({task.target_id: target_state,
                          task.robot_id: robot_state}) : target_belief[target_state]
@@ -196,7 +200,9 @@ def solve(env, agent, task, planner, viz, graph):
     subtask_planner = None
 
     evidence_from_subtasks = []  # evidence accumulated after solving subgoals
-    
+
+    discount = 1.0
+    disc_reward = 0
     for step in range(100):
         print("---- Step %d ----" % step)
         if subtask is None:
@@ -215,7 +221,7 @@ def solve(env, agent, task, planner, viz, graph):
                 subtask_agent = subtask.to_agent(subtask_prior)
                 subtask_env = subtask.get_env(env)
                 subtask_planner = pomdp_py.POUCT(max_depth=15,
-                                                 discount_factor=0.95,
+                                                 discount_factor=discount_factor,
                                                  num_sims=100,
                                                  exploration_const=100,
                                                  rollout_policy=subtask_agent.policy_model)
@@ -241,9 +247,12 @@ def solve(env, agent, task, planner, viz, graph):
                                   used_cues,
                                   evidence_from_subtasks=evidence_from_subtasks)
         planner.update(agent, action, observation)
-        
+
+        disc_reward += discount*reward
+        discount*=discount_factor
         print("     action: %s" % str(action.name))        
         print("     reward: %s" % str(reward))
+        print(" disc cum R: %s" % str(disc_reward))
         print("observation: %s" % str(observation))
         print("robot state: %s" % str(robot_state))
         
