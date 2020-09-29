@@ -19,7 +19,7 @@ class SearchRoomViz(Home2DViz):
         r = self._res  # Not radius!
         img = super().render_env(display_surf)
         if self._last_belief is not None:
-            SearchItemViz.draw_belief(img, self._last_belief, r, r//3, self._colors)
+            SearchItemViz.draw_belief(img, r, self._last_belief, r//3, self._colors)
         # Draw robot (again)
         rx, ry, rth = self._env.robot_state["pose"]
         Home2DViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)            
@@ -33,6 +33,6 @@ class SearchRoomViz(Home2DViz):
         self._last_belief = belief
 
     @staticmethod
-    def draw_belief(img, belief, r, size, colors):
+    def draw_belief(img, r, belief, size, colors):
         """belief (OOBelief)"""
-        SearchItemViz.draw_belief(img, belief, r, size, colors)
+        return SearchItemViz.draw_belief(img, r, belief, size, colors)

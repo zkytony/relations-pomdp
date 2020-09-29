@@ -56,10 +56,10 @@ class RewardModel(pomdp_py.RewardModel):
             room_state = state.object_states[self.room_type]
             next_room_state = next_state.object_states[self.room_type]
             if next_room_state["reached"]:
-                if not room_state["reached"]:
-                    return 100.0
-                else:
-                    return -1.0
+                # if not room_state["reached"]:
+                return 100.0
+                # else:
+                #     return -1.0
             else:
                 return -100.0
         return -1.0
@@ -159,7 +159,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
 
         room_state = state.object_states[self.room_type]
         if room_state["reached"] is False:
-            cur_dist = euclidean_dist(robot_state["pose"][:2], room_state["pose"])
+            # cur_dist = euclidean_dist(robot_state["pose"][:2], room_state["pose"])
             neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
                          for action in self.legal_motions[robot_state["pose"][:2]]}
             for next_robot_pose in neighbors:
@@ -168,8 +168,8 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
                 action = neighbors[next_robot_pose]
                 next_room = self.grid_map.room_of(next_robot_pose[:2])
                 object_room = self.grid_map.room_of(room_state["pose"])
-                if object_room == next_room\
-                   and euclidean_dist(next_robot_pose, room_state["pose"]) < cur_dist:
+                if object_room == next_room:
+                   # and euclidean_dist(next_robot_pose, room_state["pose"]) < cur_dist:
                     preferences.add((action,
                                      self.num_visits_init, self.val_init))
         return preferences
@@ -183,17 +183,14 @@ class SearchRoomTask(Task):
     def __init__(self,
                  robot_id,
                  room_type,
-                 grid_map=None):
+                 grid_map):
         self.robot_id = robot_id
         self.room_type = room_type
         motions = {MoveN, MoveS, MoveE, MoveW}
 
         cond_effects_t = []
-        if grid_map is None:
-            cond_effects_t.append((CanMove(robot_id, None), MoveEffect(robot_id)))
-        else:
-            legal_motions = grid_map.compute_legal_motions(motions)
-            cond_effects_t.append((CanMove(robot_id, legal_motions), MoveEffect(robot_id)))
+        legal_motions = grid_map.compute_legal_motions(motions)
+        cond_effects_t.append((CanMove(robot_id, legal_motions), MoveEffect(robot_id)))
         cond_effects_t.append((CanStop(), StopEffect(robot_id, room_type, grid_map)))
         transition_model = oopomdp.OOTransitionModel(cond_effects_t)
 
@@ -217,3 +214,39 @@ class SearchRoomTask(Task):
                          observation_model,
                          reward_model,
                          policy_model)
+
+    def __str__(self):
+        return "SearchRoomTask(%s)" % self.room_type
+
+    def __repr__(self):
+        return str(self)
+
+    def is_done(self, env, action):
+        """Check if the task is done given environment state
+        and the last action taken by agent. """
+        return action == Stop() and\
+           env.grid_map.room_of(env.robot_state["pose"][:2]).room_type == self.room_type
+
+    def get_result(self, agent, grid_map):
+        room_state = agent.belief.object_beliefs[self.room_type].mpe()
+        return grid_map.room_of(room_state["pose"])
+
+    def get_prior(self, grid_map, prior_type="uniform"):
+        room_hist = {}
+        total_prob = 0
+        for x in range(grid_map.width):
+            for y in range(grid_map.length):
+                state = objstate(self.room_type, pose=(x,y), reached=False)
+                if prior_type == "uniform":
+                    room_hist[state] = 1.0
+                elif prior_type == "informed":
+                    if grid_map.room_of((x,y)).room_type != self.room_type:
+                        room_hist[state] = 0.0
+                    else:
+                        room_hist[state] = 1.0
+                total_prob += room_hist[state]
+        # Normalize
+        for state in room_hist:
+            room_hist[state] /= total_prob
+        return pomdp_py.Histogram(room_hist)
+        

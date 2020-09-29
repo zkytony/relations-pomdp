@@ -42,24 +42,7 @@ def setup():
 
     # Obtain prior
     prior_type = "uniform"
-    room_hist = {}
-    total_prob = 0
-    for x in range(grid_map.width):
-        for y in range(grid_map.length):
-            state = objstate(room_type, pose=(x,y), reached=False)
-            if prior_type == "uniform":
-                room_hist[state] = 1.0
-            elif prior_type == "informed":
-                if grid_map.room_of((x,y)).room_type != room_type:
-                    room_hist[state] = 0.0
-                else:
-                    room_hist[state] = 1.0
-            total_prob += room_hist[state]
-    # Normalize
-    for state in room_hist:
-        room_hist[state] /= total_prob
-
-    init_belief = pomdp_py.OOBelief({room_type: pomdp_py.Histogram(room_hist),
+    init_belief = pomdp_py.OOBelief({room_type: task.get_prior(grid_map, prior_type=prior_type),
                                      robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
     agent = task.to_agent(init_belief)
 
@@ -67,7 +50,7 @@ def setup():
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
                              num_sims=500,
-                             exploration_const=10,
+                             exploration_const=200,
                              rollout_policy=agent.policy_model)
 
     viz = SearchRoomViz(env,
@@ -85,6 +68,9 @@ def solve(env, agent, task, planner, viz):
     for step in range(100):
         print("---- Step %d ----" % step)
         action = planner.plan(agent)
+        for a in agent.tree.children:
+            print(a, agent.tree.children[a].value)
+        
         reward = env.state_transition(action, execute=True)
         observation = env.observation_model.sample(env.state, action)
 
@@ -108,7 +94,8 @@ def solve(env, agent, task, planner, viz):
                                          for state in new_belief})
         agent.belief.set_object_belief(task.room_type, new_belief)        
         agent.belief.set_object_belief(task.robot_id, pomdp_py.Histogram({robot_state:1.0}))
-        planner.update(agent, action, observation)
+        observation_planner = agent.observation_model.sample(env.state, action)
+        planner.update(agent, action, observation_planner)
         
         print("     action: %s" % str(action.name))        
         print("     reward: %s" % str(reward))
@@ -121,8 +108,7 @@ def solve(env, agent, task, planner, viz):
         viz.update(agent.belief)        
         viz.on_render()
 
-        if action == Stop() and\
-           env.grid_map.room_of(env.robot_state["pose"][:2]).room_type == task.room_type:
+        if task.is_done(env, action):
             break
     print("Done.")    
     
