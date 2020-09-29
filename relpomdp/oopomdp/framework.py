@@ -571,16 +571,6 @@ class Relation(Edge):
     def color(self):
         return "black"
 
-class InfoRelation(Relation):
-    def to_factor(self):
-        pass
-    def to_mrf(self, *args, **kwargs):
-        pass
-
-class RelationGraph(Graph):
-    def __init__(self, relations):
-        super().__init__(relations, directed=True)
-        
 ########### Object-Oriented Transition Model ###########        
 class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
