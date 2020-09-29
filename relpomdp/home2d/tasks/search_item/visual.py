@@ -8,7 +8,7 @@ import cv2
 class SearchItemViz(Home2DViz):
     def __init__(self, env, colors, img_path="imgs",
                  res=30, fps=30, controllable=False):
-        super().__init__(env, colors, img_path="imgs",
+        super().__init__(env, colors, img_path=img_path,
                          res=30, fps=30, controllable=False)
         self._key_action_map[pygame.K_SPACE] = Pickup
         self._last_belief = None

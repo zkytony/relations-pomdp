@@ -34,3 +34,22 @@ class Task:
                               transition_model=self.transition_model,
                               observation_model=self.observation_model,
                               reward_model=self.reward_model)
+
+    def is_done(self, env, action):
+        """Checks if the task is done given environment state
+        and the action taken by the agent."""
+        raise NotImplementedError
+
+    def step(self, env, agent, planner):
+        """Runs a forward step given environment agent and planner.
+        Agent plans an action, environment transitions, and returns
+        observation and reward. The agent belief and planner are
+        also updated after each step call.
+        """
+        raise NotImplementedError
+
+    def get_prior(self, *args, **kwargs):
+        """
+        Returns a prior distribution suitable for this task.
+        """
+        raise NotImplementedError

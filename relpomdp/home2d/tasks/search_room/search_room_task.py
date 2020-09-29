@@ -221,6 +221,7 @@ class SearchRoomTask(Task):
     def __repr__(self):
         return str(self)
 
+    # Functions used during planning
     def is_done(self, env, action):
         """Check if the task is done given environment state
         and the last action taken by agent. """
@@ -231,7 +232,7 @@ class SearchRoomTask(Task):
         room_state = agent.belief.object_beliefs[self.room_type].mpe()
         return grid_map.room_of(room_state["pose"])
 
-    def get_prior(self, grid_map, prior_type="uniform"):
+    def get_prior(self, grid_map, prior_type="uniform", **kwargs):
         room_hist = {}
         total_prob = 0
         for x in range(grid_map.width):

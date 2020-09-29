@@ -5,12 +5,13 @@
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.tasks.task import Task
-from relpomdp.home2d.tasks.common.policy_model import PolicyModel
+from relpomdp.home2d.tasks.common.policy_model import PolicyModel, PreferredPolicyModel
 from relpomdp.home2d.tasks.common.sensor import *
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
 from relpomdp.home2d.utils import objstate, objobs, ooobs
+import pomdp_py
 
 class Pickup(Action):
     """Pick up action"""
@@ -118,6 +119,44 @@ class RewardModel(pomdp_py.RewardModel):
             else:
                 return -100.0
         return -1.0
+
+
+class GreedyActionPrior(pomdp_py.ActionPrior):
+    """greedy action prior for 'xy' motion scheme;
+    Requires knowledge of grid map"""
+    def __init__(self, robot_id, target_id, grid_map,
+                 num_visits_init, val_init, motions={MoveE, MoveW, MoveN, MoveS}):
+        self.robot_id = robot_id
+        self.target_id = target_id
+        self.grid_map = grid_map
+        self.legal_motions = grid_map.compute_legal_motions(motions)
+        self.motions = motions
+        self.num_visits_init = num_visits_init
+        self.val_init = val_init
+
+    def get_preferred_actions(self, state, history):
+        """Get preferred actions. This can be used by a rollout policy as well."""
+        robot_state = state.object_states[self.robot_id]
+        cur_room = self.grid_map.room_of(robot_state["pose"][:2])
+        preferences = set()
+
+        target_state = state.object_states[self.target_id]
+        if target_state["is_found"] is False:
+            cur_dist = euclidean_dist(robot_state["pose"][:2], target_state["pose"])
+            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
+                         for action in self.legal_motions[robot_state["pose"][:2]]}
+            for next_robot_pose in neighbors:
+                # Prefer action to move into the room where
+                # the sampled target state is located
+                action = neighbors[next_robot_pose]
+                next_room = self.grid_map.room_of(next_robot_pose[:2])
+                object_room = self.grid_map.room_of(target_state["pose"])
+                if object_room == next_room\
+                   and euclidean_dist(next_robot_pose, target_state["pose"]) < cur_dist:
+                    preferences.add((action,
+                                     self.num_visits_init, self.val_init))
+        return preferences
+    
     
 
 class SearchItemTask(Task):
@@ -130,11 +169,13 @@ class SearchItemTask(Task):
     def __init__(self,
                  robot_id,
                  target_id,
+                 target_class,
                  sensor,
                  grid_map=None,  # If None, then the agent does not know the map at all
                  within_room=False):  # If True, searches only within the current room
         self.robot_id = robot_id
         self.target_id = target_id
+        self.target_class = target_class
         motions = {MoveN, MoveS, MoveE, MoveW}
 
         cond_effects_t = []
@@ -148,14 +189,73 @@ class SearchItemTask(Task):
 
         cond_effects_o = [(CanObserve(), ObjectObserveEffect(sensor, robot_id, epsilon=1e-12))]
         observation_model = oopomdp.OOObservationModel(cond_effects_o)
-        policy_model = PolicyModel(robot_id, motions=motions,
-                                   other_actions={Pickup()},
-                                   grid_map=grid_map)
+
+        if grid_map is not None:
+            # Greedy policy
+            action_prior = GreedyActionPrior(robot_id, target_id, grid_map, 10, 100)
+            policy_model = PreferredPolicyModel(action_prior,
+                                                other_actions={Pickup()})
+        else:
+            # Random rollout
+            policy_model = PolicyModel(robot_id, motions=motions,
+                                       other_actions={Pickup()},
+                                       grid_map=grid_map)
         reward_model = RewardModel(robot_id, target_id, grid_map=grid_map, within_room=within_room)
         super().__init__(transition_model,
                          observation_model,
                          reward_model,
                          policy_model)
+
+
+
+    def is_done(self, env, *args):
+        return env.state.object_states[self.target_id]["is_found"]
+
+    def get_prior(self, grid_map, prior_type="uniform", env=None):
+        target_hist = {}
+        total_prob = 0
+        for x in range(grid_map.width):
+            for y in range(grid_map.length):
+                state = objstate(self.target_class, pose=(x,y), is_found=False)
+                if prior_type == "uniform":
+                    target_hist[state] = 1.0
+                elif prior_type == "informed":
+                    if (x,y) != env.state.object_states[target_id]["pose"]:
+                        target_hist[state] = 0.0
+                    else:
+                        target_hist[state] = 1.0
+                total_prob += target_hist[state]
+        # Normalize
+        for state in target_hist:
+            target_hist[state] /= total_prob
+        return pomdp_py.Histogram(target_hist)
+
+    def step(self, env, agent, planner):
+        action = planner.plan(agent)
+        reward = env.state_transition(action, execute=True)
+        observation = agent.observation_model.sample(env.state, action)
+
+        # Belief update
+        robot_state = env.state.object_states[self.robot_id]
+    
+        cur_belief = pomdp_py.Histogram({
+            oopomdp.OOState({self.target_id: target_state,
+                             self.robot_id: robot_state}) : agent.belief.object_beliefs[self.target_id][target_state]
+            for target_state in agent.belief.object_beliefs[self.target_id]})
+        new_belief = pomdp_py.update_histogram_belief(cur_belief,
+                                                      action, observation,
+                                                      agent.observation_model,
+                                                      agent.transition_model,
+                                                      static_transition=True)
+        # Take just the target state from this
+        new_belief = pomdp_py.Histogram({state.object_states[self.target_id]:
+                                         new_belief[state]
+                                         for state in new_belief})
+        agent.belief.set_object_belief(self.target_id, new_belief)
+        agent.belief.set_object_belief(self.robot_id, pomdp_py.Histogram({robot_state:1.0}))
+        planner.update(agent, action, observation)
+        return action, observation, reward
+
 
 
 # Unittest
