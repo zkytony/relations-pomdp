@@ -5,7 +5,8 @@ import habitat_sim
 
 cv2 = None
 
-HABITAT_DATAPATH = "/home/kaiyuzh/repo/habitat-sim/data/data"
+# Needs an absolute path to the directory that contains 'scene_datasets' subdirectory
+HABITAT_DATAPATH = "/home/kaiyuzh/repo/habitat-sim/data/"
 
 # Helper function to render observations from the stereo agent
 def _render(sim, display, depth=False):

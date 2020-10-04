@@ -7,7 +7,7 @@ random.seed(105)
 
 import pandas as pd
 import numpy as np
-import relpomdp.util as util
+import relpomdp.utils as util
 
 
 def plot_object(ax, center, size, color, catg):
