@@ -7,12 +7,13 @@ from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
 from relpomdp.utils import perplexity
 from relpomdp.home2d.tasks.search_item.search_item_task import SearchItemTask
 from relpomdp.home2d.tasks.search_room.search_room_task import SearchRoomTask
-from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist
+from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist, save_images_and_compress
 from relpomdp.home2d.tasks.common.sensor import *
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.tasks.search_item.search_item_task import *
 from relpomdp.home2d.tasks.search_item.visual import SearchItemViz
 from relpomdp.utils import perplexity
+import subprocess
 import pomdp_py
 
 discount_factor = 0.95
@@ -187,9 +188,11 @@ def item_search_belief_update(task, agent, observation,
     
 
 def solve(env, agent, task, planner, viz, graph):
+    game_states = []
     viz.on_init()
     viz.update(agent.belief)    
-    viz.on_render()
+    img = viz.on_render()
+    game_states.append(img)
 
     used_cues = set()
 
@@ -257,7 +260,8 @@ def solve(env, agent, task, planner, viz, graph):
         
         viz.update(agent.belief)
         viz.on_loop()
-        viz.on_render()
+        img = viz.on_render()
+        game_states.append(img)
 
         if task.is_done(env):
             break
@@ -268,6 +272,12 @@ def solve(env, agent, task, planner, viz, graph):
             subtask_agent = None
             subtask_env = None            
             subtask_planner = None
+
+    print("Saving images...")
+    dirp = "./game_states"
+    save_images_and_compress(game_states,
+                             dirp)
+    subprocess.Popen(["nautilus", dirp])
             
     print("Done.")
 
