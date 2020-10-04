@@ -12,12 +12,12 @@ in the order of time:
   as `habitat-api`, and downloaded the habitat scenes dataset (which should
   come with the `habitat_sim` repository.
       
-      - `data_viz.py`: Visualize the objects (e.g. couch, wall, etc.) from a scene
+  - `data_viz.py`: Visualize the objects (e.g. couch, wall, etc.) from a scene
         by plotting their bounding boxes
         
-      - `stereo.py`: example of running a stereo camera in an example scene
+  - `stereo.py`: example of running a stereo camera in an example scene
       
-      - `interaction.py`: example of running a mobile robot and recording the frames
+  - `interaction.py`: example of running a mobile robot and recording the frames
       
   
   **Conclusion** Habitat is nice, but (1) it is difficult to construct a map out of a scene,
@@ -44,7 +44,7 @@ in the order of time:
 - Probablistic Graphical Models (`pgm`): Exploring the use of `pgmpy` in Python,
   specifically its implementation of MRF and exact belief propagation. 
   
-      - `pgm/mrf.py` contains a `SemanticMRF` class that is an interface to use the 
+  - `pgm/mrf.py` contains a `SemanticMRF` class that is an interface to use the 
         pgmpy library's MRF and BP functionalities. The most tricky bit is that
         pgmpy keeps track of discrete values only as integers, so user needs to
         maintain a mapping from the actual semantic value to the integer. 
@@ -60,18 +60,18 @@ in the order of time:
   basic relation such as touching a wall, etc. But there are more specific tasks, such
   as searching for an object, that can have its own unique action/observations.
   
-      - The state and observation are expressed by `ObjectState` and `ObjectObservation`
+  - The state and observation are expressed by `ObjectState` and `ObjectObservation`
         in the `oopomdp` framework.
-      - Only N/W/S/E move actions are defined in the overall `home2d/action.py`. 
-      - The robot is assumed to be given the map room layout
-      - A relational graph is given
-      - Three tasks are written under `home2d/tasks`: Search item, search room, and leave room.
-        Each individual task directory has a `test.py` script that you can run to test just one task.
-      - Then, `home2d/planning` implements the approach of using the relational
-        graph passively for belief update (`home2d/planning/belief_update.py`) and 
-        using it actively for subgoal generation (`home2d/planning/grounding.py`).
-        The `home2d/planning/test.py` script is an example of how this algorithm
-        works in the salt and pepper domain.
+  - Only N/W/S/E move actions are defined in the overall `home2d/action.py`. 
+  - The robot is assumed to be given the map room layout
+  - A relational graph is given
+  - Three tasks are written under `home2d/tasks`: Search item, search room, and leave room.
+    Each individual task directory has a `test.py` script that you can run to test just one task.
+  - Then, `home2d/planning` implements the approach of using the relational
+    graph passively for belief update (`home2d/planning/belief_update.py`) and 
+    using it actively for subgoal generation (`home2d/planning/grounding.py`).
+    The `home2d/planning/test.py` script is an example of how this algorithm
+    works in the salt and pepper domain.
         
   **Conclusion** The iterations over the salt and pepper domain yields (1) The
   relational graph, if used directly and actively for planning, should be just
