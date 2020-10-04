@@ -42,12 +42,18 @@ class SemanticMRF:
     def factors(self):
         return self.G.factors
 
+    @property
+    def variables(self):
+        return list(self.name_to_value.keys())
+
     def query(self, variables, evidence=None):
         """
         evidence is a mapping from variable to value_name. The value_name
             is the semantic one - e.g. for location, it's (x,y). Its
             integer index value in the MRF model will be used for
             actual inference.
+        Returns:
+            DiscreteFactor
         """
         for variable in variables:
             if not self.valid_var(variable):
@@ -76,16 +82,19 @@ class SemanticMRF:
 
 def relations_to_mrf(relations):
     """Here, relations is a list of Relation objects"""    
-    factors = []
+    factors = [relation.to_factor()  # MRF factor
+               for relation in relations]
+    return factors_to_mrf(factors)
+
+def factors_to_mrf(factors):
+    """Here, relations is a list of Relation objects"""    
     variables = []
     edges = []
     value_to_names = {}  # {variable -> {value_index -> value_name}}
-    for relation in relations:
-        factor = relation.to_factor()  # MRF factor
+    for factor in factors:
         value_to_names.update(factor.no_to_name)
         variables.extend(factor.variables)
         edges.append([factor.variables[0], factor.variables[1]])
-        factors.append(factor)
     G = MarkovModel()
     G.add_nodes_from(variables)
     G.add_edges_from(edges)

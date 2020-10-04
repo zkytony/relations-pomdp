@@ -4,8 +4,42 @@ from pomdp_py.framework.basics import POMDP, State, Action, Observation,\
     ObservationModel, TransitionModel, GenerativeDistribution, Environment, Agent
 import copy
 from relpomdp.oopomdp.graph import *
+from relpomdp.oopomdp.infograph import RelationGraph
 
 ########### State ###########
+# class Attribute:
+#     """
+#     We make a class of Attribute so that there would be abstraction
+#     over attributes.
+#     """
+#     def __init__(self, name, value):
+#         self.name = name
+#         self.value = value
+#         self._hashcode = hash((self.name, self.value))
+
+#     def __hash__(self):
+#         return self._hashcode
+
+#     def __eq__(self, other):
+#         if isinstance(other, Attribute):
+#             return self.name == other.name\
+#                 and self.value == other.value
+#         else:
+#             return False
+
+#     def copy(self):
+#         """copy(self)
+#         Copies the state."""
+#         raise NotImplementedError
+    
+#     def __repr__(self):
+#         return self.__str__()
+
+#     def __str__(self):
+#         return '%s::(%s)' % (str(self.__class__.__name__),
+#                              str(self.value))
+    
+
 class ObjectState(State):
     # Note: 08/22/2020 - it's a copy of the ObjectState from pomdp_py
     """
@@ -13,16 +47,21 @@ class ObjectState(State):
     in an OO-POMDP is made up of ObjectState(s), each with
     an `object class` (str) and a set of `attributes` (dict).
     """
-    def __init__(self, objclass, attributes):
+    def __init__(self, objclass, attributes, nested=False):
         """
         class: "class",
         attributes: {
-            "attr1": value,  # value should be hashable
+            "attr1": Attribute,
             ...
         }
+        nested (bool): True if any of the attributes is itself an object;
+            that means, copying this ObjectState requires deepcopy.
+            If False, then copying this object state means passing the
+            attributes to the constructor.
         """
         self.objclass = objclass
         self.attributes = attributes
+        self._nested = nested
         self._hashcode = hash(frozenset(self.attributes.items()))
 
     def __repr__(self):
@@ -56,7 +95,10 @@ class ObjectState(State):
     def copy(self):
         """copy(self)
         Copies the state."""
-        raise NotImplementedError
+        if self._nested:
+            return copy.deepcopy(self)
+        else:
+            return ObjectState(self.objclass, dict(self.attributes), nested=False)
 
 
 class OOState(State):
@@ -121,9 +163,9 @@ class OOState(State):
         return self.object_states[objid][attr]
 
     def copy(self):
-        """copy(self)
-        Copies the state."""
-        raise NotImplementedError
+        object_states = {objid : self.object_states[objid].copy()
+                         for objid in self.object_states}
+        return OOState(object_states)    
 
     def obj(self, objid):
         return self.get_object_state(objid)
@@ -136,15 +178,22 @@ class OOState(State):
     
     def __len__(self):
         return len(self.object_states)
+    
 
 ########### Observation ###########
 class NullObservation(Observation):
-    pass
+    def __eq__(self, other):
+        return isinstance(other, NullObservation)
+
+    def __hash__(self):
+        return hash(None)
+    
 
 class ObjectObservation(Observation):
-    def __init__(self, objclass, attributes):
+    def __init__(self, objclass, attributes, nested=False):
         self.objclass = objclass
         self.attributes = attributes
+        self._nested = nested
         self._hashcode = hash(frozenset(self.attributes.items()))
 
     def __repr__(self):
@@ -178,12 +227,17 @@ class ObjectObservation(Observation):
     def copy(self):
         """copy(self)
         Copies the state."""
-        raise NotImplementedError
+        if self._nested:
+            return copy.deepcopy(self)
+        else:
+            return ObjectObservation(self.objclass, dict(self.attributes), nested=False)        
+
 
 class OOObservation(Observation):
     def __init__(self, object_observations):
         """
-        objects_observations: dictionary of dictionaries; Each dictionary represents an object observation:
+        objects_observations: dictionary of dictionaries;
+        Each dictionary represents an object observation:
             { ID: ObjectObservation }
         """
         # internally, objects are sorted by ID.
@@ -237,10 +291,18 @@ class OOObservation(Observation):
     def copy(self):
         """copy(self)
         Copies the observation."""
-        raise NotImplementedError
+        object_observations = {objid : self.object_observations[objid].copy()
+                               for objid in self.object_observations}
+        return OOObservation(object_observations)            
 
     def obj(self, objid):
         return self.get_object_observation(objid)
+
+    def for_objs(self, objids):
+        object_observations = {objid : self.object_observations[objid].copy()
+                               for objid in objids\
+                               if objid in self.object_observations}
+        return OOObservation(object_observations)    
 
     def __getitem__(self, objid):
         return self.get_object_observation(objid)
@@ -287,8 +349,64 @@ class CombinedObservation(Observation):
 
 ######### Belief ###########
 class OOBelief(GenerativeDistribution):
-    # TODO
-    pass
+
+    """
+    Belief factored by objects.
+    """
+    def __init__(self, object_beliefs, oo_state_class=OOState):
+        """
+        object_beliefs (objid -> GenerativeDistribution)
+        """
+        self._object_beliefs = object_beliefs
+        self._oo_state_class = oo_state_class
+
+    def __getitem__(self, state):
+        """__getitem__(self, state)
+        Returns belief probability of given state"""
+        if not isinstance(state, OOState):
+            raise ValueError("state must be OOState")
+        belief_prob = 1.0
+        for objid in self._object_beliefs:
+            object_state = state.object_states[objid]
+            belief_prob = belief_prob * self._object_beliefs[objid].probability(object_state)
+        return belief_prob
+
+    def mpe(self, **kwargs):
+        """mpe(self, **kwargs)
+        Returns most likely state."""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].mpe(**kwargs)
+        return self._oo_state_class(object_states)
+    
+    def random(self, **kwargs):
+        """random(self, **kwargs)
+        Returns a random state"""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].random(**kwargs)
+        return self._oo_state_class(object_states)        
+    
+    def __setitem__(self, oostate, value):
+        """__setitem__(self, oostate, value)
+        Sets the probability of a given `oostate` to `value`.
+        Note always feasible."""
+        raise NotImplemented
+        
+    def object_belief(self, objid):
+        """object_belief(self, objid)
+        Returns the belief (GenerativeDistribution) for the given object."""
+        return self._object_beliefs[objid]
+
+    def set_object_belief(self, objid, belief):
+        """set_object_belief(self, objid, belief)
+        Sets the belief of object to be the given `belief` (GenerativeDistribution)"""
+        self._object_beliefs[objid] = belief
+
+    @property
+    def object_beliefs(self):
+        """object_beliefs(self)"""
+        return self._object_beliefs
 
 ########### Condition and Effect ###########
 class Condition:
@@ -454,50 +572,40 @@ class Relation(Edge):
     def color(self):
         return "black"
 
-class InfoRelation(Relation):
-    def to_factor(self):
-        pass
-    def to_mrf(self, *args, **kwargs):
-        pass
-
-class RelationGraph(Graph):
-    def __init__(self, relations):
-        super().__init__(relations, directed=True)
-        
 ########### Object-Oriented Transition Model ###########        
 class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
+        """
+        cond_effects (list): List of (Condition, Effect) pairs; The order matters.
+            The condition evaluated later uses the state after applying the previous
+            effect. Assumption: Later effects will NOT modify the same attribute as
+            any prior effect.
+        """
         self._cond_effects = cond_effects
 
     @property
     def cond_effects(self):
         return self._cond_effects
 
-    def _satisfied_effects(self, state, action):
-        effects = []
-        for condition, effect in self._cond_effects:
-            res = condition.satisfy(state, action)
-            if type(res) == tuple:
-                satisfied, byproduct = res
-            else:
-                satisfied = res
-                byproduct = None
-            if satisfied:
-                effects.append((effect, byproduct))
-        return effects
-
     def sample(self, state, action, argmax=False):
         """sample(self, state, action, **kwargs)
         Samples the next state by applying effects with satisfying cond_effects
         """
-        effects = self._satisfied_effects(state, action)
-        next_state = state.copy()
-        for effect, byproduct in effects:
-            if argmax:
-                next_state = effect.mpe(next_state, action, byproduct)
+        interm_state = state.copy()
+        for condition, effect in self._cond_effects:
+            res = condition.satisfy(interm_state, action)
+            if type(res) == tuple:
+                satisfied, byproduct = res
             else:
-                next_state = effect.random(next_state, action, byproduct)
-        return next_state
+                satisfied, byproduct = res, None
+                
+            if satisfied:
+                if argmax:
+                    interm_state = effect.mpe(interm_state, action, byproduct)
+                else:
+                    interm_state = effect.random(interm_state, action, byproduct)
+
+        return interm_state  # intermediate state becomes next state
         
     def probability(self, next_state, state, action, **kwargs):
         """
@@ -508,10 +616,17 @@ class OOTransitionModel(TransitionModel):
         This is still -- a solution -- not part of the problem definition (as M.Littman would say?)
         TODO: What if effects are not independent?
         """
-        effects = self._satisfied_effects(state, action)        
         prob = 1.0
-        for effect, byproduct in effects:
-            prob *= effect.probability(next_state, state, action, byproduct)
+        interm_state = state
+        for condition, effect in self._cond_effects:
+            res = condition.satisfy(next_state, action)
+            if type(res) == tuple:
+                satisfied, byproduct = res
+            else:
+                satisfied, byproduct = res, None
+
+            if satisfied:
+                prob *= effect.probability(next_state, state, action, byproduct)
         return prob
     
     def argmax(self, state, action):
@@ -555,7 +670,7 @@ class OOObservationModel(ObservationModel):
         if len(observations) == 0:
             return NullObservation()
         elif len(observations) == 1:
-            return observations[0]
+            return observation
         else:
             return CombinedObservation(observations)
         
