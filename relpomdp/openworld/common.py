@@ -1,6 +1,7 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 import random
 
+### Attribute
 class Attr(ABC):
     """
     Attribute; Can be constructed with
@@ -19,10 +20,18 @@ class Attr(ABC):
         return False
     
 class Vec2d(Attr):
-    """A 2D array"""
+    """A 2-element array"""
     def __init__(self, val):
         assert len(val) == 2, "`val` needs to be of length 2!"
         self._val = val
+    def __iter__(self):
+        return iter(self.value)
+    def __repr__(self):
+        return str(self)
+    def __str__(self):
+        return "Vec2d({},{})".format(*self.value)
+    def __len__(self):
+        return 2
 
 class Real(Attr):
     """A float number"""
@@ -44,40 +53,42 @@ class Bool(Attr):
             assert type(val) == bool
         self._val = val
 
-
+### Domain
 class Domain(ABC):
     @abstractmethod
-    def check(self, val, verbose=True):
+    def check(self, val):
         """Returns true if value `val` is in Domain.
         Will not raise exception if val is of invalid
         format - will return False in this case.
-        If verbose, print a message to explain why."""
+        If verbose, print a message to explain why.
+        Note that val is assumed to NOT be a Attr object,
+        but a value (like a float)."""
         pass
     @abstractmethod
-    def sample(self):
-        """Returns a value sampled from this domain;
-        The underlying distribution could be anything you want."""
+    def sample(self, attr_class):
+        """Returns a value sampled from this domain; The underlying distribution could
+        be anything you want.  Note that this function is computing the value of
+        an attribute `attr_class`.
+        """
         pass
     # Implement below if the domain is enumerable
-    @abstractmethod
     def __iter__(self):
         pass
-    @abstractmethod
     def __next__(self):
         pass    
 
     
 class Ranges(Domain):
-    """
-    A convenient type of Domain where the acceptable
-    values can be a single value, or array of any
-    dimension. Creating a Ranges domain requires
-    specifying a scope, which is either a 2-tuple
-    or a set for every entry in the value; When
-    the scope is a 2-tuple, it is assumed to be
-    the min/max values of a continuous range. For
-    integer range like 1 to 100, just pass in the set
-    of 100 numbers (TODO: improve this?)
+    """A convenient type of Domain where the acceptable values can be a single
+    value, or array of any dimension. Creating a Ranges domain requires
+    specifying a scope, which is either a 2-tuple or a set for every entry in
+    the value; When the scope is a 2-tuple, it is assumed to be the min/max
+    values of a continuous range. For integer range like 1 to 100, just pass in
+    the set of 100 numbers (TODO: improve this?)
+
+    Note that if the value is an array, each element has a range and is
+    independent from other elements (i.e. sampling from this domain will be
+    uniform and independent for each element)
     """
     def __init__(self, *ranges):
         # Check if the ranges is valid
@@ -91,59 +102,56 @@ class Ranges(Domain):
     def _check_in_range(self, rang, v):
         if type(rang) == tuple:
             if not (rang[0] <= v <= rang[1]):
-                return False, "Value {} not in range {}".format(v, rang)
+                return False
         else:
             if v not in rang:
-                return False, "Value {} not in range {}".format(v, rang)
-        return True, ""
+                return False
+        return True#, ""
 
-    def check(self, val, verbose=True):
+    def check(self, val):
         res = True
-        msg = ""
-        if hasattr(val, "len"):
+        # msg = ""
+        if type(val) == tuple:
             if len(val) != len(self._ranges):
-                msg = "Number of elements in"\
-                    "value {} != that declared in Ranges {}"\
-                    .format(len(val), len(self._ranges))
+                # Number of elements in vals != that declared in Ranges                
                 res = False
             else:
                 for i, v in enumerate(val):
                     rang = self._ranges[i]
-                    res, msg = self._check_in_range(rang, v)
+                    res = self._check_in_range(rang, v)
                     if not res:
                         break
         else:
             if len(self._ranges) != 1:
-                msg = "Number of elements in"\
-                    "value 1 != that declared in Ranges {}"\
-                    .format(len(self._ranges))
+                # Number of elements in vals != that declared in Ranges
                 res = False
             rang = self._ranges[0]
-            res, msg = self._check_in_range(rang, val)
-        if verbose and len(msg) > 0:
-            print("Warning: ", msg)
+            res = self._check_in_range(rang, val)
         return res
     
-    def sample(self, samplers=[], joint_sampler=None):
-        """Samples independently and uniformly from the ranges. For non-uniform
-        independent sampling, you can pass. in `samplers` which contains a list
-        of functions in the order of the `ranges` passed in to this Ranges
-        constructor, a function that maps a range to a value.
+    def sample(self, attr_class):
+        """Samples independently and uniformly from the ranges,
+        as defined above.
 
-        For non-uniform, non-independent sampling, you can pass in a 'joint_sampler',
-        which is a function that takes in 'ranges' of this object and returns a value.
-        (I do not expect this to be used much or at all.)
+        Note that this function is not returning the Attribute, but the
+        value. The user is expected to take this value and construct a
+        corresponding Attribute object, if necessary. 
         """
-        if joint_sampler is not None:
-            return joint_sampler.sample(self._ranges)
         elems = []
         for i, rang in enumerate(self._ranges):
-            if len(samplers) > i:
-                elems.append(samplers[i].sample(rang))
             if type(rang) == tuple:
-                return random.uniform(*rang)
+                elems.append(random.uniform(*rang))
             else:
-                return random.sample(rang, 1)[0]
-            
-            
-        
+                elems.append(random.sample(rang, 1)[0])
+        if len(elems) == 1:
+            return attr_class(elems[0])
+        else:
+            return attr_class(tuple(elems))
+
+    def __str__(self):
+        return "Ranges({})".format(self._ranges)
+
+    def __repr__(self):
+        return str(self)
+
+### JOKE
