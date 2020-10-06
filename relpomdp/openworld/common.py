@@ -19,6 +19,13 @@ class Attr(ABC):
             return self.value == other.value
         return False
     
+    def __str__(self):
+        return "{}({})".format(self.__class__.__name__, self.value)
+    
+    def __repr__(self):
+        return str(self)    
+    
+    
 class Vec2d(Attr):
     """A 2-element array"""
     def __init__(self, val):
@@ -26,10 +33,6 @@ class Vec2d(Attr):
         self._val = val
     def __iter__(self):
         return iter(self.value)
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        return "Vec2d({},{})".format(*self.value)
     def __len__(self):
         return 2
 

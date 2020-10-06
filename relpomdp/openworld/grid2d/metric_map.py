@@ -27,6 +27,14 @@ class MetricMap2d(Domain):
                             for y in range(length)
                             if (x,y) not in self._obstacle_poses}
 
+    @property
+    def obstacle_poses(self):
+        return self._obstacle_poses
+
+    @property
+    def free_poses(self):
+        return self._free_poses
+
     def check(self, val):
         """
         Args:

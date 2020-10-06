@@ -50,7 +50,7 @@ CLASSES = {
 # Define instances of objects
 OBJECTS = {
     1: ("Cupboard",
-        ("Location", (5, 9)),
+        ("Location", (0, 0)),
         ("Dimension", (4, 3)),
         ("Facing", 0.),
         ("DoorAngle", 45.)),
