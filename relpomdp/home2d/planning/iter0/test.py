@@ -1,7 +1,7 @@
 from relpomdp.home2d.domain.maps import all_maps
-from relpomdp.home2d.planning.relations import *
-from relpomdp.home2d.planning.belief_update import relation_belief_update
-from relpomdp.home2d.planning.grounding import next_grounding_task
+from relpomdp.home2d.planning.iter0.relations import *
+from relpomdp.home2d.planning.iter0.belief_update import relation_belief_update
+from relpomdp.home2d.planning.iter0.grounding import next_grounding_task
 from relpomdp.oopomdp.infograph import *
 from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
 from relpomdp.utils import perplexity
@@ -132,7 +132,7 @@ def setup():
     viz = SearchItemViz(env,
                         objcolors,
                         res=30,
-                        img_path="../imgs")
+                        img_path="../../domain/imgs")
     return env, agent, task, planner, viz, graph
 
 

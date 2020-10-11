@@ -16,7 +16,7 @@ from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
 from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation
-from relpomdp.home2d.planning.relations import *
+from relpomdp.home2d.planning.iter0.relations import *
 from relpomdp.oopomdp.infograph import *
 from relpomdp.home2d.utils import euclidean_dist
 from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs

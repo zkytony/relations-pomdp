@@ -12,7 +12,7 @@ import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
 from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
-from relpomdp.home2d.planning.relations import RoomAttr
+from relpomdp.home2d.planning.iter0.relations import RoomAttr
 
 
 class Stop(Action):
