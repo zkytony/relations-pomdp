@@ -27,3 +27,5 @@ def build_object_states(classes, objects):
             objattrs[attr] = attrval
         objstates[objid] = ObjectState(objclass, objattrs)
     return objstates
+
+
