@@ -41,7 +41,7 @@ class Room:
         return str(self)
     
     
-def init_map(width, length):
+def init_map(width, length, return_parts=False):
     """
     Create a map without any inner wall and only
     walls around the map. Note that for a horizontal
@@ -54,7 +54,10 @@ def init_map(width, length):
     bottom_walls = [(x,-1,"H") for x in range(width)]
     left_walls = [(-1,y,"V") for y in range(length)]
     right_walls = [(width-1,y,"V") for y in range(length)]
-    return set(top_walls + bottom_walls + left_walls + right_walls)
+    if return_parts:
+        return top_walls, left_walls, bottom_walls, right_walls
+    else:
+        return set(top_walls + bottom_walls + left_walls + right_walls)
 
 def make_room(name, x, y, width, length):
     """
@@ -137,11 +140,28 @@ def _overlapping(room_tup, rooms):
                 if (top_left[0] + dx, top_left[1] + dy) in rm.locations:
                     return True
     return False
-    
+
 
 def pcg_map(width, length, nrooms, categories, objects, seed=100,
-            min_room_size=2, max_room_size=6, max_trys=100):
-    """The (0,0) coordinates is at top left of the map."""
+            min_room_size=2, max_room_size=6, max_trys=100, ndoors=1):
+    """
+    Procedurally generates a map.
+
+    The (0,0) coordinates is at top left of the map.
+
+    Args:
+        width (int): width of the map
+        length (int): length of the map
+        nrooms (int): Number of rooms  (each room is a rectangle)
+        categories (list): Category of each room. Length must be at least `nrooms`.
+        objects (dict): Specifies what objects would appear within a room category
+        seed (int): Random seed
+        min_room_size (int): Minimum room width/length
+        max_room_size (int): Maximum room width/length
+        max_trys (int): Maximum number of attempts to insert valid rooms into free space.
+        ndoors (int): Number of walls to be removed (connected to the corridor) to
+            give space for a doorway.
+    """
     random.seed(seed)    
     walls = init_map(width, length)
     
@@ -187,6 +207,33 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
         if trys > max_trys:
             print("Unable to generate all rooms (likely not enough space)")
             break
+
+    # Iterate over walls; If a wall is not overlapping with any other wall,
+    # then we could remove it to make a doorway. We can add a certain number
+    # of doors per room.
+    # First, create a mapping from wall to rooms
+    name_to_rooms = {rm.name:rm for rm in rooms}
+    wall_to_rooms = {}
+    for rm in rooms:
+        for wall in rm.walls:
+            if wall not in wall_to_rooms:
+                wall_to_rooms[wall] = []
+            wall_to_rooms[wall].append(rm.name)
+
+    NDOORS = 2
+    room_doors = {}
+    for wall in wall_to_rooms:
+        rooms_sharing_wall = wall_to_rooms[wall]
+        if len(rooms_sharing_wall) == 1:
+            rm_name = rooms_sharing_wall[0]
+            if rm_name not in room_doors:
+                room_doors[rm_name] = set()
+            if len(room_doors[rm_name]) < NDOORS:
+                room_doors[rm_name].add(wall)
+    for rm_name in room_doors:
+        doorway_walls = room_doors[rm_name]
+        # Remove these walls from the room
+        name_to_rooms[rm_name].walls -= doorway_walls
             
     for room in rooms:
         walls |= set(room.walls)
@@ -201,7 +248,6 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
             if loc not in occupied:
                 occupied.add(loc)
             else:
-                import pdb; pdb.set_trace()
                 raise ValueError("There is clearly overlap.")
             
 
