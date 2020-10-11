@@ -4,12 +4,11 @@ from relpomdp.home2d.domain.maps.grid_map import GridMap
 from relpomdp.home2d.domain.maps.build_map import *
 
 
-def map_big_0(width=50, length=50, seed=100):
+def map_big_0(width=50, length=50, seed=100, corridor_length=3):
     walls = init_map(width, length)
 
     # layers
     corridor_width = width
-    corridor_length = 3    
     room_width = width // 10
     room_length = length // 5 - corridor_length
 

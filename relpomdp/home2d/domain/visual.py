@@ -55,9 +55,14 @@ class Home2DViz:
         img = np.full((w*r,l*r,3), 255, dtype=np.int32)
         for x in range(w):
             for y in range(l):
-                # Draw free space
+                # Draw free space; color by room category, if provided
+                room_category = self._env.grid_map.room_of((x,y)).room_type
+                if room_category in self._colors:
+                    room_color = self._colors[room_category]
+                else:
+                    room_color = (255, 255, 255)
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                              (255, 255, 255), -1)                
+                              room_color, -1)                
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (0, 0, 0), 1, 8)
