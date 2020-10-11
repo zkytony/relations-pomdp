@@ -132,7 +132,9 @@ def walls_to_states(walls, base_id=1000):
 # Level up - Procedural Content Generation of the floor plans as well as objects
 def _overlapping(room_tup, rooms):
     """Returns true if room_tup overlaps with rooms;
-    Here, `room_tup` is a tuple (top_left, width, length)"""
+    Here, `room_tup` is a tuple (top_left, width, length)
+
+    Helper for _generate_rooms """
     top_left, width, length = room_tup
     for rm in rooms:
         for dx in range(width):
@@ -163,7 +165,7 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
             give space for a doorway.
     """
     random.seed(seed)    
-    walls = init_map(width, length)
+    border_walls = init_map(width, length)
     
     free_locations = {(x,y)
                       for x in range(width)
@@ -172,6 +174,7 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
     rooms = []
     trys = 0
 
+    # First, insert valid boxes as rooms
     i = 0    
     while len(rooms) < nrooms:
         # Generate n rooms
@@ -208,19 +211,23 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
             print("Unable to generate all rooms (likely not enough space)")
             break
 
+    # Then, add doorway
     # Iterate over walls; If a wall is not overlapping with any other wall,
     # then we could remove it to make a doorway. We can add a certain number
     # of doors per room.
-    # First, create a mapping from wall to rooms
+    ## First, create a mapping from wall to rooms
     name_to_rooms = {rm.name:rm for rm in rooms}
     wall_to_rooms = {}
     for rm in rooms:
         for wall in rm.walls:
+            if wall in border_walls:
+                continue # skip border walls
             if wall not in wall_to_rooms:
                 wall_to_rooms[wall] = []
             wall_to_rooms[wall].append(rm.name)
-
-    NDOORS = 2
+    ## Then, for all walls which is only shared by one room, add
+    ## this wall to be potentially removed, if the total number of
+    ## walls to be removed for the room is below the `ndoors` limit.
     room_doors = {}
     for wall in wall_to_rooms:
         rooms_sharing_wall = wall_to_rooms[wall]
@@ -228,18 +235,21 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
             rm_name = rooms_sharing_wall[0]
             if rm_name not in room_doors:
                 room_doors[rm_name] = set()
-            if len(room_doors[rm_name]) < NDOORS:
+            if len(room_doors[rm_name]) < ndoors:
                 room_doors[rm_name].add(wall)
+    ## Remove candidate walls identified above.
     for rm_name in room_doors:
         doorway_walls = room_doors[rm_name]
         # Remove these walls from the room
         name_to_rooms[rm_name].walls -= doorway_walls
-            
-    for room in rooms:
-        walls |= set(room.walls)
 
-    # Everything else is a corridor; with all walls as its walls
-    rooms.append(Room("Corridor-%d" % len(rooms), walls, free_locations))
+    # Gather all walls; This is needed by the GridMap creation.
+    all_walls = border_walls
+    for room in rooms:
+        all_walls |= set(room.walls)
+
+    # Everything else is a corridor which has no wall.
+    rooms.append(Room("Corridor-%d" % len(rooms), set(), free_locations))
 
     # Verify there is no overlap
     occupied = set()
@@ -249,7 +259,6 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
                 occupied.add(loc)
             else:
                 raise ValueError("There is clearly overlap.")
-            
 
-    wall_states = walls_to_states(walls)
+    wall_states = walls_to_states(all_walls)
     return GridMap(width, length, wall_states, rooms)    
