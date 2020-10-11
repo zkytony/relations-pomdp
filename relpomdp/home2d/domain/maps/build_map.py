@@ -158,8 +158,8 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
         skip = False
 
         top_left = random.sample(free_locations, 1)[0]
-        room_width = 3#random.randint(min_room_size, max_room_size)
-        room_length = 3#random.randint(min_room_size, max_room_size)
+        room_width = random.randint(min_room_size, max_room_size)
+        room_length = random.randint(min_room_size, max_room_size)
         room_tup = (top_left, room_width, room_length)
         
         if room_tup in bad_candidates:
