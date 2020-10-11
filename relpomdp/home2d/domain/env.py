@@ -21,7 +21,6 @@ from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
 from relpomdp.home2d.domain.maps.grid_map import *
 from relpomdp.home2d.domain.visual import Home2DViz
-from relpomdp.home2d.utils import objstate
 from relpomdp.oopomdp.framework import *
 import pomdp_py
 
@@ -77,15 +76,15 @@ def unittest():
 
     # Building object state
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=(0,0,0),
                            camera_direction="+x")
     salt_id = 10
-    salt_state = objstate("Salt",
+    salt_state = Objstate("Salt",
                           pose=(3,3))
 
     pepper_id = 15
-    pepper_state = objstate("Pepper",
+    pepper_state = Objstate("Pepper",
                             pose=(3,2))
     
     init_state = {robot_id: robot_state,

@@ -3,6 +3,7 @@ from relpomdp.home2d.domain.visual import Home2DViz
 from relpomdp.home2d.domain.maps import all_maps
 from relpomdp.home2d.domain.env import Home2DEnvironment
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 import time
 
 def setup():
@@ -10,7 +11,7 @@ def setup():
 
     # Building object state
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=(0,0,0),
                            camera_direction="+x",
                            room_id=grid_map.room_of((0,0)).name)

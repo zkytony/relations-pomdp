@@ -8,9 +8,9 @@ from relpomdp.home2d.tasks.task import Task
 from relpomdp.home2d.tasks.common.policy_model import PolicyModel, PreferredPolicyModel
 from relpomdp.home2d.tasks.common.sensor import *
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
-from relpomdp.home2d.utils import objstate, objobs, ooobs
 import pomdp_py
 
 class Pickup(Action):
@@ -79,9 +79,9 @@ class ObjectObserveEffect(oopomdp.DeterministicOEffect):
             objstate = next_state.object_states[objid]
             if "pose" in objstate.attributes and objid != self.robot_id:
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"]):
-                    observation = objobs(objstate.objclass, pose=objstate["pose"])
+                    observation = Objobs(objstate.objclass, pose=objstate["pose"])
                     obs[objid] = observation
-        return ooobs(obs)
+        return OOObs(obs)
 
 
 class RewardModel(pomdp_py.RewardModel):
@@ -216,7 +216,7 @@ class SearchItemTask(Task):
         total_prob = 0
         for x in range(grid_map.width):
             for y in range(grid_map.length):
-                state = objstate(self.target_class, pose=(x,y), is_found=False)
+                state = Objstate(self.target_class, pose=(x,y), is_found=False)
                 if prior_type == "uniform":
                     target_hist[state] = 1.0
                 elif prior_type == "informed":
@@ -290,15 +290,15 @@ def unittest():
 
     # Building object state
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=(0,0,0),
                            camera_direction="+x")
     salt_id = 10
-    salt_state = objstate("Salt",
+    salt_state = Objstate("Salt",
                           pose=(3,3))
 
     pepper_id = 15
-    pepper_state = objstate("Pepper",
+    pepper_state = Objstate("Pepper",
                             pose=(3,2))
     
     init_state = {robot_id: robot_state,
@@ -317,7 +317,7 @@ def unittest():
     total_prob = 0
     for x in range(grid_map.width):
         for y in range(grid_map.length):
-            state = objstate(target_class, pose=(x,y), is_found=False)
+            state = Objstate(target_class, pose=(x,y), is_found=False)
             if prior_type == "uniform":
                 target_hist[state] = 1.0
             elif prior_type == "informed":

@@ -11,7 +11,7 @@ from relpomdp.home2d.tasks.common.sensor import *
 import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.home2d.domain.relation import *
-from relpomdp.home2d.utils import objstate, objobs, ooobs
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 from relpomdp.home2d.planning.relations import RoomAttr
 
 
@@ -131,13 +131,13 @@ class RoomObserveEffect(oopomdp.DeterministicOEffect):
         # The second part is omitted, because it will always be null.
         if self.for_env:
             # for environment, we can access the room type the robot is in
-            return objobs(robot_room.room_type)
+            return Objobs(robot_room.room_type)
 
         # Otherwise, the robot observes the room when in the same  room
         if room_room == robot_room:
-            return objobs(self.room_type)
+            return Objobs(self.room_type)
         else:
-            return objobs("null")
+            return Objobs("null")
 
 
 class GreedyActionPrior(pomdp_py.ActionPrior):
@@ -243,7 +243,7 @@ class SearchRoomTask(Task):
         total_prob = 0
         for x in range(grid_map.width):
             for y in range(grid_map.length):
-                state = objstate(self.room_type, pose=(x,y), reached=False)
+                state = Objstate(self.room_type, pose=(x,y), reached=False)
                 if prior_type == "uniform":
                     room_hist[state] = 1.0
                 elif prior_type == "informed":
@@ -283,7 +283,7 @@ class SearchRoomTask(Task):
                 room = grid_map.rooms[room_name]
                 break
         init_state = {self.robot_id: robot_state,
-                      self.room_type: objstate(self.room_type,
+                      self.room_type: Objstate(self.room_type,
                                           pose=room.center_of_mass, reached=False)}
         env = Home2DEnvironment(self.robot_id,
                                 grid_map, init_state,

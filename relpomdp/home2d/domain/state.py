@@ -1,7 +1,7 @@
 import numpy as np
 import pomdp_py
 import relpomdp.oopomdp.framework as oopomdp
-from relpomdp.home2d.utils import objstate
+from relpomdp.oopomdp.framework import Objstate
 import relpomdp.home2d.utils as utils
 import copy
 

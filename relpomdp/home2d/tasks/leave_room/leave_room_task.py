@@ -5,7 +5,6 @@
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.home2d.tasks.task import Task
-from relpomdp.home2d.utils import objstate, objobs, ooobs
 from relpomdp.home2d.tasks.common.policy_model import *
 import relpomdp.oopomdp.framework as oopomdp
 

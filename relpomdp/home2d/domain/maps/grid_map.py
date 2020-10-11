@@ -4,7 +4,7 @@ from relpomdp.home2d.domain.relation import *
 from relpomdp.home2d.domain.state import *
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.condition_effect import *
-from relpomdp.home2d.utils import objstate
+from relpomdp.oopomdp.framework import Objstate
 import sys
 
 class GridMap:
@@ -47,7 +47,7 @@ class GridMap:
         legal_actions = {}  # 
         for x in range(self.width):
             for y in range(self.length):
-                so = objstate("PoseObject", pose=(x,y))
+                so = Objstate("PoseObject", pose=(x,y))
                 motion_actions = set(all_motion_actions)
                 for wall_id in self.walls:
                     wall = self.walls[wall_id]

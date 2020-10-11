@@ -2,6 +2,7 @@ from relpomdp.home2d.tasks.search_room.search_room_task import *
 from relpomdp.home2d.tasks.search_room.visual import SearchRoomViz
 from relpomdp.home2d.domain.maps import all_maps
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 import time
 
 
@@ -10,7 +11,7 @@ def setup():
 
     # Building object state
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=(0,0,0),
                            camera_direction="+x")
 

@@ -2,6 +2,7 @@ from relpomdp.home2d.tasks.search_item.search_item_task import *
 from relpomdp.home2d.tasks.search_item.visual import SearchItemViz
 from relpomdp.home2d.domain.maps import all_maps
 import relpomdp.oopomdp.framework as oopomdp
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 import time
 
 def setup():
@@ -9,15 +10,15 @@ def setup():
 
     # Building object state
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=(0,0,0),
                            camera_direction="+x")
     salt_id = 10
-    salt_state = objstate("Salt",
+    salt_state = Objstate("Salt",
                           pose=(3,3))
 
     pepper_id = 15
-    pepper_state = objstate("Pepper",
+    pepper_state = Objstate("Pepper",
                             pose=(3,2))
 
     # Make task

@@ -7,39 +7,6 @@ from relpomdp.oopomdp.graph import *
 from relpomdp.oopomdp.infograph import RelationGraph
 
 ########### State ###########
-# class Attribute:
-#     """
-#     We make a class of Attribute so that there would be abstraction
-#     over attributes.
-#     """
-#     def __init__(self, name, value):
-#         self.name = name
-#         self.value = value
-#         self._hashcode = hash((self.name, self.value))
-
-#     def __hash__(self):
-#         return self._hashcode
-
-#     def __eq__(self, other):
-#         if isinstance(other, Attribute):
-#             return self.name == other.name\
-#                 and self.value == other.value
-#         else:
-#             return False
-
-#     def copy(self):
-#         """copy(self)
-#         Copies the state."""
-#         raise NotImplementedError
-    
-#     def __repr__(self):
-#         return self.__str__()
-
-#     def __str__(self):
-#         return '%s::(%s)' % (str(self.__class__.__name__),
-#                              str(self.value))
-    
-
 class ObjectState(State):
     # Note: 08/22/2020 - it's a copy of the ObjectState from pomdp_py
     """
@@ -744,3 +711,13 @@ class OOAgent(Agent):
                          observation_model,
                          reward_model)
 
+
+## POMDP UTILS; Short hands for object creations
+def Objstate(obj_class, **attrs):
+    return ObjectState(obj_class, attrs)
+
+def Objobs(obj_class, **attrs):
+    return ObjectObservation(obj_class, attrs)        
+
+def OOObs(observations):
+    return OOObservation(observations)
