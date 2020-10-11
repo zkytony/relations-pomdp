@@ -235,7 +235,7 @@ class SearchRoomTask(Task):
         # The observation is that the type of room appears in the room id,
         # as believed by the agent.        
         room_state = agent.belief.object_beliefs[self.room_type].mpe()
-        return objobs(self.room_type, 
+        return Objobs(self.room_type, 
                       room_id=grid_map.room_of(room_state["pose"]).name)  # name === room_id
 
     def get_prior(self, grid_map, prior_type="uniform", **kwargs):

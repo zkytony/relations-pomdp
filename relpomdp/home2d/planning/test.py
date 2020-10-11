@@ -7,7 +7,8 @@ from relpomdp.pgm.mrf import SemanticMRF, factors_to_mrf
 from relpomdp.utils import perplexity
 from relpomdp.home2d.tasks.search_item.search_item_task import SearchItemTask
 from relpomdp.home2d.tasks.search_room.search_room_task import SearchRoomTask
-from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist, save_images_and_compress
+from relpomdp.home2d.utils import euclidean_dist, save_images_and_compress
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 from relpomdp.home2d.tasks.common.sensor import *
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.tasks.search_item.search_item_task import *
@@ -33,18 +34,18 @@ def office_floor1(init_robot_pose=(9,0,0)):
     salt_id = 10
     pepper_id = 15
     robot_id = 1
-    robot_state = objstate("Robot",
+    robot_state = Objstate("Robot",
                            pose=init_robot_pose,
                            camera_direction="-x")
-    salt_state = objstate("Salt",
+    salt_state = Objstate("Salt",
                           pose=init_salt_pose)
-    pepper_state = objstate("Pepper",
+    pepper_state = Objstate("Pepper",
                             pose=init_pepper_pose)
     
     computer_poses = [(5,9), (6,2)]
     computer_states = []
     for pose in computer_poses:
-        computer_states.append(objstate("Computer",
+        computer_states.append(Objstate("Computer",
                                         pose=pose))
     init_state = {robot_id: robot_state,
                   pepper_id: pepper_state,

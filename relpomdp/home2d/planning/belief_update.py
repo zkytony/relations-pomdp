@@ -18,7 +18,8 @@ from pgmpy.models import MarkovModel
 from pgmpy.inference import BeliefPropagation
 from relpomdp.home2d.planning.relations import *
 from relpomdp.oopomdp.infograph import *
-from relpomdp.home2d.utils import objstate, objobs, ooobs, euclidean_dist
+from relpomdp.home2d.utils import euclidean_dist
+from relpomdp.oopomdp.framework import Objstate, Objobs, OOObs
 import pomdp_py
 
 # TODO:
@@ -76,7 +77,7 @@ def unittest():
     in2 = In(salt, kitchen)
     graph = RelationGraph({in1, in2, near1, near2})
     grid_map = all_maps["map_small_1"]()    
-    relation_belief_update(None, salt, graph, objobs("Pepper", pose=(0,1)), pepper, grid_map)
+    relation_belief_update(None, salt, graph, Objobs("Pepper", pose=(0,1)), pepper, grid_map)
 
 if __name__ == "__main__":
     unittest()    
