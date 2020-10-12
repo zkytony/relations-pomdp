@@ -105,15 +105,20 @@ class Home2DViz:
 
         endpoint = (y+shift + int(round(shift*math.sin(th))),
                     x+shift + int(round(shift*math.cos(th))))
-        cv2.line(img, (y+shift,x+shift), endpoint, color, 2)        
+        cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
+
+    @staticmethod
+    def load_obj_img(obj_img_path):
+        obj_img = cv2.imread(obj_img_path, cv2.IMREAD_COLOR)
+        obj_img = cv2.rotate(obj_img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
+        obj_img = cv2.cvtColor(obj_img, cv2.COLOR_BGR2RGB)
+        return obj_img
 
     @staticmethod
     def draw_object(img, x, y, res, size, color=(10,180,40), obj_img_path=None):
         if obj_img_path is not None:
-            obj_img = cv2.imread(obj_img_path, cv2.IMREAD_COLOR)
-            obj_img = cv2.rotate(obj_img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
-            obj_img = cv2.cvtColor(obj_img, cv2.COLOR_BGR2RGB)
-            obj_img = cv2.resize(obj_img, (res, res))
+            obj_img = Home2DViz.load_obj_img(obj_img_path)
+            obj_img = cv2.resize(obj_img, (res, res))            
             w,l = obj_img.shape[:2]
             img[x:x+w, y:y+l] = obj_img
             # Draw boundary
@@ -123,6 +128,22 @@ class Home2DViz:
             shift = int(round(res / 2))
             cv2.circle(img, (y+shift, x+shift), radius, color, thickness=-1)
             cv2.circle(img, (y+shift, x+shift), radius//2, lighter(color, 0.4), thickness=-1)
+
+    @staticmethod
+    def draw_rect_object(img, x, y, w, l, res, color=(10,180,40), obj_img_path=None):
+        """
+        This method will draw the robot as a rectangle that spans over just one grid cell,
+        with x, y, w, l given (already scaled by res).
+        """
+        if obj_img_path is not None:
+            obj_img = Home2DViz.load_obj_img(obj_img_path)            
+            obj_img = cv2.resize(obj_img, (l, w))
+            img[x:x+w, y:y+l] = obj_img
+            # Draw boundary
+            cv2.rectangle(img, (y, x), (y+l, x+w), (0, 0, 0), 1, 8)
+        else:
+            cv2.rectangle(img, (y, x), (y+l, x+w), color, 1, thickness=-1)            
+            cv2.rectangle(img, (y, x), (y+l//2, x+w//2), lighter(color, 0.4), 1, -1)
 
     # PyGame interface functions
     def on_init(self):
@@ -219,12 +240,22 @@ class Home2DViz:
                 color = self._colors[objid]
             else:
                 color = (10,180,40)
-            x, y = objstate["pose"]
+                
             obj_img_path = os.path.join(self._img_path, "%s.png" %  objstate.objclass.lower())
             if not os.path.exists(obj_img_path):
                 obj_img_path = None
-            Home2DViz.draw_object(img, x*r, y*r, r, r*0.75, color=color,
-                                        obj_img_path=obj_img_path)
+
+            if "pose" in objstate.attributes:
+                x, y = objstate["pose"]
+                Home2DViz.draw_object(img, x*r, y*r, r, r*0.75, color=color,
+                                            obj_img_path=obj_img_path)
+            elif "p" in objstate.attributes\
+                 and "w" in objstate.attributes\
+                 and "l" in objstate.attributes:
+                x, y = objstate.attributes["p"]
+                w, l = objstate.attributes["w"], objstate.attributes["l"]
+                Home2DViz.draw_rect_object(img, x*r, y*r, w*r, l*r,
+                                           r, color=color, obj_img_path=obj_img_path) 
 
         # Draw robot
         rx, ry, rth = self._env.robot_state["pose"]

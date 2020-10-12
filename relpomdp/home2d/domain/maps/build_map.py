@@ -1,6 +1,7 @@
 import numpy as np
 from relpomdp.home2d.domain.state import WallState
 from relpomdp.home2d.domain.maps.grid_map import GridMap
+from relpomdp.oopomdp.framework import Objstate
 import random
 import pickle
 
@@ -144,10 +145,10 @@ def _overlapping(room_tup, rooms):
     return False
 
 
-def pcg_map(width, length, nrooms, categories, objects, seed=100,
+def pcg_map(width, length, nrooms, categories, seed=100,
             min_room_size=2, max_room_size=6, max_trys=100, ndoors=1):
     """
-    Procedurally generates a map.
+    Procedurally generates a map (with no objects).
 
     The (0,0) coordinates is at top left of the map.
 
@@ -156,13 +157,14 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
         length (int): length of the map
         nrooms (int): Number of rooms  (each room is a rectangle)
         categories (list): Category of each room. Length must be at least `nrooms`.
-        objects (dict): Specifies what objects would appear within a room category
         seed (int): Random seed
         min_room_size (int): Minimum room width/length
         max_room_size (int): Maximum room width/length
         max_trys (int): Maximum number of attempts to insert valid rooms into free space.
         ndoors (int): Number of walls to be removed (connected to the corridor) to
             give space for a doorway.
+    Returns:
+        GridMap
     """
     random.seed(seed)    
     border_walls = init_map(width, length)
@@ -261,4 +263,78 @@ def pcg_map(width, length, nrooms, categories, objects, seed=100,
                 raise ValueError("There is clearly overlap.")
 
     wall_states = walls_to_states(all_walls)
-    return GridMap(width, length, wall_states, rooms)    
+    return GridMap(width, length, wall_states, rooms)
+
+
+def _placeable(obj_tup, free_locations):
+    top_left, width, length = obj_tup
+    # Check if all locations within this box are free
+    for x in range(width):
+        for y in range(length):
+            loc = (top_left[0] + x,
+                   top_left[1] + y)
+            if loc not in free_locations:
+                return False
+    return True
+
+def pcg_world(grid_map, objects, max_trys=30):
+    """
+    Procedurally generates a random world, given a grid map and a specification
+    of objects per room category.
+
+    Args:
+        objects (dict): Specifies what objects would appear within a room category
+            Format: {room_category -> {object_class -> (amount, footprint)}}
+              footprint is essentially the (width,length) tuple of the bounding box
+
+    Returns:
+        init_state (dict): Mapping from object id to object state
+    """
+    init_state = {}
+    for i, room_name in enumerate(grid_map.rooms):
+        room = grid_map.rooms[room_name]
+        if room.room_type not in objects:
+            print("No object will get generated in %s" % room.room_type)
+            continue
+        spec = objects[room.room_type]
+
+        # Create a distribution such that the boundary of the room is
+        # more likely for objects to appear...
+        free_locations = set(room.locations)
+
+        # Try to generate according to the spec as much as possible
+        for j, objclass in enumerate(spec):
+            amount, footprint = spec[objclass]
+            new_objects = {}
+            trys = 0
+            bad_candidates = set()            
+            while len(new_objects) < amount:
+                skip = False
+                
+                top_left = random.sample(free_locations, 1)[0]
+                width, length = footprint
+                obj_tup = (top_left, width, length)
+                if obj_tup in bad_candidates:
+                    skip = True
+                elif not _placeable(obj_tup, free_locations):
+                    skip = True
+
+                if skip:
+                    bad_candidates.add(obj_tup)
+                else:
+                    objid = ((i+1)*1000 + (j+1)*100) + len(new_objects)
+                    object_state = Objstate(objclass,
+                                            p=top_left,
+                                            w=width,
+                                            l=length)
+                    new_objects[objid] = object_state
+                    free_locations -= {(top_left[0]+x,
+                                        top_left[1]+y) for x in range(width) for y in range(length)}
+
+                trys += 1
+                if trys > max_trys:
+                    print("Unable to generate all instances of object class %s"\
+                          "(likely not enough space)" % objclass)
+                    break
+            init_state.update(new_objects)
+    return init_state
