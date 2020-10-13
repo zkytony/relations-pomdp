@@ -5,6 +5,7 @@ from relpomdp.home2d.domain.state import *
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.oopomdp.framework import Objstate
+from relpomdp.utils_geometry import intersect
 import sys
 
 class GridMap:
@@ -42,22 +43,26 @@ class GridMap:
             return {name:self.rooms[name].to_state()
                     for name in self.rooms}
 
+    def legal_motions_at(self, x, y, all_motion_actions):
+        so = Objstate("PoseObject", pose=(x,y))
+        motion_actions = set(all_motion_actions)
+        legal_actions = set()
+        for a in motion_actions:
+            dx, dy, dth = a.motion
+            legal = True
+            for wall_id in self.walls:
+                if self.walls[wall_id].intersect((x,y), (x+dx, y+dy)):
+                    legal = False
+                    break
+            if legal:
+                legal_actions.add(a)
+        return legal_actions
+
+
     def compute_legal_motions(self, all_motion_actions):
         """Returns a map from (x,y) to legal motion actions"""
-        legal_actions = {}  # 
+        legal_actions = {}  #
         for x in range(self.width):
             for y in range(self.length):
-                so = Objstate("PoseObject", pose=(x,y))
-                motion_actions = set(all_motion_actions)
-                for wall_id in self.walls:
-                    wall = self.walls[wall_id]
-                    if touch_N(so, wall):
-                        motion_actions.remove(MoveN)
-                    elif touch_S(so, wall):
-                        motion_actions.remove(MoveS)
-                    elif touch_E(so, wall):
-                        motion_actions.remove(MoveE)
-                    elif touch_W(so, wall):
-                        motion_actions.remove(MoveW)
-                legal_actions[(x,y)] = motion_actions
+                legal_actions[(x,y)] = self.legal_motions_at(x, y, all_motion_actions)
         return legal_actions
