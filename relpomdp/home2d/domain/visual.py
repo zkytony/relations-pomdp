@@ -66,24 +66,24 @@ class Home2DViz:
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (0, 0, 0), 1, 8)
-        self.render_walls(img, r)
+        self.render_walls(self._env.grid_map.walls, img, r)
         return img
 
-    def render_walls(self, img, r):
+    def render_walls(self, walls, img, r, wall_color=(0,0,0)):
         """r == resolution"""
         # Draw walls
         walls_at_pose = {}
-        for objid in self._env.grid_map.walls:
-            wall = self._env.grid_map.walls[objid]
+        for objid in walls:
+            wall = walls[objid]
             x, y = wall["pose"]
             if wall.direction == "H":
                 # draw a line on the top side of the square
                 cv2.line(img, (y*r+r, x*r), (y*r+r, x*r+r),
-                         (0, 0, 0), 6)
+                         wall_color, 6)
             else:
                 # draw a line on the right side of the square
                 cv2.line(img, (y*r, x*r+r), (y*r+r, x*r+r),
-                         (0, 0, 0), 6)
+                         wall_color, 6)
     
     @property
     def img_width(self):
@@ -262,5 +262,5 @@ class Home2DViz:
         Home2DViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)
 
         # Draw walls
-        self.render_walls(img, r)
+        self.render_walls(self._env.grid_map.walls, img, r)
         return img

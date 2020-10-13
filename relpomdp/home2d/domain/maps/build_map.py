@@ -338,3 +338,17 @@ def pcg_world(grid_map, objects, max_trys=30):
                     break
             init_state.update(new_objects)
     return init_state
+
+
+def random_world(width, length, nrooms, categories, objects={},
+                 min_room_size=2, max_room_size=6, seed=100,
+                 ndoors=2, robot_id=0, init_robot_pose=(0, 0, 0)):
+    grid_map = pcg_map(width, length, nrooms, categories,
+                       min_room_size=min_room_size,
+                       max_room_size=max_room_size,
+                       seed=seed, ndoors=ndoors)
+    init_state = pcg_world(grid_map, objects)
+    init_state[robot_id] = Objstate("Robot",
+                                    pose=init_robot_pose,
+                                    camera_direction="-x")
+    return init_state, grid_map    
