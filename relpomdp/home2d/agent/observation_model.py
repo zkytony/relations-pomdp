@@ -3,24 +3,31 @@
 # objects differs)
 import pomdp_py
 import random
-from relpomdp.oopomdp.framework import NullObservation, OOObservation
+from relpomdp.oopomdp.framework import NullObservation, OOObservation, Condition, OEffect, Objobs
+
+# Observation condition / effects
+class CanObserve(Condition):
+    """Condition to observe"""
+    def satisfy(self, next_state, action):
+        return True  # always can
 
 
-class ObserveEffect(oopomdp.OEffect):
-    def __init__(self, robot_id, sensor, noise_params):
+class ObserveEffect(OEffect):
+    def __init__(self, robot_id, sensor, grid_map, noise_params):
         """
         noise_params (dict): Maps from object class to (alpha, beta) which
             defines the noise level of detecting an object of this class
         """
         self.robot_id = robot_id
         self.sensor = sensor
+        self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
 
     @staticmethod
     def sensor_functioning(alpha, beta):
         return random.uniform(0,1) < alpha / (alpha + beta)
 
-    def random(self, next_state, action, **kwargs):
+    def random(self, next_state, action, byproduct=None):
         robot_state = next_state.object_states[self.robot_id]
 
         # We will not model occlusion by objects; only occlusion by walls (which is
@@ -31,9 +38,10 @@ class ObserveEffect(oopomdp.OEffect):
             if objstate.objclass in self.noise_params:
                 # We will only observe objects that we have noise parameters for
                 alpha, beta = self.noise_params[objstate.objclass]
-                if sensor.within_range(robot_state["pose"][:2], objstate["pose"]):
+                objo = Objobs(objstate.objclass, pose=objstate["pose"])
+                if self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                            grid_map=self.grid_map):
                     # observable;
-                    objo = ObjectObservation(objstate.objclass, pose=objstate["pose"])
                     if ObserveEffect.sensor_functioning(alpha, beta):
                         # Sensor functioning;
                         objo["label"] = objid
@@ -42,8 +50,8 @@ class ObserveEffect(oopomdp.OEffect):
                         objo["label"] = "free"
                 else:
                     objo["label"] = "unknown"
-            else:
-                noisy_obs[objid] = NullObservation()
+            # else:
+            #     noisy_obs[objid] = NullObservation()
 
         return OOObservation(noisy_obs)
 
@@ -59,11 +67,10 @@ class ObserveEffect(oopomdp.OEffect):
                     val = 1.0
                 else:
                     val = alpha
-            else:
-                if isinstance(objo, NullObservation):
-                    val = 1.0
-                else:
-                    val = 1e-9
-
-            prob *= val
+                prob *= val
+            # else:
+            #     if isinstance(objo, NullObservation):
+            #         val = 1.0
+            #     else:
+            #         val = 1e-9
         return prob

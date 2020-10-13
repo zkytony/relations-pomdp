@@ -26,7 +26,7 @@ class Room:
 
         mean = np.mean(np.array([*self.locations]),axis=0)
         self._center_of_mass = tuple(np.round(mean).astype(int))
-        
+
     # def to_state(self):
     #     return ContainerState(self.room_type, self.name, tuple(self.locations))
 
@@ -40,8 +40,8 @@ class Room:
 
     def __repr__(self):
         return str(self)
-    
-    
+
+
 def init_map(width, length, return_parts=False):
     """
     Create a map without any inner wall and only
@@ -110,7 +110,7 @@ def make_corridor(name, x, y, width, length, rooms, other_corridors=[], seed=100
     other_corridors = list(other_corridors)
     for other_corridor in other_corridors:
         walls = list(sorted(other_corridor.walls))
-        random.shuffle(walls)        
+        random.shuffle(walls)
         for wall in walls:
             if wall in corridor.walls:
                 other_corridor.walls.remove(wall)
@@ -120,7 +120,7 @@ def make_corridor(name, x, y, width, length, rooms, other_corridors=[], seed=100
         return corridor, rooms, other_corridors
     else:
         return corridor, rooms
-    
+
 def walls_to_states(walls, base_id=1000):
     # Remove duplicated walls and convert the unique ones into states
     wall_states = {}
@@ -166,9 +166,9 @@ def pcg_map(width, length, nrooms, categories, seed=100,
     Returns:
         GridMap
     """
-    random.seed(seed)    
+    random.seed(seed)
     border_walls = init_map(width, length)
-    
+
     free_locations = {(x,y)
                       for x in range(width)
                       for y in range(length)}
@@ -177,7 +177,7 @@ def pcg_map(width, length, nrooms, categories, seed=100,
     trys = 0
 
     # First, insert valid boxes as rooms
-    i = 0    
+    i = 0
     while len(rooms) < nrooms:
         # Generate n rooms
         skip = False
@@ -186,14 +186,14 @@ def pcg_map(width, length, nrooms, categories, seed=100,
         room_width = random.randint(min_room_size, max_room_size)
         room_length = random.randint(min_room_size, max_room_size)
         room_tup = (top_left, room_width, room_length)
-        
+
         if room_tup in bad_candidates:
             skip = True
         if not ((top_left[0] + room_width < width)\
            and (top_left[1] + room_length < length)):
             bad_candidates.add(room_tup)
             skip = True
-        
+
         # Check if this room overlaps with any existing rooms
         if not skip:
             overlaps = _overlapping(room_tup, rooms)
@@ -206,7 +206,7 @@ def pcg_map(width, length, nrooms, categories, seed=100,
                 room = make_room(room_name, x, y, room_width, room_length)
                 rooms.append(room)
                 free_locations = free_locations - room.locations
-                
+
         # Make sure there is no infinite loop
         trys += 1
         if trys > max_trys:
@@ -307,10 +307,10 @@ def pcg_world(grid_map, objects, max_trys=30):
             amount, footprint = spec[objclass]
             new_objects = {}
             trys = 0
-            bad_candidates = set()            
+            bad_candidates = set()
             while len(new_objects) < amount:
                 skip = False
-                
+
                 top_left = random.sample(free_locations, 1)[0]
                 width, length = footprint
                 obj_tup = (top_left, width, length)
@@ -323,10 +323,14 @@ def pcg_world(grid_map, objects, max_trys=30):
                     bad_candidates.add(obj_tup)
                 else:
                     objid = ((i+1)*1000 + (j+1)*100) + len(new_objects)
-                    object_state = Objstate(objclass,
-                                            p=top_left,
-                                            w=width,
-                                            l=length)
+                    if width == 1 and length == 1:
+                        object_state = Objstate(objclass,
+                                                pose=top_left)
+                    else:
+                        object_state = Objstate(objclass,
+                                                p=top_left,
+                                                w=width,
+                                                l=length)
                     new_objects[objid] = object_state
                     free_locations -= {(top_left[0]+x,
                                         top_left[1]+y) for x in range(width) for y in range(length)}
@@ -351,4 +355,4 @@ def random_world(width, length, nrooms, categories, objects={},
     init_state[robot_id] = Objstate("Robot",
                                     pose=init_robot_pose,
                                     camera_direction="-x")
-    return init_state, grid_map    
+    return init_state, grid_map

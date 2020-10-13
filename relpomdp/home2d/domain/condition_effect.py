@@ -9,7 +9,7 @@ class CanMove(oopomdp.Condition):
     def __init__(self, robot_id, legal_motions):
         self.legal_motions = legal_motions
         self.robot_id = robot_id  # map from object class to id or a set of ids
-    
+
     # Strictly speaking OO-MDP expects conditions like CanMoveE, CanMoveN, etc.
     # but that is too verbose
     def satisfy(self, state, action):
@@ -21,8 +21,10 @@ class CanMove(oopomdp.Condition):
             # is legal or not.
             return True
         else:
+            if action == MoveW:
+                print(self.legal_motions[robot_state["pose"][:2]])
             return action in self.legal_motions[robot_state["pose"][:2]]
-    
+
 class MoveEffect(oopomdp.DeterministicTEffect):
     """Deterministically move"""
     def __init__(self, robot_id):
@@ -34,7 +36,7 @@ class MoveEffect(oopomdp.DeterministicTEffect):
         dx, dy, th = motion
         rx, ry = robot_pose[:2]
         return (rx + dx, ry + dy, th)
-        
+
     def mpe(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         robot_state = state.object_states[self.robot_id]
@@ -50,7 +52,7 @@ class MoveEffect(oopomdp.DeterministicTEffect):
 # class CanObserve(oopomdp.Condition):
 #     def __init__(self, ids):
 #         self.ids = ids
-        
+
 #     def satisfy(self, next_state, action):
 #         return True  # always can
 
@@ -69,8 +71,8 @@ class MoveEffect(oopomdp.DeterministicTEffect):
 #         if expected_observation == observation.for_objs(modeled_objs):
 #             return 1.0 - self.epsilon
 #         else:
-#             return self.epsilon        
-        
+#             return self.epsilon
+
 #     def mpe(self, next_state, action, byproduct=None):
 #         """Returns an OOState after applying this effect on `state`"""
 #         robot_state = next_state.object_states[self.ids["Robot"]]
@@ -89,7 +91,7 @@ class MoveEffect(oopomdp.DeterministicTEffect):
 #         self.sensor = sensor
 #         self.grid_map = grid_map
 #         super().__init__("sensing", epsilon=epsilon)  # ? not really a reason to name the type this way
-        
+
 #     def mpe(self, next_state, action, byproduct=None):
 #         """Returns an OOState after applying this effect on `state`"""
 #         # If the robot enters a room, it observes the type of that room
@@ -97,4 +99,3 @@ class MoveEffect(oopomdp.DeterministicTEffect):
 #         robot_state = next_state.object_states[self.ids["Robot"]]
 #         room_name = self.grid_map.room_of(robot_state.pose[:2])
 #         return RoomObservation(room_name)
-    

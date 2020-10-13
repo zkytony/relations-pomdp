@@ -24,25 +24,37 @@ def wait_for_action(viz, timeout=10):
     return action
 
 
-def main():
+def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
     init_state, grid_map = random_world(10, 10, 4,
                                         ["Office", "Office", "Kitchen", "Bathroom"],
+                                        objects={"Office": {"Computer": (1, (1,1))},
+                                                 "Kitchen": {"Salt": (1, (1,1)),
+                                                             "Pepper": (1, (1,1))},
+                                                 "Bathroom": {"Toilet": (1, (1,1))}},
                                         robot_id=robot_id, init_robot_pose=init_robot_pose)
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
-    agent = NKAgent(init_robot_pose)
+    return env
+
+
+def test_map_building():
+    env = make_world()
+    robot_id = env.robot_id
+    init_robot_pose = env.robot_state["pose"]
+    agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
                                        fov=90, min_range=1,
-                                       max_range=3, angle_increment=0.5))
+                                       max_range=3, angle_increment=0.1))
 
     viz = NKAgentViz(agent,
                      env,
                      {},
                      res=30,
-                     controllable=True)
+                     controllable=True,
+                     img_path="../../domain/imgs")
     viz.on_init()
 
     for i in range(100):
@@ -58,4 +70,4 @@ def main():
         fake_slam.update(agent.grid_map, robot_pose, env)
 
 if __name__ == "__main__":
-    main()
+    test_map_building()

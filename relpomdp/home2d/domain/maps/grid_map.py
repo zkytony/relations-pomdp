@@ -5,7 +5,8 @@ from relpomdp.home2d.domain.state import *
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.oopomdp.framework import Objstate
-from relpomdp.utils_geometry import intersect
+from relpomdp.utils_geometry import intersect, euclidean_dist
+import math
 import sys
 
 class GridMap:
@@ -47,10 +48,31 @@ class GridMap:
         so = Objstate("PoseObject", pose=(x,y))
         motion_actions = set(all_motion_actions)
         legal_actions = set()
+
+        # Compute maximum expected length of travel
+        max_traj_len = float("-inf")
         for a in motion_actions:
             dx, dy, dth = a.motion
+            traj = (x,y), (x+dx, y+dy)
+            max_traj_len = max(max_traj_len, math.sqrt(dx**2 + dy**2))
+
+        # Find walls that are nearby
+        nearby_walls = set()
+        for wall_id in self.walls:
+            p1, p2 = self.walls[wall_id].segment
+            if euclidean_dist(p1, (x,y)) <= max_traj_len\
+               or euclidean_dist(p2, (x,y)) <= max_traj_len:
+                nearby_walls.add(wall_id)
+
+        # Compute legal motions
+        for a in motion_actions:
+            dx, dy, dth = a.motion
+            if not (0 <= x+dx < self.width):
+                continue
+            if not (0 <= y+dy < self.length):
+                continue
             legal = True
-            for wall_id in self.walls:
+            for wall_id in nearby_walls:
                 if self.walls[wall_id].intersect((x,y), (x+dx, y+dy)):
                     legal = False
                     break

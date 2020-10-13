@@ -33,7 +33,7 @@ class DummyRewardModel(pomdp_py.RewardModel):
 
 class Home2DEnvironment(OOEnvironment):
     """Single robot home environment"""
-    
+
     def __init__(self,
                  robot_id,
                  grid_map,  # specifies the map (dimension and walls)
@@ -45,6 +45,12 @@ class Home2DEnvironment(OOEnvironment):
         """
         self.robot_id = robot_id
         self.grid_map = grid_map
+        self.class_to_ids = {}
+        for objid in init_object_states:
+            objclass = init_object_states[objid].objclass
+            if objclass not in self.class_to_ids:
+                self.class_to_ids[objclass] = set()
+            self.class_to_ids[objclass].add(objid)
 
         init_state = OOState(init_object_states)
         relations = {touch_N,
@@ -57,6 +63,9 @@ class Home2DEnvironment(OOEnvironment):
         cond_effects = [(CanMove(robot_id, self.legal_motions), MoveEffect(robot_id))]
         super().__init__(init_state, relations, cond_effects, reward_model)
 
+    def ids_for(self, objclass):
+        return self.class_to_ids[objclass]
+
     @property
     def robot_state(self):
         return self.state.object_states[self.robot_id]
@@ -68,7 +77,7 @@ class Home2DEnvironment(OOEnvironment):
     @property
     def length(self):
         return self.grid_map.length
-    
+
 
 def unittest():
     from relpomdp.home2d.domain.maps import all_maps
@@ -86,13 +95,13 @@ def unittest():
     pepper_id = 15
     pepper_state = Objstate("Pepper",
                             pose=(3,2))
-    
+
     init_state = {robot_id: robot_state,
                   salt_id: salt_state,
                   pepper_id: pepper_state}
     env = Home2DEnvironment(robot_id,
         grid_map, init_state)
-    
+
     viz = Home2DViz(env,
                     {salt_id: (128, 128, 128),
                      pepper_id: (200, 10, 10)},

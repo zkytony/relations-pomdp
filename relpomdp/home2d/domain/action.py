@@ -74,7 +74,7 @@ class MotionPolicy:
         # Finds a path between position1 and position2.
         # Uses the Dijkstra's algorithm.
         V = set({(x,y)    # all valid positions
-                 for x in range(self._grid_map.width) 
+                 for x in range(self._grid_map.width)
                  for y in range(self._grid_map.length)
                  if self._grid_map.within_bounds((x,y))})
         position1 = position1[:2]  # If it is robot pose then it has length 3.
