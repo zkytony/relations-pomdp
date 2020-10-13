@@ -21,23 +21,25 @@ class NKAgentViz(Home2DViz):
     def on_init(self):
         super().on_init()
         plt.ion()
-        plt.show(block=False)        
+        plt.show(block=False)
 
     def on_render(self):
         # Renders the true world. Then plot agent's world
         super().on_render()
-        
+
         plt.clf()
-        fig = plt.gcf()        
+        fig = plt.gcf()
         ax = plt.gca()
         img = self.make_agent_view(self._res)
+        # rotate 90 deg CCW to match the pygame display
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         ax.imshow(img, interpolation='none')
         # These must happen after imshow
         ax.set_aspect("equal")
-        ax.invert_yaxis()
-        
+        # ax.invert_yaxis()
+
         fig.canvas.draw()
-        fig.canvas.flush_events()        
+        fig.canvas.flush_events()
 
     def make_agent_view(self, r):
         # Preparing 2d array
@@ -57,14 +59,19 @@ class NKAgentViz(Home2DViz):
                     room_color = (66, 66, 66)
                     boundary_color = (66, 66, 66)
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                              room_color, -1)                
+                              room_color, -1)
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               boundary_color, 1, 8)
         self.render_walls(self._nkagent.grid_map.walls, img, r)
+
+        # draw robot
+        rx, ry, rth = self._env.robot_state["pose"]
+        NKAgentViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)
+
         return img
 
-        
+
 
 def unittest():
     robot_id = 0

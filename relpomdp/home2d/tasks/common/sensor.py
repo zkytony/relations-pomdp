@@ -49,9 +49,12 @@ class Sensor:
         return self._robot_id
 
 class Laser2DSensor:
-    """Fan shaped 2D laser sensor"""
+    """Fan shaped 2D laser sensor
+    It is assumed that this sensor will be operating on a single map,
+    thus we can maintain a cache to compute more quickly if a point
+    is observable or not."""
 
-    def __init__(self, robot_id, grid_map,
+    def __init__(self, robot_id, grid_map=None,
                  fov=90, min_range=1, max_range=5,
                  angle_increment=5):
         """
@@ -93,11 +96,23 @@ class Laser2DSensor:
         in front of the robot. By our angle convention, 180 degrees maps to [0,90] and [270, 360]."""
         fov_right = (0, view_angles / 2)
         fov_left = (2*math.pi - view_angles/2, 2*math.pi)
-        
-    def within_range(self, robot_pose, point):
+
+    def within_range(self, robot_pose, point, grid_map=None, return_intersecting_wall=False):
         """Returns true if the point is within range of the sensor (i.e. visible).
         To do this need to check if any wall is closer to the robot along the
-        direction of the beam from robot to the `point`.x"""
+        direction of the beam from robot to the `point`.x
+
+        Args:
+            robot_pose (tuple): (x,y,theta) pose of the robot
+            point (tuple): (x,y) point to determine if in range
+            grid_map (GridMap): The grid map whose walls can cause occlusions
+            return_intersecting_wall (bool): True if want to return the wall that
+                is intersecting the sensor beam. NOTE: This parameter affects what
+                the cache stores. If True, then the cache will also store the intersecting
+                wall for this (robot_pose, point) pair."""
+        intersecting_wall = None
+        if grid_map is None:
+            grid_map = self.grid_map
         if (robot_pose, point) in self._cache:
             return self._cache[(robot_pose, point)]
         if robot_pose[:2] == point:
@@ -111,13 +126,18 @@ class Laser2DSensor:
             if not point_in_range:
                 result = False
             else:
-                for objid in self.grid_map.walls:
-                    wall = self.grid_map.walls[objid]
+                for objid in grid_map.walls:
+                    wall = grid_map.walls[objid]
                     if wall.intersect(robot_pose[:2], point):
                         result = False
+                        intersecting_wall = (objid, wall)
                         break
-        self._cache[(robot_pose, point)] = result
-        return result
+        if return_intersecting_wall:
+            self._cache[(robot_pose, point)] = (result, intersecting_wall)
+            return result, intersecting_wall
+        else:
+            self._cache[(robot_pose, point)] = result
+            return result
 
     def shoot_beam(self, robot_pose, point):
         """Shoots a beam from robot_pose at point. Returns the distance and bearing
@@ -157,7 +177,7 @@ class Laser2DSensor:
     @property
     def sensing_region_size(self):
         raise NotImplementedError
-    
+
 
 class ProximitySensor(Laser2DSensor):
     """This is a simple sensor; Observes a region centered

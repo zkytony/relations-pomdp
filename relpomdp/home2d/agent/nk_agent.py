@@ -3,6 +3,8 @@
 import pomdp_py
 from relpomdp.home2d.domain.maps.grid_map import GridMap
 from relpomdp.home2d.domain.action import *
+from relpomdp.oopomdp.framework import ObjectObservation
+from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 
 class PartialGridMap:
 
@@ -16,7 +18,7 @@ class PartialGridMap:
 
     def update(self, free_locs, walls):
         self.free_locations |= free_locs
-        self.walls |= walls
+        self.walls.update(walls)
 
     def legal_motions(self, x, y, all_motion_actions={MoveN, MoveS, MoveE, MoveW}):
         motion_actions = set(all_motion_actions)
@@ -34,6 +36,38 @@ class PartialGridMap:
         return motion_actions
 
 
+class FakeSLAM:
+    def __init__(self, range_sensor):
+        """
+        range_sensor provides the field of view ( e.g. Laser2DSensor)
+        """
+        self.range_sensor = range_sensor
+
+    def update(self, partial_map, robot_pose, env):
+        """
+        Projects the range sensor from the robot pose, and get readings
+        based on environment's full map. Then update the partial map
+        based on such readings.
+        """
+        full_grid_map = env.grid_map
+        free_locs = set()
+        walls = {}
+        for x in range(full_grid_map.width):
+            for y in range(full_grid_map.length):
+                res, wall = self.range_sensor.within_range(
+                    robot_pose, (x,y), grid_map=full_grid_map,
+                    return_intersecting_wall=True)
+                if res:
+                    free_locs.add((x,y))
+                else:
+                    if wall is not None:
+                        # The point is blocked by some wall that is in the FOV
+                        # TODO: REFACTOR: Getting wall id should not be necessary
+                        wall_id, wall_state = wall
+                        walls[wall_id] = wall_state
+        partial_map.update(free_locs, walls)
+
+
 class NKAgent(pomdp_py.Agent):
     def __init__(self, init_robot_pose):
         """
@@ -42,5 +76,3 @@ class NKAgent(pomdp_py.Agent):
         """
         # Initially, the robot's map is empty
         self.grid_map = PartialGridMap(set({init_robot_pose[:2]}), {})
-
-        

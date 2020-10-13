@@ -18,7 +18,7 @@ def lighter(color, percent):
     color = np.array(color)
     white = np.array([255, 255, 255])
     vector = white-color
-    return color + vector * percent    
+    return color + vector * percent
 
 #### Visualization through pygame ####
 class Home2DViz:
@@ -43,7 +43,7 @@ class Home2DViz:
             pygame.K_RIGHT: MoveE,
             pygame.K_UP: MoveN,
             pygame.K_DOWN: MoveS
-        }  
+        }
 
 
     def _make_gridworld_image(self, r):
@@ -62,7 +62,7 @@ class Home2DViz:
                 else:
                     room_color = (255, 255, 255)
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                              room_color, -1)                
+                              room_color, -1)
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (0, 0, 0), 1, 8)
@@ -84,11 +84,11 @@ class Home2DViz:
                 # draw a line on the right side of the square
                 cv2.line(img, (y*r, x*r+r), (y*r+r, x*r+r),
                          wall_color, 6)
-    
+
     @property
     def img_width(self):
         return self._img.shape[0]
-    
+
     @property
     def img_height(self):
         return self._img.shape[1]
@@ -96,10 +96,10 @@ class Home2DViz:
     @property
     def last_observation(self):
         return self._last_observation
-    
+
     @staticmethod
     def draw_robot(img, x, y, th, res, size, color=(255,150,0)):
-        radius = int(round(size / 2))        
+        radius = int(round(size / 2))
         shift = int(round(res / 2))
         cv2.circle(img, (y+shift, x+shift), radius, color, thickness=2)
 
@@ -118,11 +118,11 @@ class Home2DViz:
     def draw_object(img, x, y, res, size, color=(10,180,40), obj_img_path=None):
         if obj_img_path is not None:
             obj_img = Home2DViz.load_obj_img(obj_img_path)
-            obj_img = cv2.resize(obj_img, (res, res))            
+            obj_img = cv2.resize(obj_img, (res, res))
             w,l = obj_img.shape[:2]
             img[x:x+w, y:y+l] = obj_img
             # Draw boundary
-            cv2.rectangle(img, (y, x), (y+res, x+res), (0, 0, 0), 1, 8)                    
+            cv2.rectangle(img, (y, x), (y+res, x+res), (0, 0, 0), 1, 8)
         else:
             radius = int(round(size / 2))
             shift = int(round(res / 2))
@@ -136,13 +136,13 @@ class Home2DViz:
         with x, y, w, l given (already scaled by res).
         """
         if obj_img_path is not None:
-            obj_img = Home2DViz.load_obj_img(obj_img_path)            
+            obj_img = Home2DViz.load_obj_img(obj_img_path)
             obj_img = cv2.resize(obj_img, (l, w))
             img[x:x+w, y:y+l] = obj_img
             # Draw boundary
             cv2.rectangle(img, (y, x), (y+l, x+w), (0, 0, 0), 1, 8)
         else:
-            cv2.rectangle(img, (y, x), (y+l, x+w), color, 1, thickness=-1)            
+            cv2.rectangle(img, (y, x), (y+l, x+w), color, 1, thickness=-1)
             cv2.rectangle(img, (y, x), (y+l//2, x+w//2), lighter(color, 0.4), 1, -1)
 
     # PyGame interface functions
@@ -169,7 +169,7 @@ class Home2DViz:
             action = None
             if event.key in self._key_action_map:
                 action = self._key_action_map[event.key]
-                
+
             if action is None:
                 return
             if not self._controllable:
@@ -180,7 +180,7 @@ class Home2DViz:
 
     def on_loop(self):
         self._playtime += self._clock.tick(self._fps) / 1000.0
-        
+
     def on_render(self):
         # self._display_surf.blit(self._background, (0, 0))
         img = self.render_env(self._display_surf)
@@ -188,9 +188,9 @@ class Home2DViz:
         # In numpy image array, (0,0) is on top-left. But
         # we want to visualize it so that it's on bottom-left,
         # matching the definition in Taxi. So we just flip the image.
-        img = cv2.flip(img, 1)  # flip horizontally 
+        img = cv2.flip(img, 1)  # flip horizontally
         pygame.surfarray.blit_array(self._display_surf, img)
-        
+
         rx, ry, th = self._env.robot_state["pose"]
         fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())
         pygame.display.set_caption("robot_pose(%.2f,%.2f,%.2f) | %s" %
@@ -198,10 +198,10 @@ class Home2DViz:
                                     fps_text))
         pygame.display.flip()
         return img
- 
+
     def on_cleanup(self):
         pygame.quit()
- 
+
     def on_execute(self):
         if self.on_init() == False:
             self._running = False
@@ -230,7 +230,7 @@ class Home2DViz:
             func = draw_funcs[i]
             args, kwargs = draw_funcs_args[i]
             img = func(img, r, *args, **kwargs)
-        
+
         # Draw objects
         for objid in self._env.state.object_states:
             objstate = self._env.state.object_states[objid]
@@ -240,7 +240,7 @@ class Home2DViz:
                 color = self._colors[objid]
             else:
                 color = (10,180,40)
-                
+
             obj_img_path = os.path.join(self._img_path, "%s.png" %  objstate.objclass.lower())
             if not os.path.exists(obj_img_path):
                 obj_img_path = None
@@ -255,7 +255,7 @@ class Home2DViz:
                 x, y = objstate.attributes["p"]
                 w, l = objstate.attributes["w"], objstate.attributes["l"]
                 Home2DViz.draw_rect_object(img, x*r, y*r, w*r, l*r,
-                                           r, color=color, obj_img_path=obj_img_path) 
+                                           r, color=color, obj_img_path=obj_img_path)
 
         # Draw robot
         rx, ry, rth = self._env.robot_state["pose"]
