@@ -17,7 +17,8 @@ def make_world():
                                                  "Kitchen": {"Salt": (1, (1,1)),
                                                              "Pepper": (1, (1,1))},
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose)
+                                        robot_id=robot_id, init_robot_pose=init_robot_pose,
+                                        seed=10)
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)

@@ -1,7 +1,7 @@
 # This POMDP begins with no map
 
 import pomdp_py
-from relpomdp.home2d.agent.tests.test import wait_for_action
+from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
@@ -101,8 +101,9 @@ def test_pomdp_nk():
         })
 
         # update map (fake slam)
-        robot_pose = agent.belief.object_beliefs[robot_id].mpe()["pose"]
-        fake_slam.update(nk_agent.grid_map, robot_pose, env)
+        prev_robot_pose = env_state.object_states[robot_id]["pose"]
+        robot_pose = env_next_state.object_states[robot_id]["pose"]
+        fake_slam.update(nk_agent.grid_map, prev_robot_pose, robot_pose, env)
         nk_agent.update()  # Update the nk_agent because policy model needs to be updated
         tree = agent.tree
         agent = nk_agent.instantiate(agent.belief)  # TODO: REFACTOR; pomdp_py doesn't allow reassigning models to agents

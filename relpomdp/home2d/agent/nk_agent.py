@@ -12,6 +12,7 @@ from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.oopomdp.framework import ObjectObservation,\
     OOObservationModel, OOTransitionModel, CompositeRewardModel, OOBelief,\
     Objstate
+import numpy as np
 
 MOTION_ACTIONS = {MoveN, MoveS, MoveE, MoveW}
 
@@ -100,27 +101,42 @@ class FakeSLAM:
         """
         self.range_sensor = range_sensor
 
-    def update(self, partial_map, robot_pose, env):
+    def update(self, partial_map, prev_robot_pose, robot_pose, env):
         """
         Projects the range sensor from the robot pose, and get readings
         based on environment's full map. Then update the partial map
         based on such readings.
+
+        We want to simulate the process of robot moving from a previous
+        robot pose to a current one so it will observe the walls in between.
+        For us it is straightforward; First update the angle, then update the x,y pose.
         """
         full_grid_map = env.grid_map
         free_locs = set()
         walls = {}
-        for x in range(full_grid_map.width):
-            for y in range(full_grid_map.length):
-                res, wall = self.range_sensor.within_range(
+        # We want to simulate the process of the robot
+        interm_pose = prev_robot_pose[:2] + (robot_pose[2],)
+        for x in np.arange(-1, full_grid_map.width+1, 1):
+            for y in np.arange(-1, full_grid_map.length+1, 1):
+                res1, wall1 = self.range_sensor.within_range(
+                    interm_pose, (x,y), grid_map=full_grid_map,
+                    return_intersecting_wall=True)
+                res2, wall2 = self.range_sensor.within_range(
                     robot_pose, (x,y), grid_map=full_grid_map,
                     return_intersecting_wall=True)
-                if res:
+
+                if res1 or res2:
                     free_locs.add((x,y))
                 else:
-                    if wall is not None:
+                    if wall1 is not None:
                         # The point is blocked by some wall that is in the FOV
                         # TODO: REFACTOR: Getting wall id should not be necessary
-                        wall_id, wall_state = wall
+                        wall_id, wall_state = wall1
+                        walls[wall_id] = wall_state
+                    if wall2 is not None:
+                        # The point is blocked by some wall that is in the FOV
+                        # TODO: REFACTOR: Getting wall id should not be necessary
+                        wall_id, wall_state = wall2
                         walls[wall_id] = wall_state
         partial_map.update(free_locs, walls)
 

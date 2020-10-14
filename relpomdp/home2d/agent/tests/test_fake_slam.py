@@ -27,28 +27,27 @@ def wait_for_action(viz, timeout=10):
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(10, 10, 4,
+    init_state, grid_map = random_world(6, 6, 3,
                                         ["Office", "Office", "Kitchen", "Bathroom"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Salt": (1, (1,1)),
                                                              "Pepper": (1, (1,1))},
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose)
+                                        robot_id=robot_id, init_robot_pose=init_robot_pose,
+                                        seed=100)
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
     return env
 
 
-def test_map_building():
-    env = make_world()
+def test_map_building(env):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
-    agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
+    agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
                                        fov=90, min_range=1,
                                        max_range=3, angle_increment=0.1))
-
     viz = NKAgentViz(agent,
                      env,
                      {},
@@ -63,11 +62,13 @@ def test_map_building():
         viz.on_render()
 
         action = wait_for_action(viz)
+        prev_robot_pose = env.robot_state["pose"]
         reward = env.state_transition(action, execute=True)
         print("[{}]     action: {}     reward: {}".format(i, str(action.name), str(reward)))
 
         robot_pose = env.state.object_states[robot_id]["pose"]  # should come from agent's belief
-        fake_slam.update(agent.grid_map, robot_pose, env)
+        fake_slam.update(agent.grid_map, prev_robot_pose, robot_pose, env)
 
 if __name__ == "__main__":
-    test_map_building()
+    env = make_world()
+    test_map_building(env)
