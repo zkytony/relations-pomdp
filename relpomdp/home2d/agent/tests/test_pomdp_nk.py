@@ -63,6 +63,9 @@ def test_pomdp_nk():
     nk_agent.update()
 
     agent = nk_agent.instantiate()
+    env.set_reward_model(agent.reward_model)
+    env.set_transition_model(agent.transition_model)
+
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
                              num_sims=1000,
@@ -77,7 +80,7 @@ def test_pomdp_nk():
                      controllable=True,
                      img_path="../../domain/imgs")
     viz.on_init()
-
+    rewards = []
     for i in range(100):
         # Visualize
         viz.on_loop()
@@ -145,9 +148,11 @@ def test_pomdp_nk():
         agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
         planner.update(agent, action, observation)
         print(action, reward)
+        rewards.append(reward)
         if isinstance(action, Pickup):
             print("Done.")
             break
+    return rewards
 
 if __name__ == "__main__":
     test_pomdp_nk()

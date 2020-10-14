@@ -28,8 +28,7 @@ def make_world():
     return env
 
 
-def test_pomdp():
-    env = make_world()
+def test_pomdp(env):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     # The agent can access the full map
@@ -61,6 +60,9 @@ def test_pomdp():
     nk_agent.update()
 
     agent = nk_agent.instantiate()
+    env.set_reward_model(agent.reward_model)
+    env.set_transition_model(agent.transition_model)
+
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
                              num_sims=3000,
@@ -75,6 +77,7 @@ def test_pomdp():
                      controllable=True,
                      img_path="../../domain/imgs")
     viz.on_init()
+    rewards = []
     for i in range(100):
         # Visualize
         viz.on_loop()
@@ -110,9 +113,12 @@ def test_pomdp():
         agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
         planner.update(agent, action, observation)
         print(action, reward)
+        rewards.append(reward)
         if isinstance(action, Pickup):
             print("Done.")
             break
+    return rewards
 
 if __name__ == "__main__":
+    env = make_world()
     test_pomdp()
