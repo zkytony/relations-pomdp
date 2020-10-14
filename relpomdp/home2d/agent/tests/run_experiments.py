@@ -39,8 +39,8 @@ def main(map_dir="test_maps",
         df.to_csv("cum_disc-%d-%.2f.csv" % (nsteps, discount_factor))
 
 if __name__ == "__main__":
-    main(map_dir="small_test_maps",
-         nsteps=2, discount_factor=0.95)
+    main(map_dir="test_maps",
+         nsteps=50, discount_factor=0.95)
 
 
 # sns.barplot(x="method", y="cum_disc", hue="size", data=df)
