@@ -5,10 +5,13 @@ from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
+from relpomdp.home2d.utils import save_images_and_compress
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import time
+import random
+import subprocess
 
 def wait_for_action(viz, timeout=10):
     action = None
@@ -27,14 +30,15 @@ def wait_for_action(viz, timeout=10):
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
-                                        ["Office", "Office", "Kitchen", "Bathroom"],
+    init_state, grid_map = random_world(20, 20, 8,
+                                        ["Office", "Office", "Kitchen", "Bathroom",
+                                         "Office", "Office", "Kitchen", "Bathroom"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Salt": (1, (1,1)),
                                                              "Pepper": (1, (1,1))},
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
                                         robot_id=robot_id, init_robot_pose=init_robot_pose,
-                                        seed=100)
+                                        seed=random.randint(0,100))
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
@@ -56,10 +60,11 @@ def test_map_building(env):
                      img_path="../../domain/imgs")
     viz.on_init()
 
-    for i in range(100):
+    game_states = []
+    for i in range(30):
         # Visualize
         viz.on_loop()
-        viz.on_render()
+        img, img_world = viz.on_render()
 
         action = wait_for_action(viz)
         prev_robot_pose = env.robot_state["pose"]
@@ -68,6 +73,15 @@ def test_map_building(env):
 
         robot_pose = env.state.object_states[robot_id]["pose"]  # should come from agent's belief
         fake_slam.update(agent.grid_map, prev_robot_pose, robot_pose, env)
+        game_states.append(img)
+    game_states.append(img_world)
+
+    print("Saving images...")
+    dirp = "./demos/fake_slam"
+    save_images_and_compress(game_states,
+                             dirp)
+    subprocess.Popen(["nautilus", dirp])
+
 
 if __name__ == "__main__":
     env = make_world()

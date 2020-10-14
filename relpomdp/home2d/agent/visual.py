@@ -27,7 +27,7 @@ class NKAgentViz(Home2DViz):
 
     def on_render(self, belief=None):
         # Renders the true world. Then plot agent's world
-        super().on_render()
+        img_world = super().on_render()
 
         plt.clf()
         fig = plt.gcf()
@@ -54,6 +54,7 @@ class NKAgentViz(Home2DViz):
 
         fig.canvas.draw()
         fig.canvas.flush_events()
+        return img, img_world
 
     @staticmethod
     def draw_object_belief(img, r, belief, color,

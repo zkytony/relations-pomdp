@@ -3,6 +3,7 @@
 
 import pomdp_py
 from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
+from relpomdp.home2d.agent.tests.test_pomdp_nk import test_pomdp_nk
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
@@ -11,6 +12,8 @@ from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.oopomdp.framework import Objstate, OOState
+from relpomdp.home2d.utils import save_images_and_compress
+import subprocess
 import copy
 
 def make_world():
@@ -29,7 +32,7 @@ def make_world():
     return env
 
 
-def test_pomdp(env, nsteps=100, discount_factor=0.95):
+def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     # The agent can access the full map
@@ -80,10 +83,11 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95):
                      img_path="../../domain/imgs")
     viz.on_init()
     rewards = []
+    game_states = []
     for i in range(nsteps):
         # Visualize
         viz.on_loop()
-        viz.on_render(agent.belief)
+        img, img_world = viz.on_render(agent.belief)
 
         action = planner.plan(agent)
 
@@ -116,12 +120,23 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95):
         planner.update(agent, action, observation)
         print(action, reward)
         rewards.append(reward)
+        game_states.append(img)
         if isinstance(action, Pickup):
             print("Done.")
             break
+    game_states.append(img_world)
     viz.on_cleanup()
+
+    if save:
+        print("Saving images...")
+        dirp = "./demos/test_pomdp"
+        save_images_and_compress(game_states,
+                                 dirp)
+        subprocess.Popen(["nautilus", dirp])
+
     return rewards
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp()
+    test_pomdp(copy.deepcopy(env), save=True, nsteps=20)
+    test_pomdp_nk(copy.deepcopy(env), save=True, nsteps=20)
