@@ -1,3 +1,6 @@
+# This POMDP has access to the full map
+# Begins with uniform prior
+
 import pomdp_py
 from relpomdp.home2d.agent.tests.test import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
@@ -6,6 +9,7 @@ from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
+from relpomdp.oopomdp.framework import Objstate, OOState
 import copy
 
 def make_world():
@@ -24,11 +28,11 @@ def make_world():
     return env
 
 
-
-def test_mdp():
+def test_pomdp():
     env = make_world()
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
+    # The agent can access the full map
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
                                        fov=90, min_range=1,
@@ -36,7 +40,19 @@ def test_mdp():
 
     target_class = "Salt"
     target_id = list(env.ids_for(target_class))[0]
-    init_belief = pomdp_py.Histogram({env.state.object_states[target_id]:1.0})
+
+    # Uniform belief
+    target_hist = {}
+    total_prob = 0.0
+    for x in range(env.grid_map.width):
+        for y in range(env.grid_map.width):
+            target_state = Objstate(target_class, pose=(x,y))
+            target_hist[target_state] = 1.
+            total_prob += target_hist[target_state]
+    for state in target_hist:
+        target_hist[state] /= total_prob
+
+    init_belief = pomdp_py.Histogram(target_hist)
     nk_agent.add_target(target_id, target_class, init_belief)
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
@@ -62,7 +78,7 @@ def test_mdp():
     for i in range(100):
         # Visualize
         viz.on_loop()
-        viz.on_render()
+        viz.on_render(agent.belief)
 
         action = planner.plan(agent)
 
@@ -73,10 +89,25 @@ def test_mdp():
         reward = agent.reward_model.sample(env_state, action, env_next_state)
 
         observation = agent.observation_model.sample(env.state, action)
-        # update belief (only need to to so for robot belief)
+        # update belief of robot
         agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
             env.robot_state.copy() : 1.0
         })
+
+        # update belief of target
+        next_target_hist = {}
+        target_belief = agent.belief.object_beliefs[target_id]
+        total_prob = 0.0
+        for target_state in target_belief:
+            robot_state = agent.belief.object_beliefs[robot_id].mpe()
+            oostate = OOState({robot_id: robot_state,
+                               target_id: target_state})
+            obs_prob = agent.observation_model.probability(observation, oostate, action)
+            next_target_hist[target_state] = obs_prob * target_belief[target_state]
+            total_prob += next_target_hist[target_state]
+        for target_state in next_target_hist:
+            next_target_hist[target_state] /= total_prob
+        agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
         planner.update(agent, action, observation)
         print(action, reward)
         if isinstance(action, Pickup):
@@ -84,4 +115,4 @@ def test_mdp():
             break
 
 if __name__ == "__main__":
-    test_mdp()
+    test_pomdp()

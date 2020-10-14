@@ -50,27 +50,35 @@ class ObserveEffect(OEffect):
                         objo["label"] = "free"
                 else:
                     objo["label"] = "unknown"
+                noisy_obs[objid] = objo
             # else:
             #     noisy_obs[objid] = NullObservation()
 
         return OOObservation(noisy_obs)
 
-    def probability(self, observation, next_state, action, **kwargs):
+    def probability(self, observation, next_state, action, *args, **kwargs):
+        robot_state = next_state.object_states[self.robot_id]
         prob = 1.0
         for objid in observation.object_observations:
             objo = observation.object_observations[objid]
+            objstate = next_state.object_states[objid]
             if objo.objclass in self.noise_params:
                 alpha, beta = self.noise_params[objo.objclass]
-                if objo["label"] == "free":
-                    val = beta
-                elif objo["label"] == "unknown":
-                    val = 1.0
+                # import pdb; pdb.set_trace()
+                if self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                            grid_map=self.grid_map):
+                    # object pose is observable
+                    if objo["pose"] == objstate["pose"]:
+                        if objo["label"] == objid:
+                            val = alpha
+                        else:
+                            val = beta
+                    else:
+                        # given that object is at pose in state but
+                        # didn't observe it at that location is not
+                        # a probable event.
+                        val = 1e-9
                 else:
-                    val = alpha
+                    val = 1.0 # gamma
                 prob *= val
-            # else:
-            #     if isinstance(objo, NullObservation):
-            #         val = 1.0
-            #     else:
-            #         val = 1e-9
         return prob

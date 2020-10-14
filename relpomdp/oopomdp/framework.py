@@ -1,7 +1,7 @@
 # Object Oriented POMDP framework - without object independence assumption
 
 from pomdp_py.framework.basics import POMDP, State, Action, Observation,\
-    ObservationModel, TransitionModel, GenerativeDistribution, Environment, Agent
+    ObservationModel, TransitionModel, GenerativeDistribution, Environment, Agent, RewardModel
 import copy
 from relpomdp.oopomdp.graph import *
 from relpomdp.oopomdp.infograph import RelationGraph
@@ -38,7 +38,7 @@ class ObjectState(State):
         return '%s::(%s,%s)' % (str(self.__class__.__name__),
                                 str(self.objclass),
                                 str(self.attributes))
-    
+
     def __hash__(self):
         return self._hashcode
 
@@ -55,7 +55,7 @@ class ObjectState(State):
         """__setitem__(self, attr, value)
         Sets the attribute `attr` to the given value."""
         self.attributes[attr] = value
-    
+
     def __len__(self):
         return len(self.attributes)
 
@@ -66,6 +66,12 @@ class ObjectState(State):
             return copy.deepcopy(self)
         else:
             return ObjectState(self.objclass, dict(self.attributes), nested=False)
+
+    def get(self, attr, default_val):
+        if attr in self.attributes:
+            return self.attributes[attr]
+        else:
+            return default_val
 
 
 class OOState(State):
@@ -99,14 +105,14 @@ class OOState(State):
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __eq__(self, other):
         return isinstance(other, OOState)\
             and self.object_states == other.object_states
 
     def __hash__(self):
         return self._hashcode
-    
+
     def get_object_state(self, objid):
         """get_object_state(self, objid)
         Returns the ObjectState for given object."""
@@ -116,7 +122,7 @@ class OOState(State):
         """set_object_state(self, objid, object_state)
         Sets the state of the given
         object to be the given object state (ObjectState)
-        """        
+        """
         self.object_states[objid] = object_state
 
     def get_object_class(self, objid):
@@ -126,26 +132,26 @@ class OOState(State):
 
     def get_object_attribute(self, objid, attr):
         """get_object_attribute(self, objid, attr)
-        Returns the attributes of requested object"""        
+        Returns the attributes of requested object"""
         return self.object_states[objid][attr]
 
     def copy(self):
         object_states = {objid : self.object_states[objid].copy()
                          for objid in self.object_states}
-        return OOState(object_states)    
+        return OOState(object_states)
 
     def obj(self, objid):
         return self.get_object_state(objid)
 
     def __getitem__(self, objid):
         return self.get_object_state(objid)
-    
+
     def __setitem(self, objid, object_state):
         self.set_object_state(objid, object_state)
-    
+
     def __len__(self):
         return len(self.object_states)
-    
+
 
 ########### Observation ###########
 class NullObservation(Observation):
@@ -154,7 +160,7 @@ class NullObservation(Observation):
 
     def __hash__(self):
         return hash(None)
-    
+
 
 class ObjectObservation(Observation):
     def __init__(self, objclass, attributes, nested=False):
@@ -170,7 +176,7 @@ class ObjectObservation(Observation):
         return '%s::(%s,%s)' % (str(self.__class__.__name__),
                                 str(self.objclass),
                                 str(self.attributes))
-    
+
     def __hash__(self):
         return self._hashcode
 
@@ -187,7 +193,7 @@ class ObjectObservation(Observation):
         """__setitem__(self, attr, value)
         Sets the attribute `attr` to the given value."""
         self.attributes[attr] = value
-    
+
     def __len__(self):
         return len(self.attributes)
 
@@ -197,7 +203,7 @@ class ObjectObservation(Observation):
         if self._nested:
             return copy.deepcopy(self)
         else:
-            return ObjectObservation(self.objclass, dict(self.attributes), nested=False)        
+            return ObjectObservation(self.objclass, dict(self.attributes), nested=False)
 
 
 class OOObservation(Observation):
@@ -225,14 +231,14 @@ class OOObservation(Observation):
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __eq__(self, other):
         return isinstance(other, OOObservation)\
             and self.object_observations == other.object_observations
 
     def __hash__(self):
         return self._hashcode
-    
+
     def get_object_observation(self, objid):
         """get_object_observation(self, objid)
         Returns the ObjectObservation for given object."""
@@ -242,7 +248,7 @@ class OOObservation(Observation):
         """set_object_observation(self, objid, object_observation)
         Sets the observation of the given
         object to be the given object observation (ObjectObservation)
-        """        
+        """
         self.object_observations[objid] = object_observation
 
     def get_object_class(self, objid):
@@ -252,7 +258,7 @@ class OOObservation(Observation):
 
     def get_object_attribute(self, objid, attr):
         """get_object_attribute(self, objid, attr)
-        Returns the attributes of requested object"""        
+        Returns the attributes of requested object"""
         return self.object_observations[objid][attr]
 
     def copy(self):
@@ -260,7 +266,7 @@ class OOObservation(Observation):
         Copies the observation."""
         object_observations = {objid : self.object_observations[objid].copy()
                                for objid in self.object_observations}
-        return OOObservation(object_observations)            
+        return OOObservation(object_observations)
 
     def obj(self, objid):
         return self.get_object_observation(objid)
@@ -269,14 +275,14 @@ class OOObservation(Observation):
         object_observations = {objid : self.object_observations[objid].copy()
                                for objid in objids\
                                if objid in self.object_observations}
-        return OOObservation(object_observations)    
+        return OOObservation(object_observations)
 
     def __getitem__(self, objid):
         return self.get_object_observation(objid)
-    
+
     def __setitem(self, objid, object_observation):
         self.set_object_observation(objid, object_observation)
-    
+
     def __len__(self):
         return len(self.object_observations)
 
@@ -302,7 +308,7 @@ class CombinedObservation(Observation):
     def __str__(self):
         return '%s::(%s)' % (str(self.__class__.__name__),
                              str(self.observations))
-    
+
     def __hash__(self):
         return self._hashcode
 
@@ -345,21 +351,21 @@ class OOBelief(GenerativeDistribution):
         for objid in self._object_beliefs:
             object_states[objid] = self._object_beliefs[objid].mpe(**kwargs)
         return self._oo_state_class(object_states)
-    
+
     def random(self, **kwargs):
         """random(self, **kwargs)
         Returns a random state"""
         object_states = {}
         for objid in self._object_beliefs:
             object_states[objid] = self._object_beliefs[objid].random(**kwargs)
-        return self._oo_state_class(object_states)        
-    
+        return self._oo_state_class(object_states)
+
     def __setitem__(self, oostate, value):
         """__setitem__(self, oostate, value)
         Sets the probability of a given `oostate` to `value`.
         Note always feasible."""
         raise NotImplemented
-        
+
     def object_belief(self, objid):
         """object_belief(self, objid)
         Returns the belief (GenerativeDistribution) for the given object."""
@@ -383,7 +389,7 @@ class Condition:
         In the case of Observation model, `state` should be interpreted
         as 'next_state'"""
         raise NotImplementedError
-    
+
 class TEffect(GenerativeDistribution):
     """Probabilistic transition effect"""
     def __init__(self, effect_type):
@@ -395,19 +401,19 @@ class TEffect(GenerativeDistribution):
 
     def mpe(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
-        raise NotImplementedError    
+        raise NotImplementedError
 
     def probability(self, next_state, state, action, byproduct=None):
         """Returns the probability of getting `next_state` if applying
         this effect on `state` given `action`."""
-        raise NotImplementedError    
+        raise NotImplementedError
 
 class DeterministicTEffect(TEffect):
     """Deterministically move"""
     def __init__(self, effect_type, epsilon=1e-9):
         self.epsilon = epsilon
         super().__init__(effect_type)
-        
+
     def random(self, state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         return self.mpe(state, action, byproduct)
@@ -432,7 +438,7 @@ class OEffect(GenerativeDistribution):
 
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOObservation after applying this effect on `state`"""
-        raise NotImplementedError    
+        raise NotImplementedError
 
     def probability(self, observation, next_state, action, byproduct=None):
         """Returns the probability of getting `observation` if applying
@@ -461,8 +467,8 @@ class DeterministicOEffect(OEffect):
             return 1.0 - self.epsilon
         else:
             return self.epsilon
-        
-########### Class and Relation ###########    
+
+########### Class and Relation ###########
 class Class(Node):
     """A node, which could have an (x,y) location"""
     def __init__(self, name):
@@ -481,7 +487,7 @@ class Class(Node):
     def __hash__(self):
         return hash(self.id)
 
-    
+
 class Relation(Edge):
     """
     A relation is a directed edge.
@@ -521,7 +527,7 @@ class Relation(Edge):
             return self.nodes[1]
         else:
             return None
-            
+
     def __repr__(self):
         if self.data is None:
             data = "--"
@@ -539,7 +545,7 @@ class Relation(Edge):
     def color(self):
         return "black"
 
-########### Object-Oriented Transition Model ###########        
+########### Object-Oriented Transition Model ###########
 class OOTransitionModel(TransitionModel):
     def __init__(self, cond_effects):
         """
@@ -565,7 +571,7 @@ class OOTransitionModel(TransitionModel):
                 satisfied, byproduct = res
             else:
                 satisfied, byproduct = res, None
-                
+
             if satisfied:
                 if argmax:
                     interm_state = effect.mpe(interm_state, action, byproduct)
@@ -573,7 +579,7 @@ class OOTransitionModel(TransitionModel):
                     interm_state = effect.random(interm_state, action, byproduct)
 
         return interm_state  # intermediate state becomes next state
-        
+
     def probability(self, next_state, state, action, **kwargs):
         """
         probability(self, next_state, state, action, **kwargs)
@@ -595,15 +601,15 @@ class OOTransitionModel(TransitionModel):
             if satisfied:
                 prob *= effect.probability(next_state, state, action, byproduct)
         return prob
-    
+
     def argmax(self, state, action):
         """
         argmax(self, state, action, **kwargs)
         Returns the most likely next state"""
         return self.sample(state, action, argmax=True)
-    
 
-########### Object-Oriented Observation Model ###########            
+
+########### Object-Oriented Observation Model ###########
 class OOObservationModel(ObservationModel):
     def __init__(self, cond_effects):
         self._cond_effects = cond_effects
@@ -620,6 +626,10 @@ class OOObservationModel(ObservationModel):
             if satisfied:
                 effects.append((effect, byproduct))
         return effects
+
+    @property
+    def cond_effects(self):
+        return self._cond_effects
 
     def sample(self, next_state, action, argmax=False):
         """sample(self, next_state, action, **kwargs)
@@ -640,7 +650,7 @@ class OOObservationModel(ObservationModel):
             return observation
         else:
             return CombinedObservation(observations)
-        
+
     def probability(self, observation, next_state, action, **kwargs):
         """
         probability(self, next_state, state, action, **kwargs)
@@ -658,7 +668,7 @@ class OOObservationModel(ObservationModel):
                 o_e = observation.observation_for(effect)
             prob *= effect.probability(o_e, next_state, action, byproduct)
         return prob
-    
+
     def argmax(self, state, action):
         """
         argmax(self, state, action, **kwargs)
@@ -666,7 +676,7 @@ class OOObservationModel(ObservationModel):
         return self.sample(state, action, argmax=True)
 
 
-########### Object-Oriented Environment ###########        
+########### Object-Oriented Environment ###########
 class OOEnvironment(Environment):
     """
     OOEnvironment is initialized by both an initial state
@@ -684,8 +694,8 @@ class OOEnvironment(Environment):
         transition_model = OOTransitionModel(cond_effects)
         super().__init__(init_state, transition_model, reward_model)
 
-    
-########### Object-Oriented Environment ###########        
+
+########### Object-Oriented Environment ###########
 class OOAgent(Agent):
     """
     OOAgent is initialized by both an initial state
@@ -717,7 +727,40 @@ def Objstate(obj_class, **attrs):
     return ObjectState(obj_class, attrs)
 
 def Objobs(obj_class, **attrs):
-    return ObjectObservation(obj_class, attrs)        
+    return ObjectObservation(obj_class, attrs)
 
 def OOObs(observations):
     return OOObservation(observations)
+
+
+## CompositeRewardModel
+class CompositeRewardModel(RewardModel):
+    """A reward model that computes reward by summing
+    up rewards from a few other models"""
+    def __init__(self, reward_models, rmin=None, rmax=None):
+        """
+        reward_models (list): List of reward models
+        rmin (float): minimum reward
+        rmax (float): maximum reward
+        """
+        self.rmin = rmin
+        self.rmax = rmax
+        self.reward_models = reward_models
+
+    def sample(self, state, action, next_state, **kwargs):
+        return self.argmax(state, action, next_state)
+
+    def argmax(self, state, action, next_state, **kwargs):
+        """
+        argmax(self, state, action, next_state, **kwargs)
+        Returns the most likely reward"""
+        total_reward = sum(self.reward_models[i].argmax(state, action, next_state)
+                           for i in range(len(self.reward_models)))
+        if self.rmin is not None:
+            total_reward = max(rmin, total_reward)
+        if self.rmax is not None:
+            total_reward = min(rmax, total_reward)
+        return total_reward
+
+    def add_model(self, reward_model):
+        self.reward_models.append(reward_model)

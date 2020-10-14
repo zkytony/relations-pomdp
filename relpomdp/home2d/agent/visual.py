@@ -1,10 +1,11 @@
 # Visualize agent, allows control, visualize its map versus the true map
 
 import pygame
-from relpomdp.home2d.domain.visual import Home2DViz
+from relpomdp.home2d.domain.visual import Home2DViz, lighter
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.nk_agent import NKAgent
+import pomdp_py
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -14,16 +15,17 @@ class NKAgentViz(Home2DViz):
 
     def __init__(self, nkagent, env, colors, img_path="imgs",
                  res=30, fps=30, controllable=False):
-        self._nkagent = nkagent
         super().__init__(env, colors, img_path=img_path,
                          res=res, fps=fps, controllable=controllable)
+
+        self._nkagent = nkagent
 
     def on_init(self):
         super().on_init()
         plt.ion()
         plt.show(block=False)
 
-    def on_render(self):
+    def on_render(self, belief=None):
         # Renders the true world. Then plot agent's world
         super().on_render()
 
@@ -31,15 +33,57 @@ class NKAgentViz(Home2DViz):
         fig = plt.gcf()
         ax = plt.gca()
         img = self.make_agent_view(self._res)
+
+        if belief is not None:
+            circle_drawn = {}
+            for objid in belief.object_beliefs:
+                belief_obj = belief.object_beliefs[objid]
+                objclass = belief.object_beliefs[objid].mpe().objclass
+                if objclass.lower() == "robot":
+                    continue
+
+                color = self._colors.get(objclass, (128, 128, 128))
+                NKAgentViz.draw_object_belief(img, self._res, belief_obj, color,
+                                              circle_drawn=circle_drawn)
+
         # rotate 90 deg CCW to match the pygame display
         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         ax.imshow(img, interpolation='none')
         # These must happen after imshow
         ax.set_aspect("equal")
-        # ax.invert_yaxis()
 
         fig.canvas.draw()
         fig.canvas.flush_events()
+
+    @staticmethod
+    def draw_object_belief(img, r, belief, color,
+                           circle_drawn={}):
+        """
+        circle_drawn: map from pose to number of times drawn;
+            Used to determine sizxe of circle to draw at a location
+        """
+        radius = int(round(r / 2))
+        size = r // 3
+        last_val = -1
+        count = 0
+        hist = belief.get_histogram()
+        for state in reversed(sorted(hist, key=hist.get)):
+            if last_val != -1:
+                color = lighter(color, 1-hist[state]/last_val)
+            if np.mean(np.array(color) / np.array([255, 255, 255])) < 0.999:
+                tx, ty = state['pose']
+                if (tx,ty) not in circle_drawn:
+                    circle_drawn[(tx,ty)] = 0
+                circle_drawn[(tx,ty)] += 1
+
+                cv2.circle(img, (ty*r+radius,
+                                 tx*r+radius), size//circle_drawn[(tx,ty)], color, thickness=-1)
+                last_val = hist[state]
+
+                count +=1
+                if last_val <= 0:
+                    break
+
 
     def make_agent_view(self, r):
         # Preparing 2d array
