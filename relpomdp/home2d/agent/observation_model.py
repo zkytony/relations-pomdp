@@ -38,7 +38,7 @@ class ObserveEffect(OEffect):
             if objstate.objclass in self.noise_params:
                 # We will only observe objects that we have noise parameters for
                 alpha, beta = self.noise_params[objstate.objclass]
-                objo = Objobs(objstate.objclass, pose=objstate["pose"])
+                objo = Objobs(objstate.objclass, label="unknown")
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
                     # observable;
@@ -48,8 +48,6 @@ class ObserveEffect(OEffect):
                     else:
                         # Sensor malfunction; not observing it
                         objo["label"] = "free"
-                else:
-                    objo["label"] = "unknown"
                 noisy_obs[objid] = objo
             # else:
             #     noisy_obs[objid] = NullObservation()
@@ -67,17 +65,10 @@ class ObserveEffect(OEffect):
                 # import pdb; pdb.set_trace()
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
-                    # object pose is observable
-                    if objo["pose"] == objstate["pose"]:
-                        if objo["label"] == objid:
-                            val = alpha
-                        else:
-                            val = beta
+                    if objo["label"] == objid:
+                        val = alpha
                     else:
-                        # given that object is at pose in state but
-                        # didn't observe it at that location is not
-                        # a probable event.
-                        val = 1e-9
+                        val = beta
                 else:
                     val = 1.0 # gamma
                 prob *= val
