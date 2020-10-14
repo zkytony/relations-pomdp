@@ -90,15 +90,21 @@ class NKAgentViz(Home2DViz):
         w, l = self._env.width, self._env.length
         state = self._env.state
 
+        agent_map = self._nkagent.grid_map
+        frontier = agent_map.frontier()
+
         # Creating image
         img = np.full((w*r,l*r,3), 255, dtype=np.int32)
         for x in range(w):
             for y in range(l):
                 # Draw free space; If this exists in robot's partial map,
                 # draw it with white; Otherwise, dark
-                if (x,y) in self._nkagent.grid_map.free_locations:
+                if (x,y) in agent_map.free_locations:
                     room_color = (255, 255, 255)
                     boundary_color = (0, 0, 0)
+                elif (x,y) in frontier:
+                    room_color = (250, 243, 55)
+                    boundary_color = (245, 241, 142)
                 else:
                     room_color = (66, 66, 66)
                     boundary_color = (66, 66, 66)

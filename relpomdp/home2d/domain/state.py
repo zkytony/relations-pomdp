@@ -46,6 +46,19 @@ class WallState(oopomdp.ObjectState):
     def pose(self):
         return self["pose"]
 
+    def cells_touching(self):
+        """Returns the location of the two cells
+        that is touching this wall. Note that a vertical
+        wall is on the right side of a cell, and a horizontal
+        wall is on the top side of a cell"""
+        if self.direction == "V":
+            x, y = self["pose"]
+            return ((x,y), (x+1,y))
+        else:
+            x, y = self["pose"]
+            return ((x,y), (x,y+1))
+
+
 def unittest():
     assert WallState((0,1), "H") == WallState((0,1), "H")
     print("Passed")

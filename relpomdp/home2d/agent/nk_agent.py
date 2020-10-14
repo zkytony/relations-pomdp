@@ -24,6 +24,7 @@ class PartialGridMap(GridMap):
         """
         self.free_locations = free_locations
         self.walls = walls
+        self._cell_to_walls = self._compute_walls_per_cell()
 
         width, length = self._compute_dims(free_locations)
         super().__init__(width, length, walls, {})
@@ -33,10 +34,52 @@ class PartialGridMap(GridMap):
         length = (max(point[1] for point in free_locs) - min(point[1] for point in free_locs)) + 1
         return width, length
 
+    def _compute_walls_per_cell(self):
+        """
+        Returns a map that maps from each location to a set of walls (wall ids)
+        that surrounds this cell
+        """
+        cell_to_walls = {}
+        for wall_id in self.walls:
+            cell1, cell2 = self.walls[wall_id].cells_touching()
+            if cell1 not in cell_to_walls:
+                cell_to_walls[cell1] = set()
+            if cell2 not in cell_to_walls:
+                cell_to_walls[cell2] = set()
+            cell_to_walls[cell1].add(wall_id)
+            cell_to_walls[cell2].add(wall_id)
+        return cell_to_walls
+
+
     def update(self, free_locs, walls):
         self.free_locations |= free_locs
         self.walls.update(walls)
         self.width, self.length = self._compute_dims(self.free_locations)
+        self._cell_to_walls = self._compute_walls_per_cell()
+
+    def frontier(self):
+        """Returns a set of locations that is an immediate
+        expansion of locations at the edge of the current map"""
+        frontier = set()
+        for x, y in self.free_locations:
+            # Check all four directions of this grid cell and
+            # see if there is one side that extends into the unknown
+            connecting_cells = {(x+1, y), (x-1,y), (x,y+1), (x,y-1)}
+            if (x,y) in self._cell_to_walls:
+                surrounding_walls = self._cell_to_walls[(x,y)]
+                for wall_id in surrounding_walls:
+                    wall = self.walls[wall_id]
+                    blocked_loc = set(wall.cells_touching()) - set({(x,y)})
+                    connecting_cells -= blocked_loc
+
+            for cell in connecting_cells:
+                if cell not in self.free_locations\
+                   and (cell[0] >= 0 and cell[1] >= 0):
+                    # This is a frontier, because it is not blocked by
+                    # any wall and is not in a free location, and it
+                    # does not have negative coordinates
+                    frontier.add(cell)
+        return frontier
 
 
 class FakeSLAM:

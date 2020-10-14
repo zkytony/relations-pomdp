@@ -57,7 +57,7 @@ def test_pomdp():
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (10., 0.1)})
+    nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
     nk_agent.update()
 
     agent = nk_agent.instantiate()
