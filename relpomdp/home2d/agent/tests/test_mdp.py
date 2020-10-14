@@ -1,5 +1,5 @@
 import pomdp_py
-from relpomdp.home2d.agent.tests.test import wait_for_action
+from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
@@ -27,7 +27,7 @@ def make_world():
 
 
 
-def test_mdp(env):
+def test_mdp(env, nsteps=100, discount_factor=0.95):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
@@ -51,7 +51,7 @@ def test_mdp(env):
     env.transition_model.cond_effects.append(pickup_condeff)
 
     planner = pomdp_py.POUCT(max_depth=20,
-                             discount_factor=0.95,
+                             discount_factor=discount_factor,
                              num_sims=1000,
                              exploration_const=200,
                              rollout_policy=agent.policy_model)
@@ -65,7 +65,7 @@ def test_mdp(env):
                      img_path="../../domain/imgs")
     viz.on_init()
     rewards = []
-    for i in range(100):
+    for i in range(nsteps):
         # Visualize
         viz.on_loop()
         viz.on_render()
@@ -89,6 +89,7 @@ def test_mdp(env):
         if isinstance(action, Pickup):
             print("Done.")
             break
+    viz.on_cleanup()
     return rewards
 
 if __name__ == "__main__":
