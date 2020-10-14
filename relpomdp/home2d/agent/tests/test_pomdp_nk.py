@@ -5,7 +5,9 @@ from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
+from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.maps.build_map import random_world
+from relpomdp.home2d.domain.action import MoveN
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.oopomdp.framework import Objstate, OOState
@@ -25,6 +27,11 @@ def make_world():
                             grid_map,
                             init_state)
     return env
+
+def env_add_target(env, target_id, target_class):
+    """
+    Adds target to search for (adds pickup action and effect)
+    """
 
 
 def test_pomdp_nk():
@@ -63,8 +70,11 @@ def test_pomdp_nk():
     nk_agent.update()
 
     agent = nk_agent.instantiate()
+
+    # Need to update R/T models of the environment for the search task
     env.set_reward_model(agent.reward_model)
-    env.set_transition_model(agent.transition_model)
+    pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
+    env.transition_model.cond_effects.append(pickup_condeff)
 
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
@@ -90,6 +100,7 @@ def test_pomdp_nk():
 
         # environment transitions and obtains reward (note that we use agent's reward model for convenience)
         env_state = env.state.copy()
+        prev_robot_pose = agent.belief.mpe().object_states[robot_id]["pose"]
         _ = env.state_transition(action, execute=True)
         env_next_state = env.state.copy()
         reward = agent.reward_model.sample(env_state, action, env_next_state)
@@ -99,16 +110,15 @@ def test_pomdp_nk():
         agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
             env.robot_state.copy() : 1.0
         })
+        robot_pose = agent.belief.mpe().object_states[robot_id]["pose"]
 
         # update map (fake slam)
-        prev_robot_pose = env_state.object_states[robot_id]["pose"]
-        robot_pose = env_next_state.object_states[robot_id]["pose"]
         fake_slam.update(nk_agent.grid_map, prev_robot_pose, robot_pose, env)
         nk_agent.update()  # Update the nk_agent because policy model needs to be updated
-        tree = agent.tree
+        # tree = agent.tree
         agent = nk_agent.instantiate(agent.belief)  # TODO: REFACTOR; pomdp_py doesn't allow reassigning models to agents
         planner.set_rollout_policy(agent.policy_model)
-        agent.tree = tree
+        # agent.tree = tree
 
         # Belief update.
         ## First obtain the current belief
@@ -147,7 +157,8 @@ def test_pomdp_nk():
             next_target_hist[target_state] /= total_prob
         agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
         agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
-        planner.update(agent, action, observation)
+        # planner update is futile because the map changes
+        # planner.update(agent, action, observation)
         print(action, reward)
         rewards.append(reward)
         if isinstance(action, Pickup):

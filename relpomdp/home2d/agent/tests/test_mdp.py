@@ -4,6 +4,7 @@ from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
+from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 import copy
@@ -46,7 +47,8 @@ def test_mdp(env):
 
     agent = nk_agent.instantiate()
     env.set_reward_model(agent.reward_model)
-    env.set_transition_model(agent.transition_model)
+    pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
+    env.transition_model.cond_effects.append(pickup_condeff)
 
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
