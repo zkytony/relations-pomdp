@@ -27,6 +27,10 @@ class GridMap:
             for x,y in room.locations:
                 self.xy_to_room[(x,y)] = room.name
 
+        # all locations are free
+        self.free_locations = {(x,y) for x in range(width)
+                               for y in range(length)}
+
     def room_of(self, position):
         if position in self.xy_to_room:
             return self.rooms[self.xy_to_room[position]]
@@ -44,10 +48,17 @@ class GridMap:
             return {name:self.rooms[name].to_state()
                     for name in self.rooms}
 
-    def legal_motions_at(self, x, y, all_motion_actions):
+    def legal_motions_at(self, x, y, all_motion_actions, permitted_locations=None):
+        """
+        permitted_locations (set): A set of (x,y) locations besides what is in
+            that we allow the robot to move to. If None, `self.free_locations`
+            will be used.
+        """
         so = Objstate("PoseObject", pose=(x,y))
         motion_actions = set(all_motion_actions)
         legal_actions = set()
+        if permitted_locations is None:
+            permitted_locations = self.free_locations
 
         # Compute maximum expected length of travel
         max_traj_len = float("-inf")
@@ -67,9 +78,11 @@ class GridMap:
         # Compute legal motions
         for a in motion_actions:
             dx, dy, dth = a.motion
-            if not (0 <= x+dx < self.width):
+            if x+dx < 0:
                 continue
-            if not (0 <= y+dy < self.length):
+            if y+dy < 0:
+                continue
+            if (x+dx, y+dy) not in permitted_locations:
                 continue
             legal = True
             for wall_id in nearby_walls:

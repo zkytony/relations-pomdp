@@ -22,8 +22,8 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         self._actions = self._motion_actions | other_actions  # all actions
 
     def sample(self, state, **kwargs):
-        return random.sample(self._get_all_actions(**kwargs), 1)[0]        
-    
+        return random.sample(self._get_all_actions(**kwargs), 1)[0]
+
     def get_all_actions(self, state=None, history=None):
         """
         get_all_actions(self, *args, **kwargs)
@@ -32,7 +32,11 @@ class PolicyModel(pomdp_py.RolloutPolicy):
             return self._actions
         else:
             robot_state = state.object_states[self.robot_id]
-            motions = self.legal_motions[robot_state["pose"][:2]]
+            robot_pose = robot_state["pose"]
+            if robot_pose[:2] not in self.legal_motions:
+                motions = set()
+            else:
+                motions = self.legal_motions[robot_pose[:2]]
             return motions | self._other_actions
 
     @property
@@ -41,9 +45,9 @@ class PolicyModel(pomdp_py.RolloutPolicy):
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
-        
 
-# Preferred policy, action prior.    
+
+# Preferred policy, action prior.
 class PreferredPolicyModel(PolicyModel):
     """The same with PolicyModel except there is a preferred rollout policypomdp_py.RolloutPolicy"""
     def __init__(self, action_prior, other_actions=set()):
@@ -52,7 +56,7 @@ class PreferredPolicyModel(PolicyModel):
                          self.action_prior.motions,
                          grid_map=self.action_prior.grid_map,
                          other_actions=other_actions)
-        
+
     def rollout(self, state, history):
         # Obtain preference and returns the action in it.
         preferences = self.action_prior.get_preferred_actions(state, history)

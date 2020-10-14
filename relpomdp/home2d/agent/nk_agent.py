@@ -81,6 +81,17 @@ class PartialGridMap(GridMap):
                     frontier.add(cell)
         return frontier
 
+    def compute_legal_motions(self, all_motion_actions):
+        """This is done by creating a map from
+        current free locations and frontier to a set of
+        motions that can be executed there."""
+        legal_actions = {}
+        all_locations = self.free_locations | self.frontier()
+        for x, y in all_locations:
+            legal_actions[(x,y)] = self.legal_motions_at(x, y, all_motion_actions,
+                                                         permitted_locations=all_locations)
+        return legal_actions
+
 
 class FakeSLAM:
     def __init__(self, range_sensor):
@@ -143,8 +154,10 @@ class NKAgent:
         init_robot_state = Objstate("Robot", pose=init_robot_pose)
         self._init_belief = OOBelief({self.robot_id: pomdp_py.Histogram({init_robot_state:1.0})})
 
-    def instantiate(self):
-        agent = pomdp_py.Agent(self._init_belief,
+    def instantiate(self, init_belief=None):
+        if init_belief is None:
+            init_belief = self._init_belief
+        agent = pomdp_py.Agent(init_belief,
                                self._policy_model,
                                self._transition_model,
                                self._observation_model,
@@ -182,12 +195,12 @@ class NKAgent:
         should be updated; But the observation model should be updated automatically
         because we passed in the reference to self.grid_map when constructing it."""
         legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
-        # action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
-        #                                       legal_motions,
-        #                                       10, 10)
-        # self._policy_model = PreferredPolicyModel(action_prior,
-        #                                           other_actions={Pickup()})
-        self._policy_model = PolicyModel(self.robot_id,
-                                         motions=self.motion_actions,
-                                         other_actions={Pickup()},
-                                         grid_map=self.grid_map)
+        action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
+                                              legal_motions,
+                                              10, 100)
+        self._policy_model = PreferredPolicyModel(action_prior,
+                                                  other_actions={Pickup()})
+        # self._policy_model = PolicyModel(self.robot_id,
+        #                                  motions=self.motion_actions,
+        #                                  other_actions={Pickup()},
+        #                                  grid_map=self.grid_map)

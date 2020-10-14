@@ -17,6 +17,9 @@ class ExplorationActionPrior(pomdp_py.ActionPrior):
     def get_preferred_actions(self, state, history):
         """Get preferred actions. This can be used by a rollout policy as well."""
         robot_state = state.object_states[self.robot_id]
+        if robot_state["pose"][:2] not in self.legal_motions:
+            return set()
+
         cur_room = self.grid_map.room_of(robot_state["pose"][:2])
         preferences = set()
 
