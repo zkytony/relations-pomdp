@@ -14,7 +14,7 @@ import copy
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(10, 10, 3,
+    init_state, grid_map = random_world(6, 6, 3,
                                         ["Kitchen", "Office", "Office"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Pepper": (1, (1,1))},
@@ -34,7 +34,7 @@ def test_pomdp_nk():
     nk_agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
                                        fov=90, min_range=1,
-                                       max_range=5, angle_increment=0.1))
+                                       max_range=3, angle_increment=0.1))
 
     target_class = "Salt"
     target_id = list(env.ids_for(target_class))[0]
@@ -46,8 +46,8 @@ def test_pomdp_nk():
     target_hist = {}
     total_prob = 0.0
     for x, y in nk_agent.grid_map.free_locations | frontier:
-        # if (x,y) == init_robot_pose[:2]:
-        #     continue  # skip the robot's own pose because the target won't be there
+        if (x,y) == init_robot_pose[:2]:
+            continue  # skip the robot's own pose because the target won't be there
         target_state = Objstate(target_class, pose=(x,y))
         target_hist[target_state] = 1.
         total_prob += target_hist[target_state]

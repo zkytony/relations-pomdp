@@ -195,12 +195,15 @@ class NKAgent:
         should be updated; But the observation model should be updated automatically
         because we passed in the reference to self.grid_map when constructing it."""
         legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
-        action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
-                                              legal_motions,
-                                              10, 100)
-        self._policy_model = PreferredPolicyModel(action_prior,
-                                                  other_actions={Pickup()})
-        # self._policy_model = PolicyModel(self.robot_id,
-        #                                  motions=self.motion_actions,
-        #                                  other_actions={Pickup()},
-        #                                  grid_map=self.grid_map)
+        # action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
+        #                                       legal_motions,
+        #                                       10, 100)
+        # self._policy_model = PreferredPolicyModel(action_prior,
+        #                                           other_actions={Pickup()})
+        self._transition_model.cond_effects.pop(0)  # pop the MoveEffect
+        move_condeff = (CanMove(self.robot_id, legal_motions), MoveEffect(self.robot_id))
+        self._transition_model.cond_effects.insert(0, move_condeff)
+        self._policy_model = PolicyModel(self.robot_id,
+                                         motions=self.motion_actions,
+                                         other_actions={Pickup()},
+                                         grid_map=self.grid_map)

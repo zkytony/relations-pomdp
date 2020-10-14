@@ -28,16 +28,18 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         """
         get_all_actions(self, *args, **kwargs)
         Returns a set of all possible actions, if feasible."""
-        if state is None or self.legal_motions is None:
-            return self._actions
-        else:
-            robot_state = state.object_states[self.robot_id]
-            robot_pose = robot_state["pose"]
-            if robot_pose[:2] not in self.legal_motions:
-                motions = set()
-            else:
-                motions = self.legal_motions[robot_pose[:2]]
-            return motions | self._other_actions
+        # if state is None or self.legal_motions is None:
+        #     return self._actions
+        # else:
+        robot_state = state.object_states[self.robot_id]
+        robot_pose = robot_state["pose"]
+        # if robot_pose[:2] == (0,0) and robot_pose[2] != 0.0:
+        #     import pdb; pdb.set_trace()
+        # if robot_pose[:2] not in self.legal_motions:
+        #     motions = set()
+        # else:
+        motions = self.legal_motions[robot_pose[:2]]
+        return motions | self._other_actions
 
     @property
     def all_motion_actions(self):

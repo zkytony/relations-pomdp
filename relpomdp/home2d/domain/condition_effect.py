@@ -21,8 +21,6 @@ class CanMove(oopomdp.Condition):
             # is legal or not.
             return True
         else:
-            if action == MoveW:
-                print(self.legal_motions[robot_state["pose"][:2]])
             return action in self.legal_motions[robot_state["pose"][:2]]
 
 class MoveEffect(oopomdp.DeterministicTEffect):
