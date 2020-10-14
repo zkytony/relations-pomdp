@@ -17,9 +17,9 @@ def make_world():
     init_state, grid_map = random_world(6, 6, 3,
                                         ["Kitchen", "Office", "Office"],
                                         objects={"Office": {"Computer": (1, (1,1))},
-                                                 "Kitchen": {"Pepper": (1, (1,1))},
-                                                 "Bathroom": {"Toilet": (1, (1,1))},
-                                                 "Corridor": {"Salt": (1, (1,1))}},
+                                                 "Kitchen": {"Pepper": (1, (1,1)),
+                                                             "Salt": (1, (1,1))},
+                                                 "Bathroom": {"Toilet": (1, (1,1))}},
                                         robot_id=robot_id, init_robot_pose=init_robot_pose)
     env = Home2DEnvironment(robot_id,
                             grid_map,
@@ -105,7 +105,6 @@ def test_pomdp_nk():
         agent = nk_agent.instantiate(agent.belief)  # TODO: REFACTOR; pomdp_py doesn't allow reassigning models to agents
         planner.set_rollout_policy(agent.policy_model)
         agent.tree = tree
-        # agent.grid_map = nk_agent.grid_map  # make sure the planning agent's map is updated
 
         # Belief update.
         ## First obtain the current belief

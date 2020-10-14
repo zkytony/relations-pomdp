@@ -30,8 +30,8 @@ class MoveEffect(oopomdp.DeterministicTEffect):
         super().__init__("move")
 
     @classmethod
-    def move_by(self, robot_pose, motion):
-        dx, dy, th = motion
+    def move_by(self, robot_pose, action):
+        dx, dy, th = action.motion
         rx, ry = robot_pose[:2]
         return (rx + dx, ry + dy, th)
 
@@ -40,7 +40,7 @@ class MoveEffect(oopomdp.DeterministicTEffect):
         robot_state = state.object_states[self.robot_id]
         next_state = state.copy()
         next_robot_state = next_state.object_states[self.robot_id]
-        next_robot_state["pose"] = MoveEffect.move_by(robot_state["pose"], action.motion)
+        next_robot_state["pose"] = MoveEffect.move_by(robot_state["pose"], action)
         next_robot_state["camera_direction"] = action.name
         return next_state
 

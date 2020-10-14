@@ -26,10 +26,10 @@ class GridMap:
             room = self.rooms[name]
             for x,y in room.locations:
                 self.xy_to_room[(x,y)] = room.name
-
         # all locations are free
         self.free_locations = {(x,y) for x in range(width)
                                for y in range(length)}
+
 
     def room_of(self, position):
         if position in self.xy_to_room:

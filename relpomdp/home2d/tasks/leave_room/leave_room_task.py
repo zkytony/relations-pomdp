@@ -24,15 +24,15 @@ class RewardModel(pomdp_py.RewardModel):
     def __init__(self, robot_id, room_id):
         self.robot_id = robot_id
         self.room_id = room_id
-    
+
     def sample(self, state, action, next_state, **kwargs):
         return self.argmax(state, action, next_state)
-    
+
     def argmax(self, state, action, next_state, **kwargs):
         """
         argmax(self, state, action, next_state, **kwargs)
         Returns the most likely reward"""
-        robot_state = state.object_states[self.robot_id]        
+        robot_state = state.object_states[self.robot_id]
         next_robot_state = next_state.object_states[self.robot_id]
         if next_robot_state["room_id"] != self.room_id:
             if robot_state["room_id"] == self.room_id:
@@ -62,7 +62,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
         preferences = set()
 
         if robot_state["room_id"] != self.room_id:
-            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
+            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action):action
                          for action in self.legal_motions[robot_state["pose"][:2]]}
             for next_robot_pose in neighbors:
                 # Prefer action to move into a different room
@@ -72,7 +72,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
                     preferences.add((action,
                                      self.num_visits_init, self.val_init))
         return preferences
-    
+
 
 class LeaveRoomTask(Task):
     def __init__(self,
@@ -82,7 +82,7 @@ class LeaveRoomTask(Task):
         self.robot_id = robot_id
         self.room_id = room_id
         motions = {MoveN, MoveS, MoveE, MoveW}
-        
+
         cond_effects_t = []
         legal_motions = grid_map.compute_legal_motions(motions)
         cond_effects_t.append((CanMove(robot_id, legal_motions),
@@ -97,5 +97,3 @@ class LeaveRoomTask(Task):
                          observation_model,
                          reward_model,
                          policy_model)
-
-        

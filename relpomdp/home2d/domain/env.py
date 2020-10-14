@@ -38,6 +38,7 @@ class Home2DEnvironment(OOEnvironment):
                  robot_id,
                  grid_map,  # specifies the map (dimension and walls)
                  init_object_states, # maps from object id to initial state
+                 motions={MoveW, MoveN, MoveS, MoveE},
                  reward_model=DummyRewardModel()):
         """
         reward_model (RewardModel): May differ depending on the task.
@@ -58,7 +59,7 @@ class Home2DEnvironment(OOEnvironment):
                      touch_W,
                      touch_E,
                      is_on}
-        self.legal_motions = grid_map.compute_legal_motions({MoveN, MoveS, MoveE, MoveW})
+        self.legal_motions = grid_map.compute_legal_motions(motions)
         # Basic condition/effects
         cond_effects = [(CanMove(robot_id, self.legal_motions), MoveEffect(robot_id))]
         super().__init__(init_state, relations, cond_effects, reward_model)

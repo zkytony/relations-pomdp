@@ -45,7 +45,6 @@ class Home2DViz:
             pygame.K_DOWN: MoveS
         }
 
-
     def _make_gridworld_image(self, r):
         # Preparing 2d array
         w, l = self._env.width, self._env.length

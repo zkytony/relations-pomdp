@@ -23,7 +23,7 @@ class CanPickup(oopomdp.Condition):
     def __init__(self, robot_id, target_id):
         self.robot_id = robot_id
         self.target_id = target_id
-        
+
     def satisfy(self, state, action):
         if not isinstance(action, Pickup):
             return False
@@ -33,12 +33,12 @@ class CanPickup(oopomdp.Condition):
            and not target_state["is_found"]:
             return True, self.target_id
         return False
-            
+
 class PickupEffect(oopomdp.DeterministicTEffect):
     """Pick up effect: Deterministically pick up"""
     def __init__(self):
         super().__init__("pickup")
-        
+
     def mpe(self, state, action, picking_objid):
         """Returns an OOState after applying this effect on `state`"""
         next_state = state
@@ -69,8 +69,8 @@ class ObjectObserveEffect(oopomdp.DeterministicOEffect):
         if expected_observation == observation.for_objs(modeled_objs):
             return 1.0 - self.epsilon
         else:
-            return self.epsilon        
-        
+            return self.epsilon
+
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         robot_state = next_state.object_states[self.robot_id]
@@ -93,10 +93,10 @@ class RewardModel(pomdp_py.RewardModel):
         self.target_id = target_id
         self.grid_map = grid_map
         self.within_room = within_room
-    
+
     def sample(self, state, action, next_state, **kwargs):
         return self.argmax(state, action, next_state)
-    
+
     def argmax(self, state, action, next_state, **kwargs):
         """
         argmax(self, state, action, next_state, **kwargs)
@@ -107,12 +107,12 @@ class RewardModel(pomdp_py.RewardModel):
             next_room = self.grid_map.room_of(next_state.object_states[self.robot_id]["pose"][:2])
             if next_room != cur_room:
                 return -100.0
-                    
+
         if isinstance(action, Pickup):
             found = state.object_states[self.target_id]["is_found"]
             next_found = next_state.object_states[self.target_id]["is_found"]
             if next_found:
-                if not found: 
+                if not found:
                     return 100.0
                 else:
                     return -1.0
@@ -143,7 +143,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
         target_state = state.object_states[self.target_id]
         if target_state["is_found"] is False:
             cur_dist = euclidean_dist(robot_state["pose"][:2], target_state["pose"])
-            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
+            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action):action
                          for action in self.legal_motions[robot_state["pose"][:2]]}
             for next_robot_pose in neighbors:
                 # Prefer action to move into the room where
@@ -156,8 +156,8 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
                     preferences.add((action,
                                      self.num_visits_init, self.val_init))
         return preferences
-    
-    
+
+
 
 class SearchItemTask(Task):
 
@@ -229,13 +229,13 @@ class SearchItemTask(Task):
         for state in target_hist:
             target_hist[state] /= total_prob
 
-        # Return OOBelief, or just histogram            
+        # Return OOBelief, or just histogram
         if "robot_state" in kwargs:
             robot_state = kwargs["robot_state"]
             return pomdp_py.OOBelief({self.target_id: pomdp_py.Histogram(target_hist),
                                       self.robot_id: pomdp_py.Histogram({robot_state:1.0})})
         else:
-            return pomdp_py.Histogram(target_hist)            
+            return pomdp_py.Histogram(target_hist)
 
     def step(self, env, agent, planner):
         """
@@ -247,7 +247,7 @@ class SearchItemTask(Task):
 
         # Belief update
         robot_state = env.state.object_states[self.robot_id]
-    
+
         cur_belief = pomdp_py.Histogram({
             oopomdp.OOState({self.target_id: target_state,
                              self.robot_id: robot_state}) : agent.belief.object_beliefs[self.target_id][target_state]
@@ -300,7 +300,7 @@ def unittest():
     pepper_id = 15
     pepper_state = Objstate("Pepper",
                             pose=(3,2))
-    
+
     init_state = {robot_id: robot_state,
                   salt_id: salt_state,
                   pepper_id: pepper_state}
@@ -331,12 +331,12 @@ def unittest():
         target_hist[state] /= total_prob
 
     init_belief = pomdp_py.OOBelief({target_id: pomdp_py.Histogram(target_hist),
-                                     robot_id: pomdp_py.Histogram({env.robot_state:1.0})})    
+                                     robot_id: pomdp_py.Histogram({env.robot_state:1.0})})
 
     sensor = Laser2DSensor(robot_id, env.grid_map,  # the sensor uses the grid map for wall blocking
                            fov=90, min_range=1, max_range=2,
                            angle_increment=0.5)
-    task = SearchItemTask(robot_id, salt_id, sensor)    
+    task = SearchItemTask(robot_id, salt_id, sensor)
     agent = task.to_agent(init_belief)
 
     # Create planner and make a plan
@@ -349,4 +349,4 @@ def unittest():
 
 
 if __name__ == "__main__":
-    unittest()    
+    unittest()

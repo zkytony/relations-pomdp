@@ -63,7 +63,7 @@ def test_pomdp():
     agent = nk_agent.instantiate()
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=0.95,
-                             num_sims=1000,
+                             num_sims=3000,
                              exploration_const=200,
                              rollout_policy=agent.policy_model)
 

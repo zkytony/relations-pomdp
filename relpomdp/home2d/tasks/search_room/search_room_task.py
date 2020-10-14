@@ -30,7 +30,7 @@ class StopEffect(oopomdp.DeterministicTEffect):
         self.robot_id = robot_id
         self.room_type = room_type
         self.grid_map = grid_map
-        
+
     def mpe(self, state, action, byproduct=None):
         next_state = state  # copy has already happened
         robot_state = next_state.object_states[self.robot_id]
@@ -40,16 +40,16 @@ class StopEffect(oopomdp.DeterministicTEffect):
         if robot_room.name == room_room.name:
             room_state["reached"] = True
         return next_state
-    
-    
+
+
 class RewardModel(pomdp_py.RewardModel):
     def __init__(self, robot_id, room_type):
         self.robot_id = robot_id
         self.room_type = room_type
-    
+
     def sample(self, state, action, next_state, **kwargs):
         return self.argmax(state, action, next_state)
-    
+
     def argmax(self, state, action, next_state, **kwargs):
         """
         argmax(self, state, action, next_state, **kwargs)
@@ -76,7 +76,7 @@ class RoomObserveEffect(oopomdp.DeterministicOEffect):
     are in the same room then the robot gets
     the observation of the room type; Requires no
     access to room type;
-    
+
     See comment below in mpe() regarding observation parts."""
     def __init__(self, robot_id, room_type, grid_map,
                  epsilon=1e-9, for_env=False):
@@ -92,7 +92,7 @@ class RoomObserveEffect(oopomdp.DeterministicOEffect):
     def probability(self, observation, next_state, action, byproduct=None):
         """
         observation: Observation actually received (should be the room
-            type of where the robot is at). 
+            type of where the robot is at).
         """
         room_state = next_state.object_states[self.room_type]
         robot_state = next_state.object_states[self.robot_id]
@@ -116,7 +116,7 @@ class RoomObserveEffect(oopomdp.DeterministicOEffect):
                 return self.epsilon
             else:
                 return 1.0 - self.epsilon
-        
+
     def mpe(self, next_state, action, byproduct=None):
         """Returns an OOState after applying this effect on `state`"""
         room_state = next_state.object_states[self.room_type]
@@ -162,7 +162,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
         room_state = state.object_states[self.room_type]
         if room_state["reached"] is False:
             # cur_dist = euclidean_dist(robot_state["pose"][:2], room_state["pose"])
-            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action.motion):action
+            neighbors = {MoveEffect.move_by(robot_state["pose"][:2], action):action
                          for action in self.legal_motions[robot_state["pose"][:2]]}
             for next_robot_pose in neighbors:
                 # Prefer action to move into the room where
@@ -176,7 +176,7 @@ class GreedyActionPrior(pomdp_py.ActionPrior):
                                      self.num_visits_init, self.val_init))
         return preferences
 
-        
+
 
 class SearchRoomTask(Task):
     """
@@ -211,7 +211,7 @@ class SearchRoomTask(Task):
             policy_model = PolicyModel(robot_id, motions=motions,
                                        other_actions={Stop()},
                                        grid_map=grid_map)
-        
+
         super().__init__(transition_model,
                          observation_model,
                          reward_model,
@@ -233,9 +233,9 @@ class SearchRoomTask(Task):
     def get_result(self, agent, grid_map):
         """Get result in the form of an object observation"""
         # The observation is that the type of room appears in the room id,
-        # as believed by the agent.        
+        # as believed by the agent.
         room_state = agent.belief.object_beliefs[self.room_type].mpe()
-        return Objobs(self.room_type, 
+        return Objobs(self.room_type,
                       room_id=grid_map.room_of(room_state["pose"]).name)  # name === room_id
 
     def get_prior(self, grid_map, prior_type="uniform", **kwargs):
@@ -297,16 +297,16 @@ class SearchRoomTask(Task):
                                              for_env=True))]
         env.observation_model = oopomdp.OOObservationModel(cond_effects_o)
         return env
-        
-        
+
+
     def step(self, env, agent, planner):
         """
         The agent is assumed to be using an OOBelief
-        """        
+        """
         action = planner.plan(agent)
         for a in agent.tree.children:
             print(a, agent.tree.children[a].value)
-        
+
         reward = env.state_transition(action, execute=True)
         observation = env.observation_model.sample(env.state, action)
 
@@ -318,7 +318,7 @@ class SearchRoomTask(Task):
         cur_belief = pomdp_py.Histogram({
             oopomdp.OOState({self.room_type: room_state,
                              self.robot_id: robot_state}) : agent.belief.object_beliefs[self.room_type][room_state]
-            for room_state in agent.belief.object_beliefs[self.room_type]})        
+            for room_state in agent.belief.object_beliefs[self.room_type]})
         new_belief = pomdp_py.update_histogram_belief(cur_belief,
                                                       action, observation,
                                                       agent.observation_model,
@@ -328,7 +328,7 @@ class SearchRoomTask(Task):
         new_belief = pomdp_py.Histogram({state.object_states[self.room_type]:
                                          new_belief[state]
                                          for state in new_belief})
-        agent.belief.set_object_belief(self.room_type, new_belief)        
+        agent.belief.set_object_belief(self.room_type, new_belief)
         agent.belief.set_object_belief(self.robot_id, pomdp_py.Histogram({robot_state:1.0}))
         observation_planner = agent.observation_model.sample(env.state, action)
         planner.update(agent, action, observation_planner)

@@ -6,7 +6,7 @@ from relpomdp.home2d.domain.action import *
 class ExplorationActionPrior(pomdp_py.ActionPrior):
     def __init__(self, robot_id, grid_map, legal_motions,
                  num_visits_init, val_init,
-                 motions={MoveE, MoveW, MoveN, MoveS}):
+                 motions):
         self.robot_id = robot_id
         self.grid_map = grid_map
         self.legal_motions = legal_motions
