@@ -12,7 +12,8 @@ class PolicyModel(pomdp_py.RolloutPolicy):
     def __init__(self,
                  robot_id, motions={MoveN, MoveS, MoveE, MoveW},
                  other_actions=set(),
-                 grid_map=None):
+                 grid_map=None,
+                 memory={}):
         self.robot_id = robot_id
         self.legal_motions = None
         if grid_map is not None:
@@ -20,6 +21,12 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         self._motion_actions = motions  # motion actions only
         self._other_actions = other_actions
         self._actions = self._motion_actions | other_actions  # all actions
+        self._memory = memory  # map from robot_pose to actions
+
+    @property
+    def memory(self):
+        """Remembers which actions were allowed at each robot pose"""
+        return self._memory
 
     def sample(self, state, **kwargs):
         return random.sample(self._get_all_actions(**kwargs), 1)[0]
@@ -28,18 +35,13 @@ class PolicyModel(pomdp_py.RolloutPolicy):
         """
         get_all_actions(self, *args, **kwargs)
         Returns a set of all possible actions, if feasible."""
-        # if state is None or self.legal_motions is None:
-        #     return self._actions
-        # else:
         robot_state = state.object_states[self.robot_id]
         robot_pose = robot_state["pose"]
-        # if robot_pose[:2] == (0,0) and robot_pose[2] != 0.0:
-        #     import pdb; pdb.set_trace()
-        # if robot_pose[:2] not in self.legal_motions:
-        #     motions = set()
-        # else:
-        motions = self.legal_motions[robot_pose[:2]]
-        return motions | self._other_actions
+        if robot_pose in self._memory:
+            return self._memory[robot_pose]
+        else:
+            motions = self.legal_motions[robot_pose[:2]]
+            return motions | self._other_actions
 
     @property
     def all_motion_actions(self):
@@ -47,6 +49,18 @@ class PolicyModel(pomdp_py.RolloutPolicy):
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
+
+    def update(self, robot_pose, next_robot_pose, action, **kwargs):
+        """Record invalid move action which did not result in the robot moving"""
+        if isinstance(action, Move) and next_robot_pose == robot_pose:
+            self._record_invalid_action(robot_pose, action)
+
+    def _record_invalid_action(self, robot_pose, action):
+        if robot_pose not in self._memory:
+            motions = self.legal_motions[robot_pose[:2]]
+            self._memory[robot_pose] = (motions - set({action})) | self._other_actions
+        else:
+            self._memory[robot_pose] -= set({action})
 
 
 # Preferred policy, action prior.

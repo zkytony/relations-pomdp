@@ -30,7 +30,7 @@ def wait_for_action(viz, timeout=10):
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(20, 20, 8,
+    init_state, grid_map = random_world(6, 6, 3,
                                         ["Office", "Office", "Kitchen", "Bathroom",
                                          "Office", "Office", "Kitchen", "Bathroom"],
                                         objects={"Office": {"Computer": (1, (1,1))},
@@ -38,7 +38,8 @@ def make_world():
                                                              "Pepper": (1, (1,1))},
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
                                         robot_id=robot_id, init_robot_pose=init_robot_pose,
-                                        seed=random.randint(0,100))
+                                        ndoors=1,
+                                        seed=10)#random.randint(0,100))
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
@@ -61,7 +62,7 @@ def test_map_building(env):
     viz.on_init()
 
     game_states = []
-    for i in range(30):
+    for i in range(100):
         # Visualize
         viz.on_loop()
         img, img_world = viz.on_render()
@@ -76,11 +77,11 @@ def test_map_building(env):
         game_states.append(img)
     game_states.append(img_world)
 
-    print("Saving images...")
-    dirp = "./demos/fake_slam"
-    save_images_and_compress(game_states,
-                             dirp)
-    subprocess.Popen(["nautilus", dirp])
+    # print("Saving images...")
+    # dirp = "./demos/fake_slam"
+    # save_images_and_compress(game_states,
+    #                          dirp)
+    # subprocess.Popen(["nautilus", dirp])
 
 
 if __name__ == "__main__":

@@ -118,9 +118,11 @@ class FakeSLAM:
         interm_pose = prev_robot_pose[:2] + (robot_pose[2],)
         for x in np.arange(-1, full_grid_map.width+1, 1):
             for y in np.arange(-1, full_grid_map.length+1, 1):
+
                 res1, wall1 = self.range_sensor.within_range(
                     interm_pose, (x,y), grid_map=full_grid_map,
                     return_intersecting_wall=True)
+                # res2, wall2 = False, None
                 res2, wall2 = self.range_sensor.within_range(
                     robot_pose, (x,y), grid_map=full_grid_map,
                     return_intersecting_wall=True)
@@ -206,7 +208,7 @@ class NKAgent:
         """
         self._init_belief.object_beliefs[objid] = init_belief
 
-    def update(self):
+    def update(self, robot_pose=None, prev_robot_pose=None, action=None):
         """After the map is updated, the policy model and the observation models
         should be updated; But the observation model should be updated automatically
         because we passed in the reference to self.grid_map when constructing it."""
@@ -219,7 +221,11 @@ class NKAgent:
         self._transition_model.cond_effects.pop(0)  # pop the MoveEffect
         move_condeff = (CanMove(self.robot_id, legal_motions), MoveEffect(self.robot_id))
         self._transition_model.cond_effects.insert(0, move_condeff)
+        memory = {} if self._policy_model is None else self._policy_model.memory
         self._policy_model = PolicyModel(self.robot_id,
                                          motions=self.motion_actions,
                                          other_actions={Pickup()},
-                                         grid_map=self.grid_map)
+                                         grid_map=self.grid_map,
+                                         memory=memory)
+        if robot_pose is not None:
+            self._policy_model.update(robot_pose, prev_robot_pose, action)  # This records invalid acitons

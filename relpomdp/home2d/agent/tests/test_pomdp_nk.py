@@ -24,7 +24,9 @@ def make_world():
                                                  "Kitchen": {"Pepper": (1, (1,1)),
                                                              "Salt": (1, (1,1))},
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose)
+                                        robot_id=robot_id, init_robot_pose=init_robot_pose,
+                                        ndoors=1,
+                                        seed=10)
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
@@ -116,7 +118,9 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
         # update map (fake slam)
         fake_slam.update(nk_agent.grid_map, prev_robot_pose, robot_pose, env)
-        nk_agent.update()  # Update the nk_agent because policy model needs to be updated
+        # Update the nk_agent because policy model needs to be updated, because
+        # its grid_map was just updated
+        nk_agent.update(robot_pose, prev_robot_pose, action)
         # tree = agent.tree
         agent = nk_agent.instantiate(agent.belief)  # TODO: REFACTOR; pomdp_py doesn't allow reassigning models to agents
         planner.set_rollout_policy(agent.policy_model)
