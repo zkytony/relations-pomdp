@@ -69,6 +69,8 @@ def run_single(env, sensor_configs, nsteps=100):
                      controllable=False,
                      img_path="../domain/imgs")
     viz.on_init()
+
+    all_detections = []
     for i in range(nsteps):
         # Visualize
         viz.on_loop()
@@ -92,6 +94,7 @@ def run_single(env, sensor_configs, nsteps=100):
                 if objo["label"] != "unknown":
                     detections[objid] = objo
         print(detections)
+        all_detections.append(detections)
 
         # update belief (only need to do so for robot belief)
         agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
@@ -101,6 +104,7 @@ def run_single(env, sensor_configs, nsteps=100):
             print("Done.")
             break
     viz.on_cleanup()
+    return all_detections
 
 
 def main():
@@ -111,6 +115,8 @@ def main():
                         type=str, help="Path to a .pickle file that contains a collection of environments")
     parser.add_argument("output_dir",
                         type=str, help="Directory to output computed difficulty saved in a file")
+    parser.add_argument("-n", "--nsteps", default=100,
+                        type=str, help="Number of steps to run the agent in each training environment")
     args = parser.parse_args()
 
     with open(args.path_to_envs, "rb") as f:
@@ -119,7 +125,14 @@ def main():
         config = yaml.load(f)
 
     filename = os.path.splitext(os.path.basename(args.path_to_envs))[0]
-    run_single(envs[0], config["sensors"])
+
+    detections = {}
+    for envid in envs:
+        detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps)
+
+    with open(os.path.join(args.output_dir, "detections-%d-%s.pkl" % (args.nsteps, filename)), "wb") as f:
+        pickle.dump(detections, f)
+
 
 if __name__ == "__main__":
     main()
