@@ -18,6 +18,7 @@ import pickle
 import yaml
 import os
 import copy
+from datetime import datetime as dt
 
 
 def run_single(env, sensor_configs, nsteps=100):
@@ -117,6 +118,8 @@ def main():
                         type=str, help="Directory to output computed difficulty saved in a file")
     parser.add_argument("-n", "--nsteps", default=100,
                         type=int, help="Number of steps to run the agent in each training environment")
+    parser.add_argument("-T", "--trials", default=100,
+                        type=int, help="Number of worlds to explore out of all worlds in the collection of environments")
     args = parser.parse_args()
 
     with open(args.path_to_envs, "rb") as f:
@@ -126,12 +129,18 @@ def main():
 
     filename = os.path.splitext(os.path.basename(args.path_to_envs))[0]
 
-    detections = {}
-    for envid in envs:
-        detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps)
+    start_time = dt.now()
+    timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
 
-    with open(os.path.join(args.output_dir, "detections-%d-%s.pkl" % (args.nsteps, filename)), "wb") as f:
-        pickle.dump(detections, f)
+    detections = {}
+    try:
+        for envid in envs:
+            detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps)
+            if len(detections) >= args.trials:
+                break
+    finally:
+        with open(os.path.join(args.output_dir, "detections-%d-%s-%s.pkl" % (args.nsteps, filename, timestr)), "wb") as f:
+            pickle.dump(detections, f)
 
 
 if __name__ == "__main__":
