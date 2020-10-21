@@ -116,7 +116,7 @@ def main():
     parser.add_argument("output_dir",
                         type=str, help="Directory to output computed difficulty saved in a file")
     parser.add_argument("-n", "--nsteps", default=100,
-                        type=str, help="Number of steps to run the agent in each training environment")
+                        type=int, help="Number of steps to run the agent in each training environment")
     args = parser.parse_args()
 
     with open(args.path_to_envs, "rb") as f:
