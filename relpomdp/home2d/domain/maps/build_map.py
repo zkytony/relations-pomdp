@@ -145,7 +145,7 @@ def _overlapping(room_tup, rooms):
     return False
 
 
-def pcg_map(width, length, nrooms, categories, seed=100,
+def pcg_map(width, length, nrooms, categories, seed=None,
             min_room_size=2, max_room_size=6, max_trys=100, ndoors=1):
     """
     Procedurally generates a map (with no objects).
@@ -166,7 +166,8 @@ def pcg_map(width, length, nrooms, categories, seed=100,
     Returns:
         GridMap
     """
-    random.seed(seed)
+    if seed is not None:
+        random.seed(seed)
     border_walls = init_map(width, length)
 
     free_locations = {(x,y)
@@ -345,7 +346,7 @@ def pcg_world(grid_map, objects, max_trys=30):
 
 
 def random_world(width, length, nrooms, categories, objects={},
-                 min_room_size=2, max_room_size=6, seed=100,
+                 min_room_size=2, max_room_size=6, seed=None,
                  ndoors=2, robot_id=0, init_robot_pose=(0, 0, 0)):
     grid_map = pcg_map(width, length, nrooms, categories,
                        min_room_size=min_room_size,
