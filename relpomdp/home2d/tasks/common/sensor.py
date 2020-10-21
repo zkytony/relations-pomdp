@@ -54,7 +54,7 @@ class Laser2DSensor:
     thus we can maintain a cache to compute more quickly if a point
     is observable or not."""
 
-    def __init__(self, robot_id, grid_map=None,
+    def __init__(self, robot_id, grid_map=None, name="laser2d",
                  fov=90, min_range=1, max_range=5,
                  angle_increment=5):
         """
@@ -88,6 +88,7 @@ class Laser2DSensor:
                                              int(round((self._fov_right[1] - self._fov_right[0]) / self.angle_increment)))}
         # The size of the sensing region here is the area covered by the fan
         self._sensing_region_size = self.fov / (2*math.pi) * math.pi * (max_range - min_range)**2
+        self.name = name
 
 
     def in_field_of_view(th, view_angles):

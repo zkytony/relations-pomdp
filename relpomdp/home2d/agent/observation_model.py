@@ -23,6 +23,9 @@ class ObserveEffect(OEffect):
         self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
 
+        # Effect name is based on sensor name
+        self._name = "ObserveEffect-%s" % sensor.name
+
     @staticmethod
     def sensor_functioning(alpha, beta):
         return random.uniform(0,1) < alpha / (alpha + beta)
@@ -73,3 +76,7 @@ class ObserveEffect(OEffect):
                     val = 1.0 # gamma
                 prob *= val
         return prob
+
+    @property
+    def name(self):
+        return self._name
