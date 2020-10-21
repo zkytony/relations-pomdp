@@ -1,7 +1,7 @@
-# Deploy an agent in each training environment to randomly
-# explore in that environment, using the sensors specified
-# in a configuration file. The detections that are received
-# by the robot along the way are recorded and stored.
+# Computes difficulty of searching for a class of object,
+# including room type, by picking unexplored locations
+# and move the robot there, recording observations received
+# in the mean time.
 
 import pomdp_py
 from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
