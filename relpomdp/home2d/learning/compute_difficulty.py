@@ -23,7 +23,7 @@ def main():
 
     filename = os.path.splitext(os.path.basename(args.path_to_envs))[0]
 
-    classes = get_classes(envs)
+    classes, _ = get_classes(envs)
 
     # For each class of object, find the step number that it is
     # first detected in the trial.
