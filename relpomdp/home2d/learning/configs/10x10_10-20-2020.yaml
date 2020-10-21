@@ -1,0 +1,54 @@
+# 10x10 worlds
+
+width: 10
+length: 10
+
+nrooms: 3
+ndoors: 2
+
+min_room_size: 2
+max_room_size: 6
+
+robot_id: 0
+init_robot_pose: [0, 0, 0]
+
+room_types:
+  - Kitchen
+  - Office
+  - Bedroom
+  - Bathroom
+
+objects:
+  Office:
+    Computer:
+      counts: 2
+    Shelf:
+      counts: 1
+    Chair:
+      counts: 1
+  Kitchen:
+    Salt:
+      counts: 1
+    Pepper:
+      counts: 1
+    Oven:
+      counts: 1
+    Countertop-wood:
+      counts: 1
+  Bedroom:
+    Single-bed:
+      counts: 1
+    Closet:
+      counts: 1
+    Clothes-folded:
+      counts: 1
+  Bathroom:
+    Bathroom-sink:
+      counts: 1
+    Toilet:
+      counts: 1
+    Laundry-basket:
+      counts: 1
+
+num_worlds: 100
+shuffle_rooms: True
