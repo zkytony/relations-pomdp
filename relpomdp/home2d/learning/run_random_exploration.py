@@ -109,7 +109,7 @@ def run_single(env, sensor_configs, nsteps=100):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute difficulty of finding objects by simulating a random agent")
+    parser = argparse.ArgumentParser(description="Simulates a random agent running in the world")
     parser.add_argument("config_file",
                         type=str, help="Path to .yaml configuration file")
     parser.add_argument("path_to_envs",
