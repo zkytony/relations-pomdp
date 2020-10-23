@@ -295,7 +295,7 @@ class CombinedObservation(Observation):
 
     def observation_for(self, effect):
         if isinstance(effect, OEffect):
-            effect = effect.__class__.__name__
+            effect = effect.name
         return self._effodict[effect]
 
     @property
