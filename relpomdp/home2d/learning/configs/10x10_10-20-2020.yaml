@@ -65,6 +65,7 @@ sensors:
       Kitchen: [0.99, 0.01]
       Bedroom: [0.99, 0.01]
       Bathroom: [0.99, 0.01]
+      Corridor: [0.99, 0.01]
 
   easy_object_sensor:
     fov: 90
