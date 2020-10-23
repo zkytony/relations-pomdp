@@ -67,10 +67,11 @@ def compute_obj_room_correlation(objclass, room_type, envs):
         # Check if the room of object class instance lies in a room of given room type
         grid_map = envs[envid].grid_map
         for objid in envs[envid].state.object_states:
-            s = envs[envid].state.object_states[objid]
-            room = grid_map.room_of(s["pose"][:2])
-            if room.room_type == room_type:
-                correlation_score += 1
+            if envs[envid].state.object_states[objid].objclass == objclass:
+                s = envs[envid].state.object_states[objid]
+                room = grid_map.room_of(s["pose"][:2])
+                if room.room_type == room_type:
+                    correlation_score += 1
     return correlation_score
 
 
