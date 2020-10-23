@@ -18,7 +18,7 @@ import subprocess
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
+    init_state, grid_map = random_world(10, 10, 3,
                                         ["Kitchen", "Office", "Office"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Pepper": (1, (1,1)),

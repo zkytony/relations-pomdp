@@ -60,7 +60,7 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
+    nk_agent.add_sensor(sensor, {target_class: (100., 1.5)})
     nk_agent.update()
 
     agent = nk_agent.instantiate()
@@ -138,5 +138,5 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp(copy.deepcopy(env), save=True, nsteps=20)
-    test_pomdp_nk(copy.deepcopy(env), save=True, nsteps=20)
+    test_pomdp(copy.deepcopy(env), save=False, nsteps=20)
+    # test_pomdp_nk(copy.deepcopy(env), save=True, nsteps=20)
