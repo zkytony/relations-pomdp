@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from compute_correlations import get_classes
+from datetime import datetime as dt
 import os
 
 def main():
@@ -15,6 +16,9 @@ def main():
                         type=str, help="Directory to output computed difficulty saved in a file")
 
     args = parser.parse_args()
+
+    start_time = dt.now()
+    timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
 
     with open(args.path_to_envs, "rb") as f:
         envs = pickle.load(f)
@@ -39,13 +43,14 @@ def main():
                 if objo.objclass not in class_detections:
                     class_detections[objo.objclass] = []
                 class_detections[objo.objclass].append(step)
+                done_classes.add(objo.objclass)
 
     # Simply compute the average step as the difficulty
     rows = []
     for objclass in class_detections:
         rows.append((objclass, np.mean(class_detections[objclass])))
     df = pd.DataFrame(rows, columns=["class", "difficulty"])
-    df.to_csv(os.path.join(args.output_dir, "difficulty-%s.csv" % filename))
+    df.to_csv(os.path.join(args.output_dir, "difficulty-%s-%s.csv" % (filename, timestr)))
 
 if __name__ == "__main__":
     main()
