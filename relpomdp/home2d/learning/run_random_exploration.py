@@ -77,8 +77,7 @@ def run_single(env, sensor_configs, nsteps=100):
         viz.on_loop()
         viz.on_render()
 
-        action = wait_for_action(viz)
-        # action = planner.plan(agent)
+        action = planner.plan(agent)
 
         # environment transitions and obtains reward (note that we use agent's reward model for convenience)
         env_state = env.state.copy()
