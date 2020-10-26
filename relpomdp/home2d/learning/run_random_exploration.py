@@ -67,7 +67,7 @@ def run_single(env, sensor_configs, nsteps=100):
     # Visualize and run
     viz = NKAgentViz(agent, env, {},
                      res=30,
-                     controllable=False,
+                     controllable=True,
                      img_path="../domain/imgs")
     viz.on_init()
 
@@ -77,7 +77,8 @@ def run_single(env, sensor_configs, nsteps=100):
         viz.on_loop()
         viz.on_render()
 
-        action = planner.plan(agent)
+        action = wait_for_action(viz)
+        # action = planner.plan(agent)
 
         # environment transitions and obtains reward (note that we use agent's reward model for convenience)
         env_state = env.state.copy()
@@ -92,7 +93,8 @@ def run_single(env, sensor_configs, nsteps=100):
         for o in observation.observations:
             for objid in o.object_observations:
                 objo = o.object_observations[objid]
-                if objo["label"] != "unknown":
+                if objo["label"] != "unknown"\
+                   and objo["label"] != "free":
                     detections[objid] = objo
         print(detections)
         all_detections.append(detections)
