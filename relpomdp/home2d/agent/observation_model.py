@@ -52,8 +52,6 @@ class ObserveEffect(OEffect):
                         # Sensor malfunction; not observing it
                         objo["label"] = "free"
                 noisy_obs[objid] = objo
-            # else:
-            #     noisy_obs[objid] = NullObservation()
 
         return OOObservation(noisy_obs)
 
