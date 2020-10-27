@@ -7,26 +7,8 @@ from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
-from test_utils import add_pickup_target, random_policy_model
+from test_utils import add_pickup_target, random_policy_model, make_world
 import copy
-
-def make_world():
-    robot_id = 0
-    init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
-                                        ["Kitchen", "Office", "Office"],
-                                        objects={"Office": {"Computer": (1, (1,1))},
-                                                 "Kitchen": {"Salt": (1, (1,1)),
-                                                             "Pepper": (1, (1,1))},
-                                                 "Bathroom": {"Toilet": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose,
-                                        seed=10)
-    env = Home2DEnvironment(robot_id,
-                            grid_map,
-                            init_state)
-    return env
-
-
 
 def test_mdp(env, nsteps=100, discount_factor=0.95):
     robot_id = env.robot_id

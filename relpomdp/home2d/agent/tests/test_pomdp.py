@@ -13,24 +13,9 @@ from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.oopomdp.framework import Objstate, OOState
 from relpomdp.home2d.utils import save_images_and_compress
+from test_utils import add_pickup_target, random_policy_model, make_world
 import subprocess
 import copy
-
-def make_world():
-    robot_id = 0
-    init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
-                                        ["Kitchen", "Office", "Office"],
-                                        objects={"Office": {"Computer": (1, (1,1))},
-                                                 "Kitchen": {"Pepper": (1, (1,1))},
-                                                 "Bathroom": {"Toilet": (1, (1,1))},
-                                                 "Corridor": {"Salt": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose)
-    env = Home2DEnvironment(robot_id,
-                            grid_map,
-                            init_state)
-    return env
-
 
 def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     robot_id = env.robot_id
@@ -56,22 +41,19 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
         target_hist[state] /= total_prob
 
     init_belief = pomdp_py.Histogram(target_hist)
-    nk_agent.add_target(target_id, target_class, init_belief)
+    add_pickup_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
     nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
-    nk_agent.update()
+    policy_model = random_policy_model(nk_agent)
 
-    agent = nk_agent.instantiate()
-    env.set_reward_model(agent.reward_model)
-    pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
-    env.transition_model.cond_effects.append(pickup_condeff)
+    agent = nk_agent.instantiate(policy_model)
 
-    planner = pomdp_py.POUCT(max_depth=25,
+    planner = pomdp_py.POUCT(max_depth=9,
                              discount_factor=discount_factor,
-                             num_sims=1000,
-                             exploration_const=200,
+                             num_sims=300,
+                             exploration_const=200,  # setting this to 200 makes the agent hesitate in where it is
                              rollout_policy=agent.policy_model)
 
     # Visualize and run
@@ -90,6 +72,9 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
         img, img_world = viz.on_render(agent.belief)
 
         action = planner.plan(agent)
+        print("-------POUCT-----")
+        planner.print_action_values()
+        print("-----------------")
 
         # environment transitions and obtains reward (note that we use agent's reward model for convenience)
         env_state = env.state.copy()
@@ -118,7 +103,7 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
             next_target_hist[target_state] /= total_prob
         agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
         planner.update(agent, action, observation)
-        print(action, reward)
+        print("Chosen action:", action, reward)
         rewards.append(reward)
         game_states.append(img)
         if isinstance(action, Pickup):
@@ -138,5 +123,4 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp(copy.deepcopy(env), save=False, nsteps=20)
-    # test_pomdp_nk(copy.deepcopy(env), save=True, nsteps=20)
+    test_pomdp(copy.deepcopy(env), save=False, nsteps=50)
