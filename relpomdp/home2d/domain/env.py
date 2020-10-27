@@ -24,13 +24,6 @@ from relpomdp.home2d.domain.visual import Home2DViz
 from relpomdp.oopomdp.framework import *
 import pomdp_py
 
-class DummyRewardModel(pomdp_py.RewardModel):
-    """Placeholder reward model"""
-    def sample(self, state, action, next_state, **kwargs):
-        return self.argmax(state, action, next_state)
-    def argmax(self, state, action, next_state, **kwargs):
-        return 0
-
 class Home2DEnvironment(OOEnvironment):
     """Single robot home environment"""
 
@@ -39,7 +32,7 @@ class Home2DEnvironment(OOEnvironment):
                  grid_map,  # specifies the map (dimension and walls)
                  init_object_states, # maps from object id to initial state
                  motions={MoveW, MoveN, MoveS, MoveE},
-                 reward_model=DummyRewardModel()):
+                 reward_model=CompositeRewardModel([])):
         """
         reward_model (RewardModel): May differ depending on the task.
             default is a dummy reward model that always returns 0.
@@ -78,6 +71,9 @@ class Home2DEnvironment(OOEnvironment):
     @property
     def length(self):
         return self.grid_map.length
+
+    def add_reward_model(self, reward_model):
+        self.reward_model.add_model(reward_model)
 
 
 def unittest():

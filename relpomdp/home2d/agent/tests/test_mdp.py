@@ -7,6 +7,7 @@ from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
+from test_utils import add_pickup_target, random_policy_model
 import copy
 
 def make_world():
@@ -38,17 +39,14 @@ def test_mdp(env, nsteps=100, discount_factor=0.95):
     target_class = "Salt"
     target_id = list(env.ids_for(target_class))[0]
     init_belief = pomdp_py.Histogram({env.state.object_states[target_id]:1.0})
-    nk_agent.add_target(target_id, target_class, init_belief)
+    add_pickup_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
     nk_agent.add_sensor(sensor, {target_class: (10., 0.1)})
-    nk_agent.update()
+    policy_model = random_policy_model(nk_agent)
 
-    agent = nk_agent.instantiate()
-    env.set_reward_model(agent.reward_model)
-    pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
-    env.transition_model.cond_effects.append(pickup_condeff)
+    agent = nk_agent.instantiate(policy_model)
 
     planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=discount_factor,

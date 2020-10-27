@@ -1,12 +1,12 @@
 # nk_agent: Agent without prior knowledge of the map
 
 import pomdp_py
+from pomdp_py import Histogram
 from relpomdp.home2d.domain.maps.grid_map import GridMap
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.agent.observation_model import CanObserve, ObserveEffect
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect, Pickup
 from relpomdp.home2d.agent.reward_model import PickupRewardModel
-from relpomdp.home2d.agent.policy_model import ExplorationActionPrior, PreferredPolicyModel, PolicyModel
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.oopomdp.framework import ObjectObservation,\
@@ -145,7 +145,16 @@ class FakeSLAM:
 
 class NKAgent:
     """This agent is not a pomdp_py.Agent but it can
-    be isntantiated into one."""
+    be isntantiated into one.
+
+    It begins with the knowledge of the given (partial) map,
+    and the knowledge that it can move in the world (MoveEffect).
+
+    It does not have purpose to begin with. But, one can
+    given the agent a sensor (add_sensor), a new action, with
+    a condition effect pair (add_action), a new objective (that is,
+    a new reward function), and a new belief distribution about some object.
+    """
     def __init__(self, robot_id, init_robot_pose,
                  grid_map=None, all_motion_actions=MOTION_ACTIONS):
         """
@@ -159,73 +168,136 @@ class NKAgent:
             grid_map = PartialGridMap(set((x,y)
                                           for x in range(grid_map.width)
                                           for y in range(grid_map.length)), grid_map.walls)
-        self.grid_map = grid_map
         self.robot_id = robot_id
         self.motion_actions = all_motion_actions
+        self.grid_map = grid_map
+        self.legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
 
-        move_condeff = (CanMove(robot_id, None), MoveEffect(robot_id))
-        self._transition_model = OOTransitionModel([move_condeff])
-        self._observation_model = None
-        self._reward_model = CompositeRewardModel([])
-        self._policy_model = None
+        # It knows how to move and its effect
+        self._move_condition = CanMove(robot_id, self.legal_motions)
+        self._move_effect = MoveEffect(robot_id)
 
+        # It begins with no sensor. This dict maps from sensor name to (sensor, (cond, eff))
+        self._sensors = {}
+
+        # It begins with no other actions and effects besides move
+        # This is a set of (actions, (cond, eff)) that stores
+        # the actions and their corresponding cond/effect;
+        # it is possible to have an action having two different effects.
+        self._t = [(self.motion_actions, (self._move_condition, self._move_effect))]
+
+        # It begins with an empty reward function; This list is used
+        # to construct a CompositeRewardModel when instantiating an Agent
+        self._reward_models = []
+
+        # It begins with no belief about other objects other than its own pose
+        # We require that these beliefs are up-to-date when instantiating
+        # an agent; i.e. the instantiated agent's belief comes from these beliefs.
         init_robot_state = Objstate("Robot", pose=init_robot_pose)
-        self._init_belief = OOBelief({self.robot_id: pomdp_py.Histogram({init_robot_state:1.0})})
+        self._object_beliefs = {self.robot_id: Histogram({init_robot_state: 1.0})}
 
-    def instantiate(self, init_belief=None):
-        if init_belief is None:
-            init_belief = self._init_belief
+    def all_actions(self):
+        """Returns the set of unique actions at this point"""
+        all_actions = set()
+        for actions, cond_eff in self._t:
+           all_actions.update(actions)
+        return all_actions
+
+    def add_sensor(self, sensor, noise_params):
+        if sensor.name in self._sensors:
+            raise ValueError("Sensor %s is already added." % sensor.name)
+        observe_cond = CanObserve()
+        observe_eff = ObserveEffect(self.robot_id, sensor, self.grid_map, noise_params)
+        self._sensors[sensor.name] =\
+            (sensor, (observe_cond, observe_eff))
+
+    def add_actions(self, actions, condition, effect):
+        """Add (multiple) actions, and their condition / effect.
+        It's totally cool to add just a single action."""
+        self._t.append((actions, (condition, effect)))
+
+    def add_reward_model(self, reward_model):
+        self._reward_models.append(reward_model)
+
+    def add_belief(self, objid, belief):
+        self._object_beliefs[objid] = belief
+
+    def check_integrity(self):
+        """Check if this agent is up-to-date / behaves correctly
+        This means: At any time, you can expect
+        - The self.legal_motions is exactly the legal motions
+          you would obtain if you compute this based on the self.grid_map."""
+        # Check if the legal motions match.
+        assert self.legal_motions == self.grid_map.compute_legal_motions(self.motion_actions)
+
+    def instantiate(self, policy_model, init_belief=None):
+        """
+        The user who instantiates this NKAgent is responsible
+        for providing a policy model. Because, the user should
+        maintain what kind of preferred rollout policy should
+        be used for this agent because that depends on the task
+        the user is implementing, which the NKAgent is not aware of.
+        """
+        init_belief = OOBelief(self._object_beliefs)
+
+        # Transition model
+        t_condeff = [tup[1] for tup in self._t]
+        transition_model = OOTransitionModel(t_condeff)
+
+        # Observation model
+        o_condeff = [self._sensors[name][1]
+                     for name in self._sensors]
+        observation_model = OOObservationModel(o_condeff)
+
+        # Reward model
+        reward_model = CompositeRewardModel(self._reward_models)
+
+        # Build Agent
         agent = pomdp_py.Agent(init_belief,
-                               self._policy_model,
-                               self._transition_model,
-                               self._observation_model,
-                               self._reward_model)
+                               policy_model,
+                               transition_model,
+                               observation_model,
+                               reward_model)
         agent.grid_map = self.grid_map
         return agent
 
 
-    def add_sensor(self, sensor, noise_params):
-        condeff = (CanObserve(),
-                   ObserveEffect(self.robot_id, sensor, self.grid_map, noise_params))
-        if self._observation_model is None:
-            self._observation_model = OOObservationModel([condeff])
-        else:
-            self._observation_model.cond_effects.append(condeff)
+    # def add_target(self, target_id, target_class, init_belief):
+    #     """
+    #     Adds target to search for, with an initial belief given.
+    #     """
+    #     pickup_condeff = (CanPickup(self.robot_id, target_id),
+    #                       PickupEffect())
+    #     self._transition_model.cond_effects.append(pickup_condeff)
+    #     self._reward_model.add_model(PickupRewardModel(self.robot_id, target_id))
+    #     self.add_belief(target_id, target_class, init_belief)
 
-    def add_target(self, target_id, target_class, init_belief):
-        """
-        Adds target to search for, with an initial belief given.
-        """
-        pickup_condeff = (CanPickup(self.robot_id, target_id),
-                          PickupEffect())
-        self._transition_model.cond_effects.append(pickup_condeff)
-        self._reward_model.add_model(PickupRewardModel(self.robot_id, target_id))
-        self.add_belief(target_id, target_class, init_belief)
+    # def add_belief(self, objid, objclass, init_belief):
+    #     """
+    #     Expands belief to include one more object
+    #     """
+    #     self._init_belief.object_beliefs[objid] = init_belief
 
-    def add_belief(self, objid, objclass, init_belief):
-        """
-        Expands belief to include one more object
-        """
-        self._init_belief.object_beliefs[objid] = init_belief
 
-    def update(self, robot_pose=None, prev_robot_pose=None, action=None):
-        """After the map is updated, the policy model and the observation models
-        should be updated; But the observation model should be updated automatically
-        because we passed in the reference to self.grid_map when constructing it."""
-        legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
-        # action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
-        #                                       legal_motions,
-        #                                       10, 100)
-        # self._policy_model = PreferredPolicyModel(action_prior,
-        #                                           other_actions={Pickup()})
-        self._transition_model.cond_effects.pop(0)  # pop the MoveEffect
-        move_condeff = (CanMove(self.robot_id, legal_motions), MoveEffect(self.robot_id))
-        self._transition_model.cond_effects.insert(0, move_condeff)
-        memory = {} if self._policy_model is None else self._policy_model.memory
-        self._policy_model = PolicyModel(self.robot_id,
-                                         motions=self.motion_actions,
-                                         other_actions={Pickup()},
-                                         grid_map=self.grid_map,
-                                         memory=memory)
-        if robot_pose is not None:
-            self._policy_model.update(robot_pose, prev_robot_pose, action)  # This records invalid acitons
+
+    # def update(self, robot_pose=None, prev_robot_pose=None, action=None):
+    #     """After the map is updated, the policy model and the observation models
+    #     should be updated; But the observation model should be updated automatically
+    #     because we passed in the reference to self.grid_map when constructing it."""
+    #     legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
+    #     # action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
+    #     #                                       legal_motions,
+    #     #                                       10, 100)
+    #     # self._policy_model = PreferredPolicyModel(action_prior,
+    #     #                                           other_actions={Pickup()})
+    #     self._transition_model.cond_effects.pop(0)  # pop the MoveEffect
+    #     move_condeff = (CanMove(self.robot_id, legal_motions), MoveEffect(self.robot_id))
+    #     self._transition_model.cond_effects.insert(0, move_condeff)
+    #     memory = {} if self._policy_model is None else self._policy_model.memory
+    #     self._policy_model = PolicyModel(self.robot_id,
+    #                                      motions=self.motion_actions,
+    #                                      other_actions={Pickup()},
+    #                                      grid_map=self.grid_map,
+    #                                      memory=memory)
+    #     if robot_pose is not None:
+    #         self._policy_model.update(robot_pose, prev_robot_pose, action)  # This records invalid acitons
