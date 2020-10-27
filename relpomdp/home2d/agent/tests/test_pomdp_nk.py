@@ -79,7 +79,7 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
     pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
     env.transition_model.cond_effects.append(pickup_condeff)
 
-    planner = pomdp_py.POUCT(max_depth=20,
+    planner = pomdp_py.POUCT(max_depth=25,
                              discount_factor=discount_factor,
                              num_sims=1000,
                              exploration_const=200,
@@ -184,4 +184,4 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp_nk(env, save=True, nsteps=30)
+    test_pomdp_nk(env, save=False, nsteps=30)

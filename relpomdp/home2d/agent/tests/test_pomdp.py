@@ -60,7 +60,7 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (100., 1.5)})
+    nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
     nk_agent.update()
 
     agent = nk_agent.instantiate()
@@ -68,7 +68,7 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     pickup_condeff = (CanPickup(env.robot_id, target_id), PickupEffect())
     env.transition_model.cond_effects.append(pickup_condeff)
 
-    planner = pomdp_py.POUCT(max_depth=20,
+    planner = pomdp_py.POUCT(max_depth=25,
                              discount_factor=discount_factor,
                              num_sims=1000,
                              exploration_const=200,
