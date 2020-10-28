@@ -7,12 +7,14 @@ from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.maps.build_map import random_world
+from relpomdp.home2d.agent.policy_model import GreedyActionPrior
 from relpomdp.home2d.domain.action import MoveN
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.home2d.utils import save_images_and_compress
 from relpomdp.oopomdp.framework import Objstate, OOState
-from test_utils import add_pickup_target, random_policy_model, make_world, update_map
+from test_utils import add_pickup_target, random_policy_model, make_world, update_map,\
+    preferred_policy_model
 import copy
 import subprocess
 
@@ -49,7 +51,10 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
     nk_agent.add_sensor(sensor, {target_class: (1000., 0.1)})
-    policy_model = random_policy_model(nk_agent)
+    # policy_model = random_policy_model(nk_agent)
+    policy_model = preferred_policy_model(nk_agent,
+                                          GreedyActionPrior,
+                                          ap_args=[target_id])
 
     agent = nk_agent.instantiate(policy_model)
 
@@ -134,11 +139,13 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
         nk_agent.set_belief(robot_id, new_robot_belief)
         nk_agent.set_belief(target_id, pomdp_py.Histogram(next_target_hist))
         ## Generate policy model
-        policy_model = random_policy_model(nk_agent, memory=agent.policy_model.memory)
+        # policy_model = random_policy_model(nk_agent, memory=agent.policy_model.memory)
+        policy_model = preferred_policy_model(nk_agent,
+                                              GreedyActionPrior,
+                                              ap_args=[target_id])
         ## Make new agent which uses the new policy mode made on top of new map
         agent = nk_agent.instantiate(policy_model)
         planner.set_rollout_policy(agent.policy_model)
-
 
         print(action, reward)
         rewards.append(reward)
