@@ -58,7 +58,7 @@ class Home2DEnvironment(OOEnvironment):
         super().__init__(init_state, relations, cond_effects, reward_model)
 
     def ids_for(self, objclass):
-        return self.class_to_ids[objclass]
+        return self.class_to_ids.get(objclass, set())
 
     @property
     def robot_state(self):

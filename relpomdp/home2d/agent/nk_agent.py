@@ -200,6 +200,10 @@ class NKAgent:
     def object_beliefs(self):
         return self._object_beliefs
 
+    @property
+    def sensors(self):
+        return self._sensors
+
     def all_actions(self):
         """Returns the set of unique actions at this point"""
         all_actions = set()
@@ -230,11 +234,11 @@ class NKAgent:
         return self._object_beliefs[objid]
 
     def sensors_for(self, objclass):
-        result = {}
+        result = set()
         for sensor_name in self._sensors:
             eff = self._sensors[sensor_name][1][1]
             if objclass in eff.noise_params:
-                result[sensor_name] = self._sensors[sensor_name][0]
+                result.add(sensor_name)
         return result
 
     def check_integrity(self):
