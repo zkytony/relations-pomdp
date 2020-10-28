@@ -174,8 +174,8 @@ class NKAgent:
         self.legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
 
         # It knows how to move and its effect
-        self._move_condition = CanMove(robot_id, self.legal_motions)
-        self._move_effect = MoveEffect(robot_id)
+        self.move_condition = CanMove(robot_id, self.legal_motions)
+        self.move_effect = MoveEffect(robot_id)
 
         # It begins with no sensor. This dict maps from sensor name to (sensor, (cond, eff))
         self._sensors = {}
@@ -184,7 +184,7 @@ class NKAgent:
         # This is a set of (actions, (cond, eff)) that stores
         # the actions and their corresponding cond/effect;
         # it is possible to have an action having two different effects.
-        self._t = [(self.motion_actions, (self._move_condition, self._move_effect))]
+        self._t = [(self.motion_actions, (self.move_condition, self.move_effect))]
 
         # It begins with an empty reward function; This list is used
         # to construct a CompositeRewardModel when instantiating an Agent
@@ -219,8 +219,11 @@ class NKAgent:
     def add_reward_model(self, reward_model):
         self._reward_models.append(reward_model)
 
-    def add_belief(self, objid, belief):
+    def set_belief(self, objid, belief):
         self._object_beliefs[objid] = belief
+
+    def object_belief(self, objid):
+        return self._object_beliefs[objid]
 
     def check_integrity(self):
         """Check if this agent is up-to-date / behaves correctly
@@ -229,6 +232,7 @@ class NKAgent:
           you would obtain if you compute this based on the self.grid_map."""
         # Check if the legal motions match.
         assert self.legal_motions == self.grid_map.compute_legal_motions(self.motion_actions)
+        assert self.move_condition.legal_motions == self.legal_motions
 
     def instantiate(self, policy_model, init_belief=None):
         """
