@@ -196,6 +196,10 @@ class NKAgent:
         init_robot_state = Objstate("Robot", pose=init_robot_pose)
         self._object_beliefs = {self.robot_id: Histogram({init_robot_state: 1.0})}
 
+    @property
+    def object_beliefs(self):
+        return self._object_beliefs
+
     def all_actions(self):
         """Returns the set of unique actions at this point"""
         all_actions = set()
@@ -225,6 +229,14 @@ class NKAgent:
     def object_belief(self, objid):
         return self._object_beliefs[objid]
 
+    def sensors_for(self, objclass):
+        result = {}
+        for sensor_name in self._sensors:
+            eff = self._sensors[sensor_name][1][1]
+            if objclass in eff.noise_params:
+                result[sensor_name] = self._sensors[sensor_name][0]
+        return result
+
     def check_integrity(self):
         """Check if this agent is up-to-date / behaves correctly
         This means: At any time, you can expect
@@ -233,8 +245,23 @@ class NKAgent:
         # Check if the legal motions match.
         assert self.legal_motions == self.grid_map.compute_legal_motions(self.motion_actions)
         assert self.move_condition.legal_motions == self.legal_motions
+        # There should be at most one reward model for each target id
+        targets = set()
+        for reward_model in self._reward_models:
+            if hasattr(reward_model, "target_id"):
+                assert reward_model.target_id not in targets, "duplicated reward model for %d" % target_id
+                targets.add(reward_model.target_id)
 
-    def instantiate(self, policy_model, init_belief=None):
+    def remove_reward_model(self, target_id):
+        """TODO: Right now the reward model is removed
+        based on target_id but this is not applicable to more types of reward models."""
+        self._reward_models = [reward_model
+                               for reward_model in self._reward_models
+                               if reward_model.target_id != target_id]
+
+
+    def instantiate(self, policy_model, init_belief=None,
+                    sensors_in_use=None, objects_tracking=None):
         """
         The user who instantiates this NKAgent is responsible
         for providing a policy model. Because, the user should
@@ -242,7 +269,13 @@ class NKAgent:
         be used for this agent because that depends on the task
         the user is implementing, which the NKAgent is not aware of.
         """
-        init_belief = OOBelief(self._object_beliefs)
+        if sensors_in_use is None:
+            sensors_in_use = self._sensors
+        if objects_tracking is None:
+            objects_tracking = self._object_beliefs.keys()
+
+        init_belief = OOBelief({objid:self._object_beliefs[objid]
+                                for objid in objects_tracking})
 
         # Transition model
         t_condeff = [tup[1] for tup in self._t]
@@ -250,7 +283,7 @@ class NKAgent:
 
         # Observation model
         o_condeff = [self._sensors[name][1]
-                     for name in self._sensors]
+                     for name in sensors_in_use]
         observation_model = OOObservationModel(o_condeff)
 
         # Reward model

@@ -10,12 +10,19 @@ import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.utils_geometry import *
 
 # Utility functions
+def discounted_cumulative_reward(rewards, discount_factor):
+    total = 0
+    d = 1.0
+    for r in rewards:
+        total += r*d
+        d *= discount_factor
+    return total
 
 #### File Utils ####
 def save_images_and_compress(images, outdir, filename="images", img_type="png"):
     # First write the images as temporary files into the outdir
     cur_time = dt.now()
-    cur_time_str = cur_time.strftime("%Y%m%d%H%M%S%f")[:-3]    
+    cur_time_str = cur_time.strftime("%Y%m%d%H%M%S%f")[:-3]
     img_save_dir = os.path.join(outdir, "tmp_imgs_%s" % cur_time_str)
     os.makedirs(img_save_dir)
 
@@ -31,7 +38,7 @@ def save_images_and_compress(images, outdir, filename="images", img_type="png"):
     # Then compress the image files in the outdir
     output_filepath = os.path.join(outdir, "%s.tar.gz" % filename)
     with tarfile.open(output_filepath, "w:gz") as tar:
-        tar.add(img_save_dir, arcname=filename)        
+        tar.add(img_save_dir, arcname=filename)
 
     # Then remove the temporary directory
     shutil.rmtree(img_save_dir)

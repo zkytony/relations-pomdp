@@ -13,6 +13,7 @@ from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.home2d.learning.random_explorer import RandomPlanner
 from relpomdp.oopomdp.framework import Objstate
+from relpomdp.home2d.agent.tests.test_utils import random_policy_model
 import argparse
 import pickle
 import yaml
@@ -58,9 +59,9 @@ def run_single(env, sensor_configs, nsteps=100):
                                angle_increment=float(cfg["angle_increment"]))
         noises = cfg["noises"]
         nk_agent.add_sensor(sensor, noises)
-    nk_agent.update()
+    policy_model = random_policy_model(nk_agent)
 
-    agent = nk_agent.instantiate()
+    agent = nk_agent.instantiate(policy_model)
 
     planner = RandomPlanner(robot_id, env.legal_motions)
 
