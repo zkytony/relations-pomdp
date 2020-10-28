@@ -10,10 +10,12 @@ from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
+from relpomdp.home2d.agent.policy_model import GreedyActionPrior
 from relpomdp.home2d.agent.transition_model import Pickup
 from relpomdp.oopomdp.framework import Objstate, OOState
 from relpomdp.home2d.utils import save_images_and_compress
-from test_utils import add_pickup_target, random_policy_model, make_world
+from test_utils import add_pickup_target, random_policy_model, make_world,\
+    preferred_policy_model
 import subprocess
 import copy
 
@@ -46,13 +48,16 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
     nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
-    policy_model = random_policy_model(nk_agent)
+    # policy_model = random_policy_model(nk_agent)
+    policy_model = preferred_policy_model(nk_agent,
+                                          GreedyActionPrior,
+                                          ap_args=[target_id])
 
     agent = nk_agent.instantiate(policy_model)
 
-    planner = pomdp_py.POUCT(max_depth=9,
+    planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=discount_factor,
-                             num_sims=300,
+                             num_sims=400,
                              exploration_const=200,  # setting this to 200 makes the agent hesitate in where it is
                              rollout_policy=agent.policy_model)
 

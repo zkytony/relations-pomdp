@@ -16,6 +16,7 @@ from relpomdp.oopomdp.framework import Objstate, OOState
 from test_utils import add_pickup_target, random_policy_model, make_world, update_map,\
     preferred_policy_model
 import copy
+import time
 import subprocess
 
 
@@ -58,9 +59,9 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
     agent = nk_agent.instantiate(policy_model)
 
-    planner = pomdp_py.POUCT(max_depth=15,
+    planner = pomdp_py.POUCT(max_depth=20,
                              discount_factor=discount_factor,
-                             num_sims=300,
+                             num_sims=200,
                              exploration_const=100,
                              rollout_policy=agent.policy_model)
 
@@ -79,8 +80,9 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
         viz.on_loop()
         img, img_world = viz.on_render(agent.belief)
 
+        start_time = time.time()
         action = planner.plan(agent)
-        print("-------POUCT-----")
+        print("-------POUCT (took %.4fs) -----" % (time.time() - start_time))
         planner.print_action_values()
         print("-----------------")
 
@@ -166,4 +168,4 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp_nk(env, save=False, nsteps=30)
+    test_pomdp_nk(env, save=False, nsteps=100)
