@@ -60,8 +60,9 @@ class ObserveEffect(OEffect):
         prob = 1.0
         for objid in observation.object_observations:
             objo = observation.object_observations[objid]
-            objstate = next_state.object_states[objid]
-            if objo.objclass in self.noise_params:
+            if objo.objclass in self.noise_params\
+               and objid in next_state.object_states:
+                objstate = next_state.object_states[objid]
                 alpha, beta = self.noise_params[objo.objclass]
                 # import pdb; pdb.set_trace()
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
@@ -71,7 +72,7 @@ class ObserveEffect(OEffect):
                     else:
                         val = beta
                 else:
-                    val = 1.0 # gamma
+                    val = 1.0 # gamma -- uniform
                 prob *= val
         return prob
 

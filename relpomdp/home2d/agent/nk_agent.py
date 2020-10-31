@@ -263,6 +263,14 @@ class NKAgent:
                                for reward_model in self._reward_models
                                if reward_model.target_id != target_id]
 
+    def build_observation_model(self, sensors_in_use=None):
+        if sensors_in_use is None:
+            sensors_in_use = self._sensors
+        o_condeff = [self._sensors[name][1]
+                     for name in sensors_in_use]
+        observation_model = OOObservationModel(o_condeff)
+        return observation_model
+
     def instantiate(self, policy_model,
                     sensors_in_use=None,
                     objects_tracking=None):
@@ -287,8 +295,6 @@ class NKAgent:
             objects_tracking  (set): A set of object ids whose beliefs will be
                 passed on to the instantiated Agent.
         """
-        if sensors_in_use is None:
-            sensors_in_use = self._sensors
         if objects_tracking is None:
             objects_tracking = self._object_beliefs.keys()
 
@@ -301,9 +307,7 @@ class NKAgent:
         transition_model = OOTransitionModel(t_condeff)
 
         # Observation model
-        o_condeff = [self._sensors[name][1]
-                     for name in sensors_in_use]
-        observation_model = OOObservationModel(o_condeff)
+        observation_model = self.build_observation_model(sensors_in_use)
 
         # Reward model
         reward_model = CompositeRewardModel(self._reward_models)
