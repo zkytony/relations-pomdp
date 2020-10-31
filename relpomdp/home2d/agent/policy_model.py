@@ -29,6 +29,10 @@ class RandomPolicyModel(pomdp_py.RolloutPolicy):
         self._memory = memory  # map from robot_pose to actions
 
     @property
+    def actions(self):
+        return self._actions
+
+    @property
     def memory(self):
         """Remembers which actions were allowed at each robot pose"""
         return self._memory

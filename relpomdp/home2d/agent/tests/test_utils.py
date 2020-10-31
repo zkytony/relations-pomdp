@@ -13,7 +13,7 @@ def add_pickup_target(nk_agent, target_id, init_belief, env):
     # the target specified by `target_id`
     effect = PickupEffect()
     action = Pickup()
-    nk_agent.add_actions([action], cond, effect)
+    nk_agent.add_actions({action}, cond, effect)
     env.transition_model.cond_effects.append((cond, effect))
 
     reward_model = PickupRewardModel(nk_agent.robot_id, target_id)
@@ -23,15 +23,18 @@ def add_pickup_target(nk_agent, target_id, init_belief, env):
     nk_agent.set_belief(target_id, init_belief)
 
 def random_policy_model(nk_agent,
-                        memory={}):
+                        memory={},
+                        actions=None):
     """Creates a RandomPolicyMOdel
     memory is a mapping from robot pose to actions,
     which indicates the set of valid actions at a pose.
     This memory can be expanded as the robot executes by
     remembering poses where not all actions can be taken
     for some reason"""
+    if actions is None:
+        actions = nk_agent.all_actions()
     policy_model = RandomPolicyModel(nk_agent.robot_id,
-                                     nk_agent.all_actions(),
+                                     actions,
                                      legal_motions=nk_agent.legal_motions,
                                      memory=memory)
     return policy_model
@@ -40,9 +43,12 @@ def preferred_policy_model(nk_agent,
                            action_prior_class,
                            ap_args=[],
                            ap_kwargs={},
-                           memory={}):
+                           memory={},
+                           actions=None):
+    if actions is None:
+        actions = nk_agent.all_actions()
     policy_model = PreferredPolicyModel(nk_agent.robot_id,
-                                        nk_agent.all_actions(),
+                                        actions,
                                         legal_motions=nk_agent.legal_motions,
                                         memory=memory)
     policy_model.add_action_prior(action_prior_class, *ap_args, **ap_kwargs)

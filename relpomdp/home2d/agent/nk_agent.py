@@ -263,15 +263,29 @@ class NKAgent:
                                for reward_model in self._reward_models
                                if reward_model.target_id != target_id]
 
-
-    def instantiate(self, policy_model, init_belief=None,
-                    sensors_in_use=None, objects_tracking=None):
+    def instantiate(self, policy_model,
+                    sensors_in_use=None,
+                    objects_tracking=None):
         """
         The user who instantiates this NKAgent is responsible
         for providing a policy model. Because, the user should
         maintain what kind of preferred rollout policy should
         be used for this agent because that depends on the task
         the user is implementing, which the NKAgent is not aware of.
+
+        The instantiation returns a pomdp_py.Agent with the T/O/R/pi models,
+        and an initial belief.
+
+        Args:
+            policy_model (PolicyModel): A policy model to give to the agent.
+                Note that, it should contains a `.actions` property, which
+                defines the valid actions considered by the isntantiated agent;
+                The agent's transition model will be built only for the valid
+                set of actions.
+            sensors_in_use (set): a set of sensor names used. Default is None,
+                where all sensors are used
+            objects_tracking  (set): A set of object ids whose beliefs will be
+                passed on to the instantiated Agent.
         """
         if sensors_in_use is None:
             sensors_in_use = self._sensors
@@ -282,7 +296,8 @@ class NKAgent:
                                 for objid in objects_tracking})
 
         # Transition model
-        t_condeff = [tup[1] for tup in self._t]
+        t_condeff = [tup[1] for tup in self._t
+                     if len(tup[0] & policy_model.actions) > 0]
         transition_model = OOTransitionModel(t_condeff)
 
         # Observation model
