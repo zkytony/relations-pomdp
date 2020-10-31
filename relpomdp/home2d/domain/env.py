@@ -60,6 +60,14 @@ class Home2DEnvironment(OOEnvironment):
     def ids_for(self, objclass):
         return self.class_to_ids.get(objclass, set())
 
+    def add_object_state(self, objid, objstate):
+        if objid in self.state.object_states:
+            raise ValueError("Object %d already exists!" % objid)
+        self.state.object_states[objid] = objstate
+        if objstate.objclass not in self.class_to_ids:
+            self.class_to_ids[objstate.objclass] = set()
+        self.class_to_ids[objstate.objclass].add(objid)
+
     @property
     def robot_state(self):
         return self.state.object_states[self.robot_id]
