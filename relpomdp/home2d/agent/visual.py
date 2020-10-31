@@ -8,6 +8,7 @@ from relpomdp.home2d.agent.nk_agent import NKAgent
 import pomdp_py
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import cv2
 import time
 
@@ -25,6 +26,13 @@ class NKAgentViz(Home2DViz):
         plt.ion()
         plt.show(block=False)
 
+    def _make_legend(self, ax, used_colors):
+        patches = []
+        for objclass in used_colors:
+            color = used_colors[objclass]
+            patches.append(mpatches.Patch(color=np.array(color)/255.0, label=objclass))
+        ax.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
     def on_render(self, belief=None):
         # Renders the true world. Then plot agent's world
         img_world = super().on_render()
@@ -33,6 +41,7 @@ class NKAgentViz(Home2DViz):
         fig = plt.gcf()
         ax = plt.gca()
         img = self.make_agent_view(self._res)
+        used_colors = {}
 
         if belief is not None:
             circle_drawn = {}
@@ -45,12 +54,14 @@ class NKAgentViz(Home2DViz):
                 color = self._colors.get(objclass, (128, 128, 128))
                 NKAgentViz.draw_object_belief(img, self._res, belief_obj, color,
                                               circle_drawn=circle_drawn)
+                used_colors[objclass] = color
 
         # rotate 90 deg CCW to match the pygame display
         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         ax.imshow(img, interpolation='none')
         # These must happen after imshow
         ax.set_aspect("equal")
+        self._make_legend(ax, used_colors)
 
         fig.canvas.draw()
         fig.canvas.flush_events()

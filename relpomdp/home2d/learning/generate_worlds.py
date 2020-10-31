@@ -7,7 +7,7 @@ import random
 import os
 
 
-def generate_world(config):
+def generate_world(config, seed=None):
     """Generates a single room"""
     # Obtain parameters
     # per-world configs
@@ -41,7 +41,8 @@ def generate_world(config):
                                         init_robot_pose=init_robot_pose,
                                         ndoors=ndoors,
                                         min_room_size=min_room_size,
-                                        max_room_size=max_room_size)
+                                        max_room_size=max_room_size,
+                                        seed=seed)
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
