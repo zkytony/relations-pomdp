@@ -375,7 +375,7 @@ def main():
 
     search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_dffc, df_corr, df_subgoal,
-           difficulty_threshold="Salt")
+           difficulty_threshold="Kitchen")
 
 if __name__ == "__main__":
     main()
