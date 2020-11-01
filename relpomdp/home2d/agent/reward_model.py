@@ -43,8 +43,8 @@ class ReachRewardModel(pomdp_py.RewardModel):
         argmax(self, state, action, next_state, **kwargs)
         Returns the most likely reward"""
         robot_state = state.object_states[self.robot_id]
-        next_robot_state = state.object_states[self.robot_id]
-        target_state = state.object_states[self.target_id]
+        next_robot_state = next_state.object_states[self.robot_id]
+        target_state = next_state.object_states[self.target_id]
         assert target_state["pose"] == next_state.object_states[self.target_id]["pose"]
         if next_robot_state["pose"][:2] == target_state["pose"]:
            if robot_state["pose"][:2] != target_state["pose"]:

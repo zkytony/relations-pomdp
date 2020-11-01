@@ -2,7 +2,7 @@ from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.tasks.common.sensor import Laser2DSensor, to_rad, to_deg
 from relpomdp.home2d.agent.visual import NKAgentViz
-from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
+from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect, Pickup
 from relpomdp.home2d.agent.policy_model import RandomPolicyModel, PreferredPolicyModel,\
     GreedyActionPrior
 from relpomdp.home2d.agent.tests.test_utils import\

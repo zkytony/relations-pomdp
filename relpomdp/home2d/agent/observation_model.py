@@ -10,18 +10,26 @@ class CanObserve(Condition):
     """Condition to observe"""
     def satisfy(self, next_state, action):
         return True  # always can
+    def __str__(self):
+        return "CanObserve"
+    def __repr__(self):
+        return str(self)
 
 
 class ObserveEffect(OEffect):
-    def __init__(self, robot_id, sensor, grid_map, noise_params):
+    def __init__(self, robot_id, sensor, grid_map, noise_params, gamma=1.0):
         """
         noise_params (dict): Maps from object class to (alpha, beta) which
             defines the noise level of detecting an object of this class
+        gamma (float): The (unnormalized) sensor probability when given object state
+            is not in the sensor's field of view. Default is 1.0. Note that
+            a functional sensor must satisfy beta < gamma < alpha.
         """
         self.robot_id = robot_id
         self.sensor = sensor
         self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
+        self.gamma = gamma
 
         # Effect name is based on sensor name
         self._name = "ObserveEffect-%s" % sensor.name
@@ -64,6 +72,9 @@ class ObserveEffect(OEffect):
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
                 alpha, beta = self.noise_params[objo.objclass]
+                if not (beta < self.gamma < alpha):
+                    print("Warning: Parameter setting for sensor seems problematic."\
+                          "Expected beta < gamma < alpha.")
                 # import pdb; pdb.set_trace()
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
@@ -72,10 +83,17 @@ class ObserveEffect(OEffect):
                     else:
                         val = beta
                 else:
-                    val = 1.0 # gamma -- uniform
+                    val = self.gamma # uniform
                 prob *= val
         return prob
 
     @property
     def name(self):
         return self._name
+
+    def __str__(self):
+        return "ObserveEffect(%s | %s)"\
+            % (self.sensor.name, str(list(self.noise_params.keys())))
+
+    def __repr__(self):
+        return str(self)

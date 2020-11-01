@@ -55,6 +55,21 @@ def uniform_belief(objclass, nk_agent):
     init_belief = pomdp_py.Histogram(obj_hist)
     return init_belief
 
+def compute_detections(observation):
+    """Given an observation (CombinedObservation),
+    return a set of object classes and ids that are detected.
+    A detection results in an ObjectObservation with a 'label'
+    that is an integer (the id of the object being detected)."""
+    detected_classes = set()
+    detected_ids = set()
+    for o in observation.observations:
+        for objid in o.object_observations:
+            objo = o.object_observations[objid]
+            if type(objo["label"]) == int:
+                detected_classes.add(objo.objclass)
+                detected_ids.add(objid)
+    return detected_classes, detected_ids
+
 def search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_difficulty, df_corr, df_subgoal,
            difficulty_threshold="Kitchen", **kwargs):
@@ -99,6 +114,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     while len(subgoals) > 0:
         subgoal_class, subgoal_id = subgoals[-1]
         reaching = subgoal_class != target_class
+        print("Searching for %s, %d" % (subgoal_class, subgoal_id))
         subgoals_done, rewards =\
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
@@ -110,7 +126,8 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
                         if tup[1] not in subgoals_done]
         rewards.extend(rewards)
     viz.on_cleanup()
-    disc_cum = discounted_cumulative_reward(rewards)
+    _discount_factor = kwargs.get("discount_factor", 0.95)
+    disc_cum = discounted_cumulative_reward(rewards, _discount_factor)
     print("Discounted cumulative reward: %.4f" % disc_cum)
     return disc_cum
 
@@ -184,6 +201,7 @@ def _run_search(nk_agent, target_class, target_id,
 
         # Get observation using all sensors
         observation = observation_model.sample(env.state, action)
+        detected_classes, detected_ids = compute_detections(observation)
 
         # update belief of robot
         new_robot_belief = pomdp_py.Histogram({env.robot_state.copy() : 1.0})
@@ -217,6 +235,8 @@ def _run_search(nk_agent, target_class, target_id,
             next_obj_hist = {}
             total_prob = 0.0
             for obj_state in obj_hist:
+                # if "Salt" in detected_classes:
+                #     import pdb; pdb.set_trace()
                 oostate = OOState({nk_agent.robot_id: robot_state,
                                    objid: obj_state})
                 obs_prob = observation_model.probability(observation, oostate, action)
@@ -245,6 +265,8 @@ def _run_search(nk_agent, target_class, target_id,
         subgoal_ids = set(subgoal_id for _, subgoal_id in all_reaching_goals)
         subgoal_classes = set(subgoal_class for subgoal_class, _ in all_reaching_goals)
         subgoals_done = set()
+
+        # TODO: THIS ISN"T CORRECT
         # As long as --- the observation contains this subgoal, then we have
         # accomplished it, even though the planning wants the robot to be on
         # top of the object. But because the robot never truely knows the
@@ -252,30 +274,23 @@ def _run_search(nk_agent, target_class, target_id,
         # object.  All it can rely on is its observation, which in this case
         # does not contain pose.  Therefore, we check the label of the
         # observation and if it matches this subgoal object, then we mark it as completed
-        detected_classes = set()
-        detected_ids = set()
-        for o in observation.observations:
-            for objid in o.object_observations:
-                objo = o.object_observations[objid]
-                if type(objo["label"]) == int:
-                    detected_classes.add(objo.objclass)
-                    detected_ids.add(objid)
         for subgoal_class, subgoal_id in all_reaching_goals:
-            if subgoal_class in detected_classes\
-               or subgoal_id in detected_ids:
+            if subgoal_class in detected_classes or subgoal_id in detected_ids:
                 subgoals_done.add(subgoal_id)
+                print("Subgoal %s, %d is done!" % (subgoal_class, subgoal_id))
         # Remove reward for done subgoals
         for objid in subgoals_done:
             nk_agent.remove_reward_model(objid)
         # If our purpose is to reach a certain class, then we can return if it is done
         if reaching:
            if target_class in detected_classes:
+               import pdb; pdb.set_trace()
                return subgoals_done, _rewards
         else:
             # We are picking
             if isinstance(action, Pickup):
-                print("Done.")
-                break
+                print("Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.")
+                return [target_id], _rewards
     return None, _rewards
 
 
@@ -331,7 +346,7 @@ def main():
                                max_range=float(cfg["max_range"]),
                                angle_increment=float(cfg["angle_increment"]))
         noises = cfg["noises"]
-        nk_agent.add_sensor(sensor, noises)
+        nk_agent.add_sensor(sensor, noises, gamma=cfg["gamma"])
     # Tell the agent that your task is to pick up the target object class
     init_belief = uniform_belief(target_class, nk_agent)
     add_pickup_target(nk_agent, target_id, init_belief, env)
@@ -360,7 +375,7 @@ def main():
 
     search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_dffc, df_corr, df_subgoal,
-           difficulty_threshold="Kitchen")
+           difficulty_threshold="Salt")
 
 if __name__ == "__main__":
     main()
