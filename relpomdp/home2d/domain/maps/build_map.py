@@ -6,14 +6,19 @@ import random
 import pickle
 
 class Room:
-    def __init__(self, name, walls, locations):
+    def __init__(self, name, walls, locations, doorways=None):
         """walls: A set of (x,y,"H"|"V") walls,
         locations: A set of (x,y) locations.
-        name (str): Assumed to be of the format Class-#"""
+        name (str): Assumed to be of the format Class-#
+        doorways (set): A set of (x,y) locations that are at the doorway.
+            Default is empty."""
         self.name = name
         self.walls = walls
         self.locations = locations
         self.room_type = self.name.split("-")[0]
+        if doorways is None:
+            doorways = set()  # must not use set() as default parameter
+        self.doorways = doorways
 
         # Compute top-left corner and width/length; The room is,
         # however, not always a rectangle.
@@ -40,6 +45,34 @@ class Room:
 
     def __repr__(self):
         return str(self)
+
+    def add_doorway_by_wall(self, wall):
+        """Adds the x,y grid cell that touches the wall
+        as the doorway; You can think of this as, the wall
+        is removed, and the x,y grid cell is the 'entrance'
+        to the room.
+
+        The wall is represented as a tuple (x, y, direction)
+        """
+        wx, wy, direction = wall
+        if (wx, wy) in self.locations:
+            self.doorways.add((wx, wy))
+            return
+
+        if direction == "V":
+            # Vertical wall. So either the doorway is at wx, wy,
+            # or it is at wx+1, wy, whichever is a valid location in
+            # this room. (wx, wy) case has been checked above
+            assert (wx+1, wy) in self.locations,\
+                "Expecting room location on right side of vertical wall."
+            self.doorways.add((wx+1, wy))
+        else:
+            # Horizontal wall. Similar reasoning
+            assert (wx, wy+1) in self.locations,\
+                "Expecting room location on above the horizontal wall at (%d, %d)."\
+                % (wx, wy+1)
+            self.doorways.add((wx, wy + 1))
+
 
 
 def init_map(width, length, return_parts=False):
@@ -241,10 +274,16 @@ def pcg_map(width, length, nrooms, categories, seed=None,
             if len(room_doors[rm_name]) < ndoors:
                 room_doors[rm_name].add(wall)
     ## Remove candidate walls identified above.
+    rm1, rm2 = list(room_doors.keys())[:2]
+    print(name_to_rooms[rm1].doorways is name_to_rooms[rm2].doorways)
     for rm_name in room_doors:
         doorway_walls = room_doors[rm_name]
         # Remove these walls from the room
         name_to_rooms[rm_name].walls -= doorway_walls
+        # Add the locations at the doorway to the room
+        # print("YOYO", doorway_walls)
+        for wall in doorway_walls:
+            name_to_rooms[rm_name].add_doorway_by_wall(wall)
 
     # Gather all walls; This is needed by the GridMap creation.
     all_walls = border_walls
@@ -264,7 +303,9 @@ def pcg_map(width, length, nrooms, categories, seed=None,
                 raise ValueError("There is clearly overlap.")
 
     wall_states = walls_to_states(all_walls)
-    return GridMap(width, length, wall_states, rooms)
+    gm = GridMap(width, length, wall_states, rooms)
+    print(gm.rooms[list(gm.rooms)[0]].doorways)
+    return gm
 
 
 def _placeable(obj_tup, free_locations):

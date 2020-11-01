@@ -170,9 +170,9 @@ def _run_search(nk_agent, target_class, target_id,
                                           objects_tracking=objects_tracking)
     observation_model = nk_agent.build_observation_model()
 
-    _depth = kwargs.get("depth", 20)
+    _depth = kwargs.get("depth", 15)
     _discount_factor = kwargs.get("discount_factor", 0.95)
-    _num_sims = kwargs.get("num_sims", 200)
+    _num_sims = kwargs.get("num_sims", 300)
     _exploration_constant = kwargs.get("exploration_constant", 100)
     planner = pomdp_py.POUCT(max_depth=_depth,
                              discount_factor=_discount_factor,
@@ -294,6 +294,17 @@ def _run_search(nk_agent, target_class, target_id,
     return None, _rewards
 
 
+def add_room_states(env):
+    # We will add a state per doorway per room
+    room_id = 10000
+    for room_name in env.grid_map.rooms:
+        room = env.grid_map.rooms[room_name]
+        for doorway in room.doorways:
+            room_state = Objstate(room.room_type,
+                                  pose=doorway)
+            env.add_object_state(room_id, room_state)
+            room_id += 100
+        room_id += 1000
 
 def main():
     parser = argparse.ArgumentParser(description="Run the object search with subgoals program.")
@@ -319,18 +330,10 @@ def main():
     print("Generating environment that surely contains %s" % args.target_class)
     seed = 100
     env = generate_world(config, seed=seed)
+    add_room_states(env)
     while len(env.ids_for(args.target_class)) == 0:
         env = generate_world(config, seed=seed)
-    # We will add a state for each room, located at the center of
-    # mass of the room; TODO: we may want to use the doorway of the room
-    # instead of the center.
-    room_id = 10000
-    for room_name in env.grid_map.rooms:
-        room = env.grid_map.rooms[room_name]
-        room_state = Objstate(room.room_type,
-                              pose=room.center_of_mass)
-        env.add_object_state(room_id, room_state)
-        room_id += 1000
+        add_room_states(env)
 
     target_class = args.target_class
     target_id = list(env.ids_for(target_class))[0]
