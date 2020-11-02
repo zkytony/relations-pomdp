@@ -17,7 +17,7 @@ class CanObserve(Condition):
 
 
 class ObserveEffect(OEffect):
-    def __init__(self, robot_id, sensor, grid_map, noise_params, gamma=1.0):
+    def __init__(self, robot_id, sensor, grid_map, noise_params):
         """
         noise_params (dict): Maps from object class to (alpha, beta) which
             defines the noise level of detecting an object of this class
@@ -29,7 +29,6 @@ class ObserveEffect(OEffect):
         self.sensor = sensor
         self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
-        self.gamma = gamma
 
         # Effect name is based on sensor name
         self._name = "ObserveEffect-%s" % sensor.name
@@ -37,31 +36,6 @@ class ObserveEffect(OEffect):
     @staticmethod
     def sensor_functioning(alpha, beta):
         return random.uniform(0,1) < alpha / (alpha + beta)
-
-    def random(self, next_state, action, byproduct=None):
-        robot_state = next_state.object_states[self.robot_id]
-
-        # We will not model occlusion by objects; only occlusion by walls (which is
-        # considered by the sensor itself)
-        noisy_obs = {}
-        for objid in next_state.object_states:
-            objstate = next_state.object_states[objid]
-            if objstate.objclass in self.noise_params:
-                # We will only observe objects that we have noise parameters for
-                alpha, beta = self.noise_params[objstate.objclass]
-                objo = Objobs(objstate.objclass, label="unknown")
-                if self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                            grid_map=self.grid_map):
-                    # observable;
-                    if ObserveEffect.sensor_functioning(alpha, beta):
-                        # Sensor functioning;
-                        objo["label"] = objclass
-                    else:
-                        # Sensor malfunction; not observing it
-                        objo["label"] = "free"
-                noisy_obs[objid] = objo
-
-        return OOObservation(noisy_obs)
 
     def probability(self, observation, next_state, action, *args, **kwargs):
         """
@@ -114,25 +88,57 @@ class ObserveEffect(OEffect):
             if objo.objclass in self.noise_params\
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
-                alpha, gamma = self.noise_params[objo.objclass]
+                true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
                 # import pdb; pdb.set_trace()
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
-                    if objo["label"] == objid:
+                    if objo["label"] == objo.objclass:
                         # sensing correct. True positive
-                        val = alpha
+                        val = true_pos_rate
                     else:
                         # Sensing incorrect. False negative
-                        val = 1. - alpha
+                        val = 1. - true_pos_rate
                 else:
-                    if objo["label"] == objid:
-                        # sensing incorrect. False positive
-                        val = 1. - gamma
-                    else:
+                    if objo["label"] == "free":
                         # sensing correct. True negative
-                        val = gamma
+                        val = 1. - false_pos_rate
+                    else:
+                        # sensing incorrect. False positive
+                        val = false_pos_rate
                 prob *= val
         return prob
+
+    def random(self, next_state, action, byproduct=None):
+        """
+        Randomly sample an observation, according to the probability defined above.x
+        """
+        robot_state = next_state.object_states[self.robot_id]
+
+        # We will not model occlusion by objects; only occlusion by walls (which is
+        # considered by the sensor itself)
+        noisy_obs = {}
+        for objid in next_state.object_states:
+            objstate = next_state.object_states[objid]
+            if objstate.objclass in self.noise_params:
+                # We will only observe objects that we have noise parameters for
+                true_pos_rate, false_pos_rate = self.noise_params[objstate.objclass]
+                label = None
+                if self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                            grid_map=self.grid_map):
+                    # observable.
+                    if ObserveEffect.sensor_functioning(true_pos_rate, 1. - true_pos_rate):
+                        # Sensor functioning.
+                        label = objstate.objclass
+                    else:
+                        # Sensor malfunction; not observing it
+                        label = "free"
+                else:
+                    if ObserveEffect.sensor_functioning(1 - false_pos_rate, false_pos_rate):
+                        label = "free"
+                    else:
+                        label = objstate.objclass
+                noisy_obs[objid] = Objobs(objstate.objclass, label=label)
+        return OOObservation(noisy_obs)
 
     @property
     def name(self):

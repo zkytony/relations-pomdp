@@ -211,12 +211,11 @@ class NKAgent:
            all_actions.update(actions)
         return all_actions
 
-    def add_sensor(self, sensor, noise_params, gamma=1.0):
+    def add_sensor(self, sensor, noise_params):
         if sensor.name in self._sensors:
             raise ValueError("Sensor %s is already added." % sensor.name)
         observe_cond = CanObserve()
-        observe_eff = ObserveEffect(self.robot_id, sensor, self.grid_map, noise_params,
-                                    gamma=gamma)
+        observe_eff = ObserveEffect(self.robot_id, sensor, self.grid_map, noise_params)
         self._sensors[sensor.name] =\
             (sensor, (observe_cond, observe_eff))
 

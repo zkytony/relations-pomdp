@@ -349,7 +349,7 @@ def main():
                                max_range=float(cfg["max_range"]),
                                angle_increment=float(cfg["angle_increment"]))
         noises = cfg["noises"]
-        nk_agent.add_sensor(sensor, noises, gamma=cfg["gamma"])
+        nk_agent.add_sensor(sensor, noises)
     # Tell the agent that your task is to pick up the target object class
     init_belief = uniform_belief(target_class, nk_agent)
     add_pickup_target(nk_agent, target_id, init_belief, env)

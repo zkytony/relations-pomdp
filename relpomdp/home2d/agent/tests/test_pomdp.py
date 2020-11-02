@@ -47,7 +47,7 @@ def test_pomdp(env, nsteps=100, discount_factor=0.95, save=False):
     sensor = Laser2DSensor(robot_id,
                            fov=90, min_range=1,
                            max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (100., 0.1)})
+    nk_agent.add_sensor(sensor, {target_class: (0.99, 0.01)})
     # policy_model = random_policy_model(nk_agent)
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
