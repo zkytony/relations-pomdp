@@ -55,7 +55,7 @@ class ObserveEffect(OEffect):
                     # observable;
                     if ObserveEffect.sensor_functioning(alpha, beta):
                         # Sensor functioning;
-                        objo["label"] = objid
+                        objo["label"] = objclass
                     else:
                         # Sensor malfunction; not observing it
                         objo["label"] = "free"
@@ -64,6 +64,49 @@ class ObserveEffect(OEffect):
         return OOObservation(noisy_obs)
 
     def probability(self, observation, next_state, action, *args, **kwargs):
+        """
+        An observation model that considers noise. This model is not exactly
+        the same as the one used in MOS-3D, because the observation space here
+        changed. An observation is just a label, instead of (pose, label) used
+        in MOS-3D. This means that there is no notion of "label corresponding to
+        a grid cell"; There is just a label.
+
+        There are pros and cons of using this model.
+        Pros:
+        - We can explicitly model true/false positive and true/false negative parameters.
+          In the MOS-3D observation model, we could only consider true positive and false negative.
+        Cons:
+        - An observation cannot be associated with a grid cell. That means when
+          the robot detects an Object, there'll be equal likelihood in every location
+          within the FOV for where the object is. And the robot must either (1) rely
+          on some other ability to estimate the pose of the object (2) move around to
+          have its FOV cover different grid cells, and see if it receives the same observation.
+          This may lead to poor decision of taking the 'find' action.
+        - Updating the belief using this model requires iterating over the entire state space.
+
+        As a comparison, there are some pros and cons of the model I used before
+        Pros:
+        - Reduces a set of voxel-label tuples to just one voxel-label tuple, for efficient
+          observation sampling and belief update
+        - Considers the pose of the voxel, so won't have the cons above.
+        - Updating the belief using this model requires only checking the grid cells within the FOV.
+        Cons:
+        - Cannot model true negative and false positive, because we treat locations outside
+          of the FOV to contribute nothing to the belief update (because we don't have the
+          information of the d(si) variable, thus the probability over d(si) is uniform.
+        - May require over-estimate of the sensor's accuracy. Because a low true positivity rate
+          would lead to the robot not believing in the object's existence, even after receiving
+          an observation about it; This is because the belief outside of the FOV is not reduced
+          as a result of this observation. This leads to a behavior where the robot must look
+          at the object multiple times in order to be certain, which is a reasonable behavior,
+          but when the true positivity rate is not substantially larger than the uniform probability,
+          (e.g. at least 10 to 1), then the robot has trouble believing in its observation, even
+          though the true positivity rate is already quite high, and such belief update behavior
+          varies dependent on the world size because the true positivity rate must overcome the
+          cumulative belief in locations outside of the FOV.
+
+        I don't think either one is right or wrong. It is a matter of balance between pros/cons.
+        """
         robot_state = next_state.object_states[self.robot_id]
         prob = 1.0
         for objid in observation.object_observations:
@@ -71,19 +114,23 @@ class ObserveEffect(OEffect):
             if objo.objclass in self.noise_params\
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
-                alpha, beta = self.noise_params[objo.objclass]
-                if not (beta < self.gamma < alpha):
-                    print("Warning: Parameter setting for sensor seems problematic."\
-                          "Expected beta < gamma < alpha.")
+                alpha, gamma = self.noise_params[objo.objclass]
                 # import pdb; pdb.set_trace()
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
                     if objo["label"] == objid:
+                        # sensing correct. True positive
                         val = alpha
                     else:
-                        val = beta
+                        # Sensing incorrect. False negative
+                        val = 1. - alpha
                 else:
-                    val = self.gamma # uniform
+                    if objo["label"] == objid:
+                        # sensing incorrect. False positive
+                        val = 1. - gamma
+                    else:
+                        # sensing correct. True negative
+                        val = gamma
                 prob *= val
         return prob
 
