@@ -1,13 +1,13 @@
 # 10x10 worlds
 
-width: 10
-length: 10
+width: 6
+length: 6
 
-nrooms: 3
+nrooms: 2
 ndoors: 2
 
 min_room_size: 2
-max_room_size: 6
+max_room_size: 3
 
 robot_id: 0
 init_robot_pose: [0, 0, 0]

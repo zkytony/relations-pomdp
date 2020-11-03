@@ -65,7 +65,7 @@ def compute_detections(observation):
     for o in observation.observations:
         for objid in o.object_observations:
             objo = o.object_observations[objid]
-            if type(objo["label"]) == int:
+            if objo["label"] == objo.objclass:
                 detected_classes.add(objo.objclass)
                 detected_ids.add(objid)
     return detected_classes, detected_ids
@@ -114,7 +114,6 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     while len(subgoals) > 0:
         subgoal_class, subgoal_id = subgoals[-1]
         reaching = subgoal_class != target_class
-        print("Searching for %s, %d" % (subgoal_class, subgoal_id))
         subgoals_done, rewards =\
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
@@ -124,6 +123,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
             # subgoals_done should be a set of object ids
             subgoals = [tup for tup in subgoals
                         if tup[1] not in subgoals_done]
+            all_reaching_goals = subgoals[1:]
         rewards.extend(rewards)
     viz.on_cleanup()
     _discount_factor = kwargs.get("discount_factor", 0.95)
@@ -187,9 +187,10 @@ def _run_search(nk_agent, target_class, target_id,
         # Plan action
         start_time = time.time()
         action = planner.plan(planning_agent)
-        print("-------POUCT (took %.4fs) -----" % (time.time() - start_time))
+        print("____ Searching for %s, %d ____" % (target_class, target_id))
+        print("#### POUCT (took %.4fs) ####" % (time.time() - start_time))
         planner.print_action_values()
-        print("-----------------")
+        print("##############################")
 
         # Environment transition
         env_state = env.state.copy()
@@ -202,6 +203,7 @@ def _run_search(nk_agent, target_class, target_id,
         # Get observation using all sensors
         observation = observation_model.sample(env.state, action)
         detected_classes, detected_ids = compute_detections(observation)
+        print("Detections: ", detected_classes)
 
         # update belief of robot
         new_robot_belief = pomdp_py.Histogram({env.robot_state.copy() : 1.0})
@@ -235,8 +237,6 @@ def _run_search(nk_agent, target_class, target_id,
             next_obj_hist = {}
             total_prob = 0.0
             for obj_state in obj_hist:
-                # if "Salt" in detected_classes:
-                #     import pdb; pdb.set_trace()
                 oostate = OOState({nk_agent.robot_id: robot_state,
                                    objid: obj_state})
                 obs_prob = observation_model.probability(observation, oostate, action)
@@ -259,7 +259,8 @@ def _run_search(nk_agent, target_class, target_id,
                                               objects_tracking=objects_tracking)
         planner.set_rollout_policy(planning_agent.policy_model)
 
-        print(action, reward)
+        print("Action executed: ", action)
+        print("Reward: ", reward)
 
         # Check termination
         subgoal_ids = set(subgoal_id for _, subgoal_id in all_reaching_goals)
@@ -277,14 +278,13 @@ def _run_search(nk_agent, target_class, target_id,
         for subgoal_class, subgoal_id in all_reaching_goals:
             if subgoal_class in detected_classes or subgoal_id in detected_ids:
                 subgoals_done.add(subgoal_id)
-                print("Subgoal %s, %d is done!" % (subgoal_class, subgoal_id))
+                print("Subgoal %s, %d is done! &! &! &! &! &!" % (subgoal_class, subgoal_id))
         # Remove reward for done subgoals
         for objid in subgoals_done:
             nk_agent.remove_reward_model(objid)
         # If our purpose is to reach a certain class, then we can return if it is done
         if reaching:
            if target_class in detected_classes:
-               import pdb; pdb.set_trace()
                return subgoals_done, _rewards
         else:
             # We are picking

@@ -264,6 +264,7 @@ class NKAgent:
                                if reward_model.target_id != target_id]
 
     def build_observation_model(self, sensors_in_use=None):
+        """Build an observation model for a given subset of sensors"""
         if sensors_in_use is None:
             sensors_in_use = self._sensors
         o_condeff = [self._sensors[name][1]
