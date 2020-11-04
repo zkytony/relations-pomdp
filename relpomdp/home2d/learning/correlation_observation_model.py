@@ -121,11 +121,4 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
                     # the poses of these classes are still not spatially correlated
                     val = 1.0
             prob *= val
-            # if detected_class == "Kitchen":
-            #     print(val)
         return prob
-
-
-
-    # def sample(self, next_state, action, **kwargs):
-    #     pass
