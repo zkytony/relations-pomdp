@@ -48,10 +48,19 @@ class ObserveEffect(OEffect):
     def probability(self, observation, next_state, action, *args, **kwargs):
         """
         An observation model that considers noise. This model is not exactly
-        the same as the one used in MOS-3D, because the observation space here
-        changed. An observation is just a label, instead of (pose, label) used
-        in MOS-3D. This means that there is no notion of "label corresponding to
-        a grid cell"; There is just a label.
+        the same as the one used in MOS-3D.
+
+        The observation for each object is (pose, label), with the following two cases:
+        - (pose=None, label="free"): The object is not detected.
+        - (pose=(x,y), label=Objclass): The object is detected with pose at (x,y)
+        Note that either case could happen because the sensor behaved correctly,
+        or that the sensor malfunction. This quality is specified by the true positive
+        and false negative rates per class.
+
+        If the observation has pose=(x,y) for object i, then object i's pose must
+        be at (x,y) in the given state in `next_state`. Otherwise, the probability is
+        zero (actually 1e-9 to avoid numerical issues). This matches the way the pose
+        is set during sampling (see random() below).
 
         There are pros and cons of using this model.
         Pros:
@@ -66,7 +75,7 @@ class ObserveEffect(OEffect):
           This may lead to poor decision of taking the 'find' action.
         - Updating the belief using this model requires iterating over the entire state space.
 
-        As a comparison, there are some pros and cons of the model I used before
+        As a comparison, there are some pros and cons of the model I used before in MOS3D
         Pros:
         - Reduces a set of voxel-label tuples to just one voxel-label tuple, for efficient
           observation sampling and belief update
@@ -96,23 +105,27 @@ class ObserveEffect(OEffect):
             if objo.objclass in self.noise_params\
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
-                true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
-                # import pdb; pdb.set_trace()
-                if self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                            grid_map=self.grid_map):
-                    if objo["label"] == objo.objclass:
-                        # sensing correct. True positive
-                        val = true_pos_rate
-                    else:
-                        # Sensing incorrect. False negative
-                        val = 1. - true_pos_rate
+                if objo["pose"] is not None\
+                   and objstate["pose"] != objo["pose"]:
+                    val = 1e-9
                 else:
-                    if objo["label"] == "free":
-                        # sensing correct. True negative
-                        val = 1. - false_pos_rate
+                    true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
+                    # import pdb; pdb.set_trace()
+                    if self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                                grid_map=self.grid_map):
+                        if objo["label"] == objo.objclass:
+                            # sensing correct. True positive
+                            val = true_pos_rate
+                        else:
+                            # Sensing incorrect. False negative
+                            val = 1. - true_pos_rate
                     else:
-                        # sensing incorrect. False positive
-                        val = false_pos_rate
+                        if objo["label"] == "free":
+                            # sensing correct. True negative
+                            val = 1. - false_pos_rate
+                        else:
+                            # sensing incorrect. False positive
+                            val = false_pos_rate
                 prob *= val
         return prob
 
@@ -131,12 +144,14 @@ class ObserveEffect(OEffect):
                 # We will only observe objects that we have noise parameters for
                 true_pos_rate, false_pos_rate = self.noise_params[objstate.objclass]
                 label = None
+                pose = None
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
                     # observable.
                     if ObserveEffect.sensor_functioning(true_pos_rate, 1. - true_pos_rate):
                         # Sensor functioning.
                         label = objstate.objclass
+                        pose = objstate["pose"]
                     else:
                         # Sensor malfunction; not observing it
                         label = "free"
@@ -145,7 +160,8 @@ class ObserveEffect(OEffect):
                         label = "free"
                     else:
                         label = objstate.objclass
-                noisy_obs[objid] = Objobs(objstate.objclass, label=label)
+                        pose = objstate["pose"]
+                noisy_obs[objid] = Objobs(objstate.objclass, label=label, pose=pose)
         return OOObservation(noisy_obs)
 
     @property
