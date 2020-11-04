@@ -1,11 +1,23 @@
 # Contains a function to generate subgoal,
 # based on correlation and difficulty scores
+from relpomdp.home2d.learning.testing.test_utils import difficulty, correlation, remap
 import pandas as pd
 import yaml
 import os
 
-def remap(oldval, oldmin, oldmax, newmin, newmax):
-    return (((oldval - oldmin) * (newmax - newmin)) / (oldmax - oldmin)) + newmin
+def correlation_score(target_class, other_class, df_corr, minval=0., maxval=1.):
+    corr = correlation(df_corr, target_class, other_class)
+    corr_min = df_corr["corr_score"].min()
+    corr_max = df_corr["corr_score"].max()
+    corr = remap(corr, corr_min, corr_max, minval, maxval)
+    return corr
+
+def difficulty_score(target_class, other_class, df_difficulty, minval=0., maxval=1.):
+    dffc = difficulty(df_corr, target_class, other_class)
+    dffc_min = df_corr["difficulty"].min()
+    dffc_max = df_corr["difficulty"].max()
+    dffc = remap(dffc, corr_min, corr_max, minval, maxval)
+    return dffc
 
 def score(target_class, other_class,
           df_corr, df_difficulty,
@@ -15,23 +27,8 @@ def score(target_class, other_class,
     the other class first before searching for the target class,
     based on the table of correlation and difficult
     """
-    try:
-        correlation = float(df_corr.loc[(df_corr["class1"] == target_class)\
-                                        & (df_corr["class2"] == other_class)]["corr_score"])
-        difficulty = float(df_difficulty.loc[df_difficulty["class"] == other_class]["difficulty"])
-    except Exception:
-        correlation = 0
-        difficulty = 1000
-
-    # remap the values
-    corr_min = df_corr["corr_score"].min()
-    corr_max = df_corr["corr_score"].max()
-    dffc_min = df_difficulty["difficulty"].min()
-    dffc_max = df_difficulty["difficulty"].max()
-
-    correlation = remap(correlation, corr_min, corr_max, 0, 1.)
-    difficulty = remap(difficulty, dffc_min, dffc_max, 0, 1.)
-
+    correlation = correlation_score(target_class, other_class, df_corr)
+    difficulty = difficulty_score(target_class, other_class, df_difficulty)
     return corr_weight*correlation - difficulty_weight*difficulty
 
 # Test

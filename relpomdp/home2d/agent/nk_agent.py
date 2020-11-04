@@ -55,11 +55,16 @@ class PartialGridMap(GridMap):
 
     def same_room(self, loc1, loc2):
         """Returns true if loc1 and loc2 (both x,y) are in the same room"""
-        if self._location_to_room[loc1] is not None\
-           and self._location_to_room[loc2] is not None:
-            return self._location_to_room[loc1] == self._location_to_room[loc2]
-        else:
+        try:
+            if self._location_to_room[loc1] is not None\
+               and self._location_to_room[loc2] is not None:
+                return self._location_to_room[loc1] == self._location_to_room[loc2]
+            else:
+                return False
+        except KeyError:
+            # KeyError could occur
             return False
+
 
     def update(self, free_locs, walls, loc_to_room={}):
         self.free_locations |= free_locs

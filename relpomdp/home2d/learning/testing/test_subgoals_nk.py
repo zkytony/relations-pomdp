@@ -11,7 +11,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
     import compute_detections, CorrelationObservationModel
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.learning.constants import FILE_PATHS
-from test_utils import add_reach_target
+from test_utils import add_reach_target, difficulty, correlation
 import copy
 import time
 import subprocess
@@ -19,12 +19,6 @@ import argparse
 import yaml
 import pandas as pd
 
-def difficulty(df_difficulty, objclass):
-    return float(df_difficulty.loc[df_difficulty["class"] == objclass]["difficulty"])
-
-def correlation(df_corr, class1, class2):
-    return float(df_corr.loc[(df_corr["class1"] == class1)\
-                  & (df_corr["class2"] == class2)]["corr_score"])
 
 def select_subgoal(df_subgoal, target_class, excluded_classes=set()):
     """Returns a class that is the best subgoal to search for the target class,
@@ -57,9 +51,6 @@ def uniform_belief(objclass, nk_agent):
     init_belief = pomdp_py.Histogram(obj_hist)
     return init_belief
 
-def compute_correlation_probability(observation, oostate, df_corr,
-                                    robot_id, objid):
-    pass
 
 def search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_difficulty, df_corr, df_subgoal,
@@ -159,7 +150,15 @@ def _run_search(nk_agent, target_class, target_id,
     planning_agent = nk_agent.instantiate(policy_model,
                                           sensors_in_use=sensor_names,
                                           objects_tracking=objects_tracking)
+    # build the sensor observation model
     observation_model = nk_agent.build_observation_model(grid_map=env.grid_map)
+
+    # build the correlation observation model
+    room_types = set(env.grid_map.rooms[name].room_type
+                     for name in env.grid_map.rooms)
+    corr_obs_model = CorrelationObservationModel(nk_agent.robot_id,
+                                                 room_types,
+                                                 df_corr)
 
     _depth = kwargs.get("depth", 15)
     _discount_factor = kwargs.get("discount_factor", 0.95)
@@ -174,6 +173,8 @@ def _run_search(nk_agent, target_class, target_id,
     while True:
         viz.on_loop()
         img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
+
+        # import pdb; pdb.set_trace()
 
         # Plan action
         start_time = time.time()
@@ -231,9 +232,10 @@ def _run_search(nk_agent, target_class, target_id,
                 oostate = OOState({nk_agent.robot_id: robot_state,
                                    objid: obj_state})
                 obs_prob = observation_model.probability(observation, oostate, action)
-                corr_prob = compute_correlation_probability(observation, oostate, df_corr,
-                                                            nk_agent.robot_id, objid)
-                next_obj_hist[obj_state] = obs_prob * obj_hist[obj_state]  # static objects
+                corr_prob = corr_obs_model.probability(observation, oostate, action,
+                                                       objid=objid, grid_map=partial_map)
+                print(corr_prob, obs_prob)
+                next_obj_hist[obj_state] = corr_prob * obs_prob * obj_hist[obj_state]  # static objects
                 total_prob += next_obj_hist[obj_state]
             for obj_state in next_obj_hist:
                 next_obj_hist[obj_state] /= total_prob
