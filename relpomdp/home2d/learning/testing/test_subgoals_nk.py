@@ -66,7 +66,14 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     and the `env` should also already contain reward model to measure
     the global goal.
     """
+    # Print info
     print("Target class: %s" % target_class)
+    print("Searcher parameters:")
+    print("    max_depth", kwargs.get("max_depth", -1))
+    print("    num_sims", kwargs.get("num_sims", -1))
+    print("    discount_factor", kwargs.get("discount_factor", 0.95))
+    print("    exploration const", kwargs.get("exploration_constant", 100))
+
     if type(difficulty_threshold) == str:
         difficulty_threshold = difficulty(df_difficulty, difficulty_threshold)
 
@@ -111,7 +118,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     _discount_factor = kwargs.get("discount_factor", 0.95)
     disc_cum = discounted_cumulative_reward(rewards, _discount_factor)
     print("Discounted cumulative reward: %.4f" % disc_cum)
-    return disc_cum
+    return rewards
 
 def _run_search(nk_agent, target_class, target_id,
                 df_corr, fake_slam, env, viz,
@@ -160,7 +167,7 @@ def _run_search(nk_agent, target_class, target_id,
                                                  room_types,
                                                  df_corr)
 
-    _depth = kwargs.get("depth", 15)
+    _depth = kwargs.get("max_depth", 15)
     _discount_factor = kwargs.get("discount_factor", 0.95)
     _num_sims = kwargs.get("num_sims", 300)
     _exploration_constant = kwargs.get("exploration_constant", 100)
@@ -234,7 +241,6 @@ def _run_search(nk_agent, target_class, target_id,
                 obs_prob = observation_model.probability(observation, oostate, action)
                 corr_prob = corr_obs_model.probability(observation, oostate, action,
                                                        objid=objid, grid_map=partial_map)
-                print(corr_prob, obs_prob)
                 next_obj_hist[obj_state] = corr_prob * obs_prob * obj_hist[obj_state]  # static objects
                 total_prob += next_obj_hist[obj_state]
             for obj_state in next_obj_hist:
@@ -301,36 +307,23 @@ def add_room_states(env):
             room_id += 100
         room_id += 1000
 
-def main():
-    parser = argparse.ArgumentParser(description="Run the object search with subgoals program.")
-    parser.add_argument("config_file",
-                        type=str, help="Path to .yaml configuration file (world distribution)")
-    parser.add_argument("diffc_score_file",
-                        type=str, help="Path to .csv for difficulty")
-    parser.add_argument("corr_score_file",
-                        type=str, help="Path to .csv for correlation")
-    parser.add_argument("subgoal_score_file",
-                        type=str, help="Path to .csv for subgoal selection")
-    parser.add_argument("-T", "--target-class", default="Salt",
-                        type=str, help="Target class to search for")
-    args = parser.parse_args()
+def test_subgoals_agent(env, target_class, config,
+                        df_corr, df_dffc, df_subgoal,
+                        difficulty_threshold="Kitchen",
+                        discount_factor=0.95, max_depth=15,
+                        num_sims=300, exploration_constant=100):
+    """The function to call.
 
-    with open(args.config_file) as f:
-        config = yaml.load(f)
-
-    df_corr = pd.read_csv(args.corr_score_file)
-    df_dffc = pd.read_csv(args.diffc_score_file)
-    df_subgoal = pd.read_csv(args.subgoal_score_file)
-
-    print("Generating environment that surely contains %s" % args.target_class)
-    seed = 100
-    env = generate_world(config, seed=seed)
-    add_room_states(env)
-    while len(env.ids_for(args.target_class)) == 0:
-        env = generate_world(config, seed=seed)
-        add_room_states(env)
-
-    target_class = args.target_class
+    Args:
+        env: The environment
+        target_class (str): object class to search for (and pickup)
+        config (dict): Configurations, read from a config file
+        df_corr
+        df_dffc
+        df_subgoal: These three are pandas dataframes that store learned scores
+        difficulty_threshold (str): The class that if difficulty is above the difficulty
+            of searching for this class, then will generate a subgoal.
+    """
     target_id = list(env.ids_for(target_class))[0]
 
     # Build an NKAgent, equipped with all sensors
@@ -371,9 +364,45 @@ def main():
                                        max_range=room_sensor.max_range,
                                        angle_increment=to_deg(room_sensor.angle_increment)))
 
-    search(target_class, target_id, nk_agent, fake_slam, env, viz,
-           df_dffc, df_corr, df_subgoal,
-           difficulty_threshold="Kitchen")
+    rewards = search(target_class, target_id, nk_agent, fake_slam, env, viz,
+                     df_dffc, df_corr, df_subgoal,
+                     difficulty_threshold=difficulty_threshold,
+                     discount_factor=discount_factor,
+                     exploration_constant=exploration_constant,
+                     max_depth=max_depth,
+                     num_sims=num_sims)
+    return rewards
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Run the object search with subgoals program.")
+    parser.add_argument("config_file",
+                        type=str, help="Path to .yaml configuration file (world distribution)")
+    parser.add_argument("diffc_score_file",
+                        type=str, help="Path to .csv for difficulty")
+    parser.add_argument("corr_score_file",
+                        type=str, help="Path to .csv for correlation")
+    parser.add_argument("subgoal_score_file",
+                        type=str, help="Path to .csv for subgoal selection")
+    parser.add_argument("-T", "--target-class", default="Salt",
+                        type=str, help="Target class to search for")
+    args = parser.parse_args()
+
+    with open(args.config_file) as f:
+        config = yaml.load(f)
+
+    print("Generating environment that surely contains %s" % args.target_class)
+    seed = 100
+    env = generate_world(config, seed=seed)
+    add_room_states(env)
+    while len(env.ids_for(args.target_class)) == 0:
+        env = generate_world(config, seed=seed)
+        add_room_states(env)
+
+    test_subgoals_agent(env, args.target_class, config,
+                        df_corr=pd.read_csv(args.corr_score_file),
+                        df_dffc=pd.read_csv(args.diffc_score_file),
+                        df_subgoal=pd.read_csv(args.subgoal_score_file))
 
 if __name__ == "__main__":
     main()
