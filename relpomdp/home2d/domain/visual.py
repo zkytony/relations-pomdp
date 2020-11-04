@@ -233,6 +233,8 @@ class Home2DViz:
         # Draw objects
         for objid in self._env.state.object_states:
             objstate = self._env.state.object_states[objid]
+            if objstate.objclass in {"Kitchen", "Office", "Bathroom", "Bedroom"}:
+                continue
             if objid == self._env.robot_id:
                 continue
             if objid in self._colors:

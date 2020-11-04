@@ -107,19 +107,23 @@ class ObserveEffect(OEffect):
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
                 true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
-                within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                                        grid_map=self.grid_map)
-                if within_range:
-                    if objo["label"] == objstate.objclass:
-
-                        val = true_pos_rate
-                    else:
-                        val = 1. - true_pos_rate
+                if objo["pose"] is not None\
+                   and objstate["pose"] != objo["pose"]:
+                    val = 1e-9
                 else:
-                    if objo["label"] == "free":
-                        val = 1. - false_pos_rate
+                    within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                                            grid_map=self.grid_map)
+                    if within_range:
+                        if objo["label"] == objstate.objclass:
+
+                            val = true_pos_rate
+                        else:
+                            val = 1. - true_pos_rate
                     else:
-                        val = false_pos_rate
+                        if objo["label"] == "free":
+                            val = 1. - false_pos_rate
+                        else:
+                            val = false_pos_ratec
                 prob *= val
         return prob
 
@@ -150,13 +154,8 @@ class ObserveEffect(OEffect):
                         # Sensor malfunction; not observing it
                         label = "free"
                 else:
-                    if ObserveEffect.sensor_functioning(1 - false_pos_rate, false_pos_rate):
-                        label = "free"
-                    else:
-                        label = objstate.objclass
-                        # False positive. exact pose is unsure, but in FOV
-                        # TODO: You should actually simulated a pose within the FOV.
-                        pose = "IN_FOV"#robot_state["pose"][:2]
+                    # TODO: HANDLE FALSE POSITIVE CORRECTLY!
+                    label = "free"
                 noisy_obs[objid] = Objobs(objstate.objclass, label=label, pose=pose)
         return OOObservation(noisy_obs)
 

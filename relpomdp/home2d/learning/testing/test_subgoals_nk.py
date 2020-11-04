@@ -407,7 +407,7 @@ def main():
         config = yaml.load(f)
 
     print("Generating environment that surely contains %s" % args.target_class)
-    seed = 10
+    seed = 100
     env = generate_world(config, seed=seed)
     add_room_states(env)
     while len(env.ids_for(args.target_class)) == 0:
@@ -419,7 +419,7 @@ def main():
                         df_dffc=pd.read_csv(args.diffc_score_file),
                         df_subgoal=pd.read_csv(args.subgoal_score_file),
                         use_correlation_belief_update=True,
-                        full_map=True)
+                        full_map=False)
 
 if __name__ == "__main__":
     main()
