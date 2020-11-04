@@ -5,7 +5,7 @@
 import pomdp_py
 from relpomdp.home2d.agent import *
 from relpomdp.home2d.domain import *
-from relpomdp.home2d.utils import save_images_and_compress, discounted_cumulative_reward
+from relpomdp.home2d.utils import save_images_and_compress, discounted_cumulative_reward, euclidean_dist
 from relpomdp.home2d.learning.generate_worlds import generate_world
 from relpomdp.home2d.learning.correlation_observation_model\
     import compute_detections, CorrelationObservationModel
@@ -293,9 +293,13 @@ def _run_search(nk_agent, target_class, target_id,
         # does not contain pose.  Therefore, we check the label of the
         # observation and if it matches this subgoal object, then we mark it as completed
         for subgoal_class, subgoal_id in all_reaching_goals:
-            if subgoal_class in detected_classes or subgoal_id in detected_ids:
+            # TODO: THIS SHOULD BE CHECKED BASED ON REWARD IN SUBGOAL!
+            if euclidean_dist(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"]) <= 2:
+            # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
                 subgoals_done.add(subgoal_id)
                 print("Subgoal %s, %d is done! &! &! &! &! &!" % (subgoal_class, subgoal_id))
+            else:
+                print(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"])
         # Remove reward for done subgoals
         for objid in subgoals_done:
             nk_agent.remove_reward_model(objid)
@@ -316,7 +320,8 @@ def test_subgoals_agent(env, target_class, config,
                         difficulty_threshold="Kitchen",
                         nsteps=100, discount_factor=0.95, max_depth=15,
                         num_sims=300, exploration_constant=100,
-                        use_correlation_belief_update=True):
+                        use_correlation_belief_update=True,
+                        full_map=False):
     """The function to call.
 
     Args:
@@ -332,7 +337,10 @@ def test_subgoals_agent(env, target_class, config,
     target_id = list(env.ids_for(target_class))[0]
 
     # Build an NKAgent, equipped with all sensors
-    nk_agent = NKAgent(env.robot_id, env.robot_state["pose"])
+    if full_map:
+        nk_agent = NKAgent(env.robot_id, env.robot_state["pose"], grid_map=env.grid_map)
+    else:
+        nk_agent = NKAgent(env.robot_id, env.robot_state["pose"])
     for sensor_name in config["sensors"]:
         cfg = config["sensors"][sensor_name]
         sensor = Laser2DSensor(env.robot_id,
@@ -399,7 +407,7 @@ def main():
         config = yaml.load(f)
 
     print("Generating environment that surely contains %s" % args.target_class)
-    seed = 100
+    seed = 10
     env = generate_world(config, seed=seed)
     add_room_states(env)
     while len(env.ids_for(args.target_class)) == 0:
@@ -410,7 +418,8 @@ def main():
                         df_corr=pd.read_csv(args.corr_score_file),
                         df_dffc=pd.read_csv(args.diffc_score_file),
                         df_subgoal=pd.read_csv(args.subgoal_score_file),
-                        use_correlation_belief_update=True)
+                        use_correlation_belief_update=True,
+                        full_map=True)
 
 if __name__ == "__main__":
     main()

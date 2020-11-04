@@ -102,6 +102,7 @@ def test_pomdp_nk(env, target_class,
         reward = agent.reward_model.sample(env_state, action, env_next_state)
 
         observation = agent.observation_model.sample(env.state, action)
+        print(observation)
 
         # update belief of robot
         new_robot_belief = pomdp_py.Histogram({env.robot_state.copy() : 1.0})

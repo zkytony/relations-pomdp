@@ -102,30 +102,24 @@ class ObserveEffect(OEffect):
         prob = 1.0
         for objid in observation.object_observations:
             objo = observation.object_observations[objid]
+
             if objo.objclass in self.noise_params\
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
-                if objo["pose"] is not None\
-                   and objstate["pose"] != objo["pose"]:
-                    val = 1e-9
-                else:
-                    true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
-                    # import pdb; pdb.set_trace()
-                    if self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                                grid_map=self.grid_map):
-                        if objo["label"] == objo.objclass:
-                            # sensing correct. True positive
-                            val = true_pos_rate
-                        else:
-                            # Sensing incorrect. False negative
-                            val = 1. - true_pos_rate
+                true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
+                within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                                        grid_map=self.grid_map)
+                if within_range:
+                    if objo["label"] == objstate.objclass:
+
+                        val = true_pos_rate
                     else:
-                        if objo["label"] == "free":
-                            # sensing correct. True negative
-                            val = 1. - false_pos_rate
-                        else:
-                            # sensing incorrect. False positive
-                            val = false_pos_rate
+                        val = 1. - true_pos_rate
+                else:
+                    if objo["label"] == "free":
+                        val = 1. - false_pos_rate
+                    else:
+                        val = false_pos_rate
                 prob *= val
         return prob
 
@@ -160,7 +154,9 @@ class ObserveEffect(OEffect):
                         label = "free"
                     else:
                         label = objstate.objclass
-                        pose = objstate["pose"]
+                        # False positive. exact pose is unsure, but in FOV
+                        # TODO: You should actually simulated a pose within the FOV.
+                        pose = "IN_FOV"#robot_state["pose"][:2]
                 noisy_obs[objid] = Objobs(objstate.objclass, label=label, pose=pose)
         return OOObservation(noisy_obs)
 

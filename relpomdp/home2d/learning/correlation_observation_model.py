@@ -98,6 +98,9 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         prob = 1.0
         for detected_class in detected_classes:
             detected_class_pose = detected_poses[detected_class]
+            if detected_class_pose == "IN_FOV":
+                # TODO: FIX THIS
+                detected_class_pose = next_state.object_states[self.robot_id]["pose"][:2]
 
             correlated = self._spatially_correlated(given_class_pose, given_object_state.objclass,
                                                     detected_class_pose, detected_class,

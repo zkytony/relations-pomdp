@@ -55,7 +55,7 @@ def test_pomdp(env, target_class,
                            max_range=target_sensor_config.get("max_range", 2),
                            angle_increment=target_sensor_config.get("angle_increment", 0.1))
     nk_agent.add_sensor(sensor,
-                        {target_class: target_sensor_config.get("noises", (0.99, 0.01))})
+                        {target_class: target_sensor_config.get("noises", (0.8, 0.01))})
     # policy_model = random_policy_model(nk_agent)
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
@@ -96,6 +96,8 @@ def test_pomdp(env, target_class,
         reward = agent.reward_model.sample(env_state, action, env_next_state)
 
         observation = agent.observation_model.sample(env.state, action)
+        print(observation)
+
         # update belief of robot
         agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
             env.robot_state.copy() : 1.0
