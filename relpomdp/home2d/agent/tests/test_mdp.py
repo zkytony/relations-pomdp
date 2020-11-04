@@ -10,30 +10,38 @@ from relpomdp.home2d.agent.transition_model import Pickup
 from test_utils import add_pickup_target, random_policy_model, make_world
 import copy
 
-def test_mdp(env, nsteps=100, discount_factor=0.95):
+def test_mdp(env, target_class,
+             discount_factor=0.95, max_depth=15,
+             num_sims=300, exploration_constant=100,
+             nsteps=100,
+             target_sensor_config={},
+             slam_sensor_config={}):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=90, min_range=1,
-                                       max_range=3, angle_increment=0.1))
-
-    target_class = "Salt"
+                                       fov=slam_sensor_config.get("fov", 90),
+                                       min_range=slam_sensor_config.get("min_range", 1),
+                                       max_range=slam_sensor_config.get("max_range", 3),
+                                       angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
     init_belief = pomdp_py.Histogram({env.state.object_states[target_id]:1.0})
     add_pickup_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
-                           fov=90, min_range=1,
-                           max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (10., 0.1)})
+                           fov=target_sensor_config.get("fov", 90),
+                           min_range=target_sensor_config.get("min_range", 1),
+                           max_range=target_sensor_config.get("max_range", 2),
+                           angle_increment=target_sensor_config.get("angle_increment", 0.1))
+    nk_agent.add_sensor(sensor,
+                        {target_class: target_sensor_config.get("noises", (0.99, 0.01))})
     policy_model = random_policy_model(nk_agent)
 
     agent = nk_agent.instantiate(policy_model)
 
-    planner = pomdp_py.POUCT(max_depth=20,
+    planner = pomdp_py.POUCT(max_depth=max_depth,
                              discount_factor=discount_factor,
-                             num_sims=1000,
-                             exploration_const=200,
+                             num_sims=num_sims,
+                             exploration_const=exploration_constant,
                              rollout_policy=agent.policy_model)
 
     # Visualize and run
@@ -74,4 +82,4 @@ def test_mdp(env, nsteps=100, discount_factor=0.95):
 
 if __name__ == "__main__":
     env = make_world()
-    test_mdp(env)
+    test_mdp(env, target_class="Salt")

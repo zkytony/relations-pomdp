@@ -20,15 +20,20 @@ import time
 import subprocess
 
 
-def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
+def test_pomdp_nk(env, target_class,
+                  discount_factor=0.95, max_depth=15,
+                  num_sims=300, exploration_constant=100,
+                  nsteps=100, save=False,
+                  target_sensor_config={},
+                  slam_sensor_config={}):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=90, min_range=1,
-                                       max_range=3, angle_increment=0.1))
-
-    target_class = "Salt"
+                                       fov=slam_sensor_config.get("fov", 90),
+                                       min_range=slam_sensor_config.get("min_range", 1),
+                                       max_range=slam_sensor_config.get("max_range", 3),
+                                       angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
 
     # Uniform belief over free spaces and a layer of frontier
@@ -49,9 +54,12 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
     init_belief = pomdp_py.Histogram(target_hist)
     add_pickup_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
-                           fov=90, min_range=1,
-                           max_range=2, angle_increment=0.1)
-    nk_agent.add_sensor(sensor, {target_class: (0.99, 0.01)})
+                           fov=target_sensor_config.get("fov", 90),
+                           min_range=target_sensor_config.get("min_range", 1),
+                           max_range=target_sensor_config.get("max_range", 2),
+                           angle_increment=target_sensor_config.get("angle_increment", 0.1))
+    nk_agent.add_sensor(sensor,
+                        {target_class: target_sensor_config.get("noises", (0.99, 0.01))})
     # policy_model = random_policy_model(nk_agent)
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
@@ -59,10 +67,10 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
     agent = nk_agent.instantiate(policy_model)
 
-    planner = pomdp_py.POUCT(max_depth=20,
+    planner = pomdp_py.POUCT(max_depth=max_depth,
                              discount_factor=discount_factor,
-                             num_sims=200,
-                             exploration_const=100,
+                             num_sims=num_sims,
+                             exploration_const=exploration_constant,
                              rollout_policy=agent.policy_model)
 
     # Visualize and run
@@ -168,4 +176,4 @@ def test_pomdp_nk(env, nsteps=100, discount_factor=0.95, save=False):
 
 if __name__ == "__main__":
     env = make_world()
-    test_pomdp_nk(env, save=False, nsteps=100)
+    test_pomdp_nk(env, target_class="Salt", save=False, nsteps=100)

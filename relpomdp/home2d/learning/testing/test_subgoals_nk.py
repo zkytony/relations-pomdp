@@ -73,6 +73,8 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     print("    num_sims", kwargs.get("num_sims", -1))
     print("    discount_factor", kwargs.get("discount_factor", 0.95))
     print("    exploration const", kwargs.get("exploration_constant", 100))
+    nsteps = kwargs.get("nsteps", 100)
+    print("    num steps allowed", nsteps)
 
     if type(difficulty_threshold) == str:
         difficulty_threshold = difficulty(df_difficulty, difficulty_threshold)
@@ -100,14 +102,17 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     # Start with the last subgoal
     all_reaching_goals = subgoals[1:]
     rewards = []
+    nsteps_remaining = nsteps
     while len(subgoals) > 0:
         subgoal_class, subgoal_id = subgoals[-1]
         reaching = subgoal_class != target_class
+        kwargs["nsteps"] = nsteps_remaining
         subgoals_done, rewards =\
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
                         reaching=reaching, all_reaching_goals=all_reaching_goals,
                         **kwargs)
+        nsteps_remaining -= len(rewards)
         if subgoals_done is not None:
             # subgoals_done should be a set of object ids
             subgoals = [tup for tup in subgoals
@@ -177,16 +182,15 @@ def _run_search(nk_agent, target_class, target_id,
                              exploration_const=_exploration_constant,  # todo: is 100 still good?
                              rollout_policy=planning_agent.policy_model)
     _rewards = []
-    while True:
+    _nsteps = kwargs.get("nsteps", 100)
+    for step in range(_nsteps):
         viz.on_loop()
         img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
-
-        # import pdb; pdb.set_trace()
 
         # Plan action
         start_time = time.time()
         action = planner.plan(planning_agent)
-        print("____ Searching for %s, %d ____" % (target_class, target_id))
+        print("__ (Step %d/%d) Searching for %s, %d ____" % (step, _nsteps, target_class, target_id))
         print("#### POUCT (took %.4fs) ####" % (time.time() - start_time))
         planner.print_action_values()
         print("##############################")
@@ -310,7 +314,7 @@ def add_room_states(env):
 def test_subgoals_agent(env, target_class, config,
                         df_corr, df_dffc, df_subgoal,
                         difficulty_threshold="Kitchen",
-                        discount_factor=0.95, max_depth=15,
+                        nsteps=100, discount_factor=0.95, max_depth=15,
                         num_sims=300, exploration_constant=100):
     """The function to call.
 
@@ -370,7 +374,8 @@ def test_subgoals_agent(env, target_class, config,
                      discount_factor=discount_factor,
                      exploration_constant=exploration_constant,
                      max_depth=max_depth,
-                     num_sims=num_sims)
+                     num_sims=num_sims,
+                     nsteps=nsteps)
     return rewards
 
 
