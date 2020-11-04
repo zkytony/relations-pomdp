@@ -67,77 +67,78 @@ def main():
 
     reward_rows = []
     success_rows = []
-    for i in range(args.num_trials):
-        print("Generating environment that surely contains %s" % args.target_class)
-        env = generate_world(config)
-        add_room_states(env)
-        while len(env.ids_for(args.target_class)) == 0:
-            env = generate_world(config)
+    try:
+        for i in range(args.num_trials):
+            print("Generating environment that surely contains %s" % args.target_class)
+            env = generate_world(config, seed=100)
             add_room_states(env)
+            while len(env.ids_for(args.target_class)) == 0:
+                env = generate_world(config)
+                add_room_states(env)
 
-        # # MDP
-        # env_copy = copy.deepcopy(env)
-        # mdp_rewards = test_mdp(env_copy, args.target_class,
-        #                        target_sensor_config=target_sensor_config,
-        #                        slam_sensor_config=slam_sensor_config,
-        #                        **params)
+            # # MDP
+            # env_copy = copy.deepcopy(env)
+            # mdp_rewards = test_mdp(env_copy, args.target_class,
+            #                        target_sensor_config=target_sensor_config,
+            #                        slam_sensor_config=slam_sensor_config,
+            #                        **params)
 
-        # SUBGOAL (with update)
-        env_copy = copy.deepcopy(env)
-        subgoal_corr_rewards = test_subgoals_agent(env_copy, args.target_class, config,
-                                                   df_corr, df_dffc, df_subgoal,
-                                                   use_correlation_belief_update=True,
-                                                   **params)
+            # SUBGOAL (with update)
+            env_copy = copy.deepcopy(env)
+            subgoal_corr_rewards = test_subgoals_agent(env_copy, args.target_class, config,
+                                                       df_corr, df_dffc, df_subgoal,
+                                                       use_correlation_belief_update=True,
+                                                       **params)
 
-        # SUBGOAL (without correlation update)
-        env_copy = copy.deepcopy(env)
-        subgoal_nocorr_rewards = test_subgoals_agent(env_copy, args.target_class, config,
-                                                     df_corr, df_dffc, df_subgoal,
-                                                     use_correlation_belief_update=False,
-                                                     **params)
+            # SUBGOAL (without correlation update)
+            env_copy = copy.deepcopy(env)
+            subgoal_nocorr_rewards = test_subgoals_agent(env_copy, args.target_class, config,
+                                                         df_corr, df_dffc, df_subgoal,
+                                                         use_correlation_belief_update=False,
+                                                         **params)
 
-        # POMDP
-        env_copy = copy.deepcopy(env)
-        pomdp_rewards = test_pomdp(env_copy, args.target_class,
-                                   target_sensor_config=target_sensor_config,
-                                   slam_sensor_config=slam_sensor_config,
-                                   **params)
+            # POMDP
+            env_copy = copy.deepcopy(env)
+            pomdp_rewards = test_pomdp(env_copy, args.target_class,
+                                       target_sensor_config=target_sensor_config,
+                                       slam_sensor_config=slam_sensor_config,
+                                       **params)
 
-        # POMDP NK
-        env_copy = copy.deepcopy(env)
-        pomdp_nk_rewards = test_pomdp_nk(env_copy, args.target_class,
-                                         target_sensor_config=target_sensor_config,
-                                         slam_sensor_config=slam_sensor_config,
-                                         **params)
+            # POMDP NK
+            env_copy = copy.deepcopy(env)
+            pomdp_nk_rewards = test_pomdp_nk(env_copy, args.target_class,
+                                             target_sensor_config=target_sensor_config,
+                                             slam_sensor_config=slam_sensor_config,
+                                             **params)
 
 
-        # mdp_disc = discounted_cumulative_reward(mdp_rewards, params["discount_factor"])
-        pomdp_disc = discounted_cumulative_reward(pomdp_rewards, params["discount_factor"])
-        pomdp_nk_disc = discounted_cumulative_reward(pomdp_nk_rewards, params["discount_factor"])
-        subgoal_nocorr_disc = discounted_cumulative_reward(subgoal_nocorr_rewards, params["discount_factor"])
-        subgoal_corr_disc = discounted_cumulative_reward(subgoal_corr_rewards, params["discount_factor"])
-        reward_rows.append([#mdp_disc,
-            pomdp_disc, pomdp_nk_disc,
-            subgoal_nocorr_disc, subgoal_corr_disc])
+            # mdp_disc = discounted_cumulative_reward(mdp_rewards, params["discount_factor"])
+            pomdp_disc = discounted_cumulative_reward(pomdp_rewards, params["discount_factor"])
+            pomdp_nk_disc = discounted_cumulative_reward(pomdp_nk_rewards, params["discount_factor"])
+            subgoal_nocorr_disc = discounted_cumulative_reward(subgoal_nocorr_rewards, params["discount_factor"])
+            subgoal_corr_disc = discounted_cumulative_reward(subgoal_corr_rewards, params["discount_factor"])
+            reward_rows.append([#mdp_disc,
+                pomdp_disc, pomdp_nk_disc,
+                subgoal_nocorr_disc, subgoal_corr_disc])
 
-        # mdp_success   = int(mdp_rewards[-1] == 100.0)
-        pomdp_success = int(pomdp_rewards[-1] == 100.0)
-        pomdp_nk_success = int(pomdp_nk_rewards[-1] == 100.0)
-        subgoal_nocorr_success = int(subgoal_nocorr_rewards[-1] == 100.0)
-        subgoal_corr_success = int(subgoal_corr_rewards[-1] == 100.0)
-        success_rows.append([#mdp_success,
-            pomdp_success, pomdp_nk_success,
-            subgoal_nocorr_success, subgoal_corr_success])
+            # mdp_success   = int(mdp_rewards[-1] == 100.0)
+            pomdp_success = int(pomdp_rewards[-1] == 100.0)
+            pomdp_nk_success = int(pomdp_nk_rewards[-1] == 100.0)
+            subgoal_nocorr_success = int(subgoal_nocorr_rewards[-1] == 100.0)
+            subgoal_corr_success = int(subgoal_corr_rewards[-1] == 100.0)
+            success_rows.append([#mdp_success,
+                pomdp_success, pomdp_nk_success,
+                subgoal_nocorr_success, subgoal_corr_success])
+    finally:
+        df_rewards = pd.DataFrame(reward_rows,
+                                  columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
+        df_success = pd.DataFrame(success_rows,
+                                  columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
 
-    df_rewards = pd.DataFrame(reward_rows,
-                              columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
-    df_success = pd.DataFrame(success_rows,
-                              columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
-
-    start_time = dt.now()
-    timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
-    df_rewards.to_csv(os.path.join(args.output_dir, "results_%s_disc-rewards.csv" % (timestr)))
-    df_success.to_csv(os.path.join(args.output_dir, "results_%s_success.csv" % (timestr)))
+        start_time = dt.now()
+        timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
+        df_rewards.to_csv(os.path.join(args.output_dir, "results_%s_disc-rewards.csv" % (timestr)))
+        df_success.to_csv(os.path.join(args.output_dir, "results_%s_success.csv" % (timestr)))
 
 
 if __name__ == "__main__":
