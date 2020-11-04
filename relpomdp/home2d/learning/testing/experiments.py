@@ -6,15 +6,19 @@
 # We also record the success rate of finding the goal object.
 # (I'm sure these are not the eventual metrics, but good for now).
 
+import argparse
 from relpomdp.home2d.agent.tests.test_pomdp_nk import test_pomdp_nk
 from relpomdp.home2d.agent.tests.test_pomdp import test_pomdp
 from relpomdp.home2d.agent.tests.test_mdp import test_mdp
 from relpomdp.home2d.learning.testing.test_subgoals_nk import test_subgoals_agent
 from relpomdp.home2d.learning.generate_worlds import generate_world
 from relpomdp.home2d.utils import save_images_and_compress, discounted_cumulative_reward
+from relpomdp.home2d.learning.testing.test_utils import add_room_states
 from datetime import datetime as dt
 import pandas as pd
+import yaml
 import copy
+import os
 
 def main():
     parser = argparse.ArgumentParser(description="Run the object search with subgoals program.")
@@ -30,6 +34,8 @@ def main():
                         type=str, help="Target class to search for")
     parser.add_argument("-N", "--num-trials", default=30,
                         type=int, help="Number of environments to generate and test")
+    parser.add_argument("--output-dir", default="./results",
+                        type=str, help="Directory to output results")
     args = parser.parse_args()
 
     with open(args.config_file) as f:
@@ -38,7 +44,7 @@ def main():
     # Parameters
     params = {
         "max_depth": 15,
-        "nsteps": 100,
+        "nsteps": 5,
         "discount_factor": 0.95,
         "num_sims": 350,
         "exploration_constant": 100
@@ -50,9 +56,10 @@ def main():
     for sensor_name in config["sensors"]:
         cfg = config["sensors"][sensor_name]
         if args.target_class in cfg["noises"]:
-            target_sensor_config = cfg
+            target_sensor_config = copy.deepcopy(cfg)
+            target_sensor_config["noises"] = target_sensor_config["noises"][args.target_class]
         if sensor_name.lower().startswith("room"):
-            slam_sensor_config = cfg
+            slam_sensor_config = copy.deepcopy(cfg)
 
     df_corr = pd.read_csv(args.corr_score_file)
     df_dffc = pd.read_csv(args.diffc_score_file)

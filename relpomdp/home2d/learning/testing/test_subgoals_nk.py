@@ -11,7 +11,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
     import compute_detections, CorrelationObservationModel
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.learning.constants import FILE_PATHS
-from test_utils import add_reach_target, difficulty, correlation
+from test_utils import add_reach_target, difficulty, correlation, add_room_states
 import copy
 import time
 import subprocess
@@ -122,6 +122,8 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
                         if tup[1] not in subgoals_done]
             all_reaching_goals = subgoals[1:]
         rewards.extend(rewards)
+        if nsteps_remaining == 0:
+            break
     viz.on_cleanup()
     _discount_factor = kwargs.get("discount_factor", 0.95)
     disc_cum = discounted_cumulative_reward(rewards, _discount_factor)
@@ -308,18 +310,6 @@ def _run_search(nk_agent, target_class, target_id,
                 return [target_id], _rewards
     return None, _rewards
 
-
-def add_room_states(env):
-    # We will add a state per doorway per room
-    room_id = 10000
-    for room_name in env.grid_map.rooms:
-        room = env.grid_map.rooms[room_name]
-        for doorway in room.doorways:
-            room_state = Objstate(room.room_type,
-                                  pose=doorway)
-            env.add_object_state(room_id, room_state)
-            room_id += 100
-        room_id += 1000
 
 def test_subgoals_agent(env, target_class, config,
                         df_corr, df_dffc, df_subgoal,
