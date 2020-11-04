@@ -43,7 +43,7 @@ def main():
 
     # Parameters
     params = {
-        "max_depth": 15,
+        "max_depth": 20,
         "nsteps": 5,
         "discount_factor": 0.95,
         "num_sims": 350,
@@ -75,12 +75,12 @@ def main():
             env = generate_world(config)
             add_room_states(env)
 
-        # MDP
-        env_copy = copy.deepcopy(env)
-        mdp_rewards = test_mdp(env_copy, args.target_class,
-                               target_sensor_config=target_sensor_config,
-                               slam_sensor_config=slam_sensor_config,
-                               **params)
+        # # MDP
+        # env_copy = copy.deepcopy(env)
+        # mdp_rewards = test_mdp(env_copy, args.target_class,
+        #                        target_sensor_config=target_sensor_config,
+        #                        slam_sensor_config=slam_sensor_config,
+        #                        **params)
 
         # POMDP
         env_copy = copy.deepcopy(env)
@@ -110,24 +110,26 @@ def main():
                                                    use_correlation_belief_update=True,
                                                    **params)
 
-        mdp_disc = discounted_cumulative_reward(mdp_rewards, params["discount_factor"])
+        # mdp_disc = discounted_cumulative_reward(mdp_rewards, params["discount_factor"])
         pomdp_disc = discounted_cumulative_reward(pomdp_rewards, params["discount_factor"])
         pomdp_nk_disc = discounted_cumulative_reward(pomdp_nk_rewards, params["discount_factor"])
         subgoal_nocorr_disc = discounted_cumulative_reward(subgoal_nocorr_rewards, params["discount_factor"])
         subgoal_corr_disc = discounted_cumulative_reward(subgoal_corr_rewards, params["discount_factor"])
-        reward_rows.append([mdp_disc, pomdp_disc, pomdp_nk_disc, subgoal_nocorr_disc, subgoal_corr_disc])
+        reward_rows.append([#mdp_disc,
+                            pomdp_disc, pomdp_nk_disc, subgoal_nocorr_disc, subgoal_corr_disc])
 
-        mdp_success   = int(mdp_rewards[-1] == 100.0)
+        # mdp_success   = int(mdp_rewards[-1] == 100.0)
         pomdp_success = int(pomdp_rewards[-1] == 100.0)
         pomdp_nk_success = int(pomdp_nk_rewards[-1] == 100.0)
         subgoal_nocorr_success = int(subgoal_nocorr_rewards[-1] == 100.0)
         subgoal_corr_success = int(subgoal_corr_rewards[-1] == 100.0)
-        success_rows.append([mdp_success, pomdp_success, pomdp_nk_success, subgoal_nocorr_success, subgoal_corr_success])
+        success_rows.append([#mdp_success,
+                             pomdp_success, pomdp_nk_success, subgoal_nocorr_success, subgoal_corr_success])
 
     df_rewards = pd.DataFrame(reward_rows,
-                              columns=["MDP", "POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
+                              columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
     df_success = pd.DataFrame(success_rows,
-                              columns=["MDP", "POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
+                              columns=["POMDP", "POMDP-NK", "SUBGOAL-NC", "SUBGOAL-C"])
 
     start_time = dt.now()
     timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
