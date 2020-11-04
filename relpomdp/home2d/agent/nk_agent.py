@@ -26,6 +26,8 @@ class PartialGridMap(GridMap):
         self.free_locations = free_locations
         self.walls = walls
         self._cell_to_walls = self._compute_walls_per_cell()
+        self._room_locations = {}  # maps from room name to a set of locations in the room
+        self._location_to_room = {}  # maps from location to room name
 
         width, length = self._compute_dims(free_locations)
         super().__init__(width, length, walls, {})
@@ -51,12 +53,30 @@ class PartialGridMap(GridMap):
             cell_to_walls[cell2].add(wall_id)
         return cell_to_walls
 
+    def same_room(self, loc1, loc2):
+        """Returns true if loc1 and loc2 (both x,y) are in the same room"""
+        if self._location_to_room[loc1] is not None\
+           and self._location_to_room[loc2] is not None:
+            return self._location_to_room[loc1] == self._location_to_room[loc2]
+        else:
+            return False
 
-    def update(self, free_locs, walls):
+    def update(self, free_locs, walls, loc_to_room={}):
         self.free_locations |= free_locs
         self.walls.update(walls)
         self.width, self.length = self._compute_dims(self.free_locations)
         self._cell_to_walls = self._compute_walls_per_cell()
+
+        # Update room tracking
+        for loc in loc_to_room:
+            room = loc_to_room[loc]
+            if room not in self._room_locations:
+                self._room_locations[room] = set()
+            self._room_locations[room].add(loc)
+            if loc in self._location_to_room:
+                assert self._location_to_room[loc] == room
+            self._location_to_room[loc] = room
+
 
     def frontier(self):
         """Returns a set of locations that is an immediate
@@ -114,6 +134,7 @@ class FakeSLAM:
         full_grid_map = env.grid_map
         free_locs = set()
         walls = {}
+        loc_to_room = {}
         # We want to simulate the process of the robot
         interm_pose = prev_robot_pose[:2] + (robot_pose[2],)
         for x in np.arange(-1, full_grid_map.width+1, 1):
@@ -129,6 +150,7 @@ class FakeSLAM:
 
                 if res1 or res2:
                     free_locs.add((x,y))
+                    loc_to_room[(x,y)] = full_grid_map.room_of((x,y))
                 else:
                     if wall1 is not None:
                         # The point is blocked by some wall that is in the FOV
@@ -140,7 +162,7 @@ class FakeSLAM:
                         # TODO: REFACTOR: Getting wall id should not be necessary
                         wall_id, wall_state = wall2
                         walls[wall_id] = wall_state
-        partial_map.update(free_locs, walls)
+        partial_map.update(free_locs, walls, loc_to_room=loc_to_room)
 
 
 class NKAgent:

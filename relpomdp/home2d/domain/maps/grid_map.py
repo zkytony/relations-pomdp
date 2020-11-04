@@ -38,6 +38,17 @@ class GridMap:
         else:
             return None
 
+    def same_room(self, loc1, loc2):
+        """Returns true if loc1 and loc2 (both x,y) are in the same room.
+        Returns false if the two rooms are different, or if one of the
+        locations does not have a room."""
+        room1 = self.room_of(loc1)
+        room2 = self.room_of(loc2)
+        if room1 is not None and room2 is not None:
+            return room1 == room2
+        else:
+            return False
+
     def within_bounds(self, position):
         if not (position[0] >= 0 and position[0] < self.width\
                 and position[1] >= 0 and position[1] < self.length):
