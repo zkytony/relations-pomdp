@@ -7,6 +7,8 @@ from relpomdp.home2d.agent import *
 from relpomdp.home2d.domain import *
 from relpomdp.home2d.utils import save_images_and_compress, discounted_cumulative_reward
 from relpomdp.home2d.learning.generate_worlds import generate_world
+from relpomdp.home2d.learning.correlation_observation_model\
+    import compute_detections, CorrelationObservationModel
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.learning.constants import FILE_PATHS
 from test_utils import add_reach_target
@@ -55,20 +57,9 @@ def uniform_belief(objclass, nk_agent):
     init_belief = pomdp_py.Histogram(obj_hist)
     return init_belief
 
-def compute_detections(observation):
-    """Given an observation (CombinedObservation),
-    return a set of object classes and ids that are detected.
-    A detection results in an ObjectObservation with a 'label'
-    that is an integer (the id of the object being detected)."""
-    detected_classes = set()
-    detected_ids = set()
-    for o in observation.observations:
-        for objid in o.object_observations:
-            objo = o.object_observations[objid]
-            if objo["label"] == objo.objclass:
-                detected_classes.add(objo.objclass)
-                detected_ids.add(objid)
-    return detected_classes, detected_ids
+def compute_correlation_probability(observation, oostate, df_corr,
+                                    robot_id, objid):
+    pass
 
 def search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_difficulty, df_corr, df_subgoal,
@@ -168,7 +159,7 @@ def _run_search(nk_agent, target_class, target_id,
     planning_agent = nk_agent.instantiate(policy_model,
                                           sensors_in_use=sensor_names,
                                           objects_tracking=objects_tracking)
-    observation_model = nk_agent.build_observation_model()
+    observation_model = nk_agent.build_observation_model(grid_map=env.grid_map)
 
     _depth = kwargs.get("depth", 15)
     _discount_factor = kwargs.get("discount_factor", 0.95)
@@ -240,6 +231,8 @@ def _run_search(nk_agent, target_class, target_id,
                 oostate = OOState({nk_agent.robot_id: robot_state,
                                    objid: obj_state})
                 obs_prob = observation_model.probability(observation, oostate, action)
+                corr_prob = compute_correlation_probability(observation, oostate, df_corr,
+                                                            nk_agent.robot_id, objid)
                 next_obj_hist[obj_state] = obs_prob * obj_hist[obj_state]  # static objects
                 total_prob += next_obj_hist[obj_state]
             for obj_state in next_obj_hist:

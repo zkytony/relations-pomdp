@@ -17,6 +17,14 @@ class CanObserve(Condition):
 
 
 class ObserveEffect(OEffect):
+    """On-board sensor observation effect.
+    It essentially models Pr(o_i | s_i, s_r, a),
+    where o_i is the observation about object i (either i's class, or "free").
+    So this model is specified by the true positive and false positive rates
+    of object i. It assumes that as soon as the object state s_i is within the field
+    of view of the sensor that can detect object i, it will be detected.
+    """
+
     def __init__(self, robot_id, sensor, grid_map, noise_params):
         """
         noise_params (dict): Maps from object class to (alpha, beta) which

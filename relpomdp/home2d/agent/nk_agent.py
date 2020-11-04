@@ -214,10 +214,7 @@ class NKAgent:
     def add_sensor(self, sensor, noise_params):
         if sensor.name in self._sensors:
             raise ValueError("Sensor %s is already added." % sensor.name)
-        observe_cond = CanObserve()
-        observe_eff = ObserveEffect(self.robot_id, sensor, self.grid_map, noise_params)
-        self._sensors[sensor.name] =\
-            (sensor, (observe_cond, observe_eff))
+        self._sensors[sensor.name] = (sensor, noise_params)
 
     def add_actions(self, actions, condition, effect):
         """Add (multiple) actions, and their condition / effect.
@@ -236,8 +233,8 @@ class NKAgent:
     def sensors_for(self, objclass):
         result = set()
         for sensor_name in self._sensors:
-            eff = self._sensors[sensor_name][1][1]
-            if objclass in eff.noise_params:
+            noise_params = self._sensors[sensor_name][1]
+            if objclass in noise_params:
                 result.add(sensor_name)
         return result
 
@@ -263,13 +260,21 @@ class NKAgent:
                                for reward_model in self._reward_models
                                if reward_model.target_id != target_id]
 
-    def build_observation_model(self, sensors_in_use=None):
+    def build_observation_model(self, sensors_in_use=None, grid_map=None):
         """Build an observation model for a given subset of sensors"""
+        if grid_map is None:
+            grid_map = self.grid_map
         if sensors_in_use is None:
             sensors_in_use = self._sensors
-        o_condeff = [self._sensors[name][1]
-                     for name in sensors_in_use]
-        observation_model = OOObservationModel(o_condeff)
+
+        cond_effects = []
+        for name in sensors_in_use:
+            sensor, noise_params = self._sensors[name]
+            observe_cond = CanObserve()
+            observe_eff = ObserveEffect(self.robot_id, sensor, grid_map, noise_params)
+            cond_effects.append((observe_cond, observe_eff))
+
+        observation_model = OOObservationModel(cond_effects)
         return observation_model
 
     def instantiate(self, policy_model,
