@@ -54,7 +54,9 @@ def uniform_belief(objclass, nk_agent):
 
 def search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_difficulty, df_corr, df_subgoal,
-           difficulty_threshold="Kitchen", **kwargs):
+           difficulty_threshold="Kitchen",
+           use_correlation_belief_update=True,
+           **kwargs):
     """
     Searches for an instance of the given target class.
     If the target class is difficult to be found, then
@@ -111,6 +113,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
                         reaching=reaching, all_reaching_goals=all_reaching_goals,
+                        use_correlation_belief_update=use_correlation_belief_update,
                         **kwargs)
         nsteps_remaining -= len(rewards)
         if subgoals_done is not None:
@@ -128,6 +131,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
 def _run_search(nk_agent, target_class, target_id,
                 df_corr, fake_slam, env, viz,
                 reaching=False, all_reaching_goals=[],
+                use_correlation_belief_update=True,
                 **kwargs):
     """Runs the agent to search for target. By 'search', I mean
     that the target can be found by 'reaching' (if it's a subgoal),
@@ -243,9 +247,15 @@ def _run_search(nk_agent, target_class, target_id,
                 oostate = OOState({nk_agent.robot_id: robot_state,
                                    objid: obj_state})
                 obs_prob = observation_model.probability(observation, oostate, action)
-                corr_prob = corr_obs_model.probability(observation, oostate, action,
-                                                       objid=objid, grid_map=partial_map)
-                next_obj_hist[obj_state] = corr_prob * obs_prob * obj_hist[obj_state]  # static objects
+
+                if use_correlation_belief_update:
+                    corr_prob = corr_obs_model.probability(observation, oostate, action,
+                                                           objid=objid, grid_map=partial_map)
+
+                    next_obj_hist[obj_state] = corr_prob * obs_prob * obj_hist[obj_state]  # static objects
+                else:
+                    next_obj_hist[obj_state] = obs_prob * obj_hist[obj_state]  # static objects
+
                 total_prob += next_obj_hist[obj_state]
             for obj_state in next_obj_hist:
                 next_obj_hist[obj_state] /= total_prob
@@ -315,7 +325,8 @@ def test_subgoals_agent(env, target_class, config,
                         df_corr, df_dffc, df_subgoal,
                         difficulty_threshold="Kitchen",
                         nsteps=100, discount_factor=0.95, max_depth=15,
-                        num_sims=300, exploration_constant=100):
+                        num_sims=300, exploration_constant=100,
+                        use_correlation_belief_update=True):
     """The function to call.
 
     Args:
@@ -375,7 +386,8 @@ def test_subgoals_agent(env, target_class, config,
                      exploration_constant=exploration_constant,
                      max_depth=max_depth,
                      num_sims=num_sims,
-                     nsteps=nsteps)
+                     nsteps=nsteps,
+                     use_correlation_belief_update=use_correlation_belief_update)
     return rewards
 
 
@@ -407,7 +419,8 @@ def main():
     test_subgoals_agent(env, args.target_class, config,
                         df_corr=pd.read_csv(args.corr_score_file),
                         df_dffc=pd.read_csv(args.diffc_score_file),
-                        df_subgoal=pd.read_csv(args.subgoal_score_file))
+                        df_subgoal=pd.read_csv(args.subgoal_score_file),
+                        use_correlation_belief_update=True)
 
 if __name__ == "__main__":
     main()
