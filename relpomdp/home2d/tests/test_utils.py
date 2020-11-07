@@ -1,22 +1,22 @@
-from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect, Pickup
-from relpomdp.home2d.agent.reward_model import PickupRewardModel
+from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect, DeclareFound
+from relpomdp.home2d.agent.reward_model import DeclareFoundRewardModel
 from relpomdp.home2d.agent.policy_model import RandomPolicyModel, PreferredPolicyModel
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.domain.maps.build_map import random_world
 
-def add_pickup_target(nk_agent, target_id, init_belief, env):
+def add_target(nk_agent, target_id, init_belief, env):
     """Adds a pick up action and effect for the given target;
     The agent will have a given initial belief about the target's
     location."""
-    cond = CanPickup(nk_agent.robot_id, target_id)
+    cond = CanDeclareFound(nk_agent.robot_id, target_id)
     # This effect will ONLY change the state of
     # the target specified by `target_id`
-    effect = PickupEffect()
-    action = Pickup()
+    effect = DeclareFoundEffect()
+    action = DeclareFound()
     nk_agent.add_actions({action}, cond, effect)
     env.transition_model.cond_effects.append((cond, effect))
 
-    reward_model = PickupRewardModel(nk_agent.robot_id, target_id)
+    reward_model = DeclareFoundRewardModel(nk_agent.robot_id, target_id)
     nk_agent.add_reward_model(reward_model)
     env.add_reward_model(reward_model)
 

@@ -4,11 +4,11 @@ from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
-from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
+from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
-from relpomdp.home2d.agent.transition_model import Pickup
+from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
-from test_utils import add_pickup_target, random_policy_model, make_world
+from test_utils import add_target, random_policy_model, make_world
 import copy
 
 def test_mdp(env, target_class,
@@ -27,7 +27,7 @@ def test_mdp(env, target_class,
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
     init_belief = pomdp_py.Histogram({env.state.object_states[target_id]:1.0})
-    add_pickup_target(nk_agent, target_id, init_belief, env)
+    add_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
                            fov=target_sensor_config.get("fov", 90),
                            min_range=target_sensor_config.get("min_range", 1),
@@ -75,7 +75,7 @@ def test_mdp(env, target_class,
         planner.update(agent, action, observation)
         print(action, reward)
         rewards.append(reward)
-        if isinstance(action, Pickup):
+        if isinstance(action, DeclareFound):
             print("Done.")
             break
     viz.on_cleanup()

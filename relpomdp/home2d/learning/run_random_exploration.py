@@ -10,7 +10,7 @@ from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment
-from relpomdp.home2d.agent.transition_model import Pickup
+from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.learning.random_explorer import RandomPlanner
 from relpomdp.oopomdp.framework import Objstate
 from relpomdp.home2d.agent.tests.test_utils import random_policy_model
@@ -103,7 +103,7 @@ def run_single(env, sensor_configs, nsteps=100):
         agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
             env.robot_state.copy() : 1.0
         })
-        if isinstance(action, Pickup):
+        if isinstance(action, DeclareFound):
             print("Done.")
             break
     viz.on_cleanup()

@@ -2,19 +2,20 @@ import relpomdp.oopomdp.framework as oopomdp
 from relpomdp.home2d.domain.relation import *
 from relpomdp.home2d.domain.action import *
 
-class Pickup(Action):
-    """Pick up action"""
+class DeclareFound(Action):
+    """Declare Found action: Declares an object to be found,
+    when the robot is on top of it."""
     def __init__(self):
-        super().__init__("pickup")
+        super().__init__("declare-found")
 
-class CanPickup(oopomdp.Condition):
+class CanDeclareFound(oopomdp.Condition):
     """Pick up condition"""
     def __init__(self, robot_id, target_id):
         self.robot_id = robot_id
         self.target_id = target_id
 
     def satisfy(self, state, action):
-        if not isinstance(action, Pickup):
+        if not isinstance(action, DeclareFound):
             return False
         robot_state = state.object_states[self.robot_id]
         target_state = state.object_states[self.target_id]
@@ -23,10 +24,10 @@ class CanPickup(oopomdp.Condition):
             return True, self.target_id
         return False
 
-class PickupEffect(oopomdp.DeterministicTEffect):
+class DeclareFoundEffect(oopomdp.DeterministicTEffect):
     """Pick up effect: Deterministically pick up"""
     def __init__(self):
-        super().__init__("pickup")
+        super().__init__("declare-found")
 
     def mpe(self, state, action, picking_objid):
         """Returns an OOState after applying this effect on `state`"""

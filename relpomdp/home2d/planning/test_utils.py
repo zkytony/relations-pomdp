@@ -1,5 +1,5 @@
 import pomdp_py
-from relpomdp.home2d.tests.test_utils import add_pickup_target, random_policy_model, make_world, update_map,\
+from relpomdp.home2d.tests.test_utils import add_target, random_policy_model, make_world, update_map,\
     preferred_policy_model
 from relpomdp.home2d.agent.reward_model import ReachRewardModel
 from relpomdp.oopomdp.framework import Objstate

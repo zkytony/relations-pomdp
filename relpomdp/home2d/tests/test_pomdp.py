@@ -8,14 +8,14 @@ from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
-from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect
+from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.policy_model import GreedyActionPrior
-from relpomdp.home2d.agent.transition_model import Pickup
+from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.oopomdp.framework import Objstate, OOState
 from relpomdp.home2d.utils import save_images_and_compress
-from test_utils import add_pickup_target, random_policy_model, make_world,\
+from test_utils import add_target, random_policy_model, make_world,\
     preferred_policy_model
 import subprocess
 import copy
@@ -49,7 +49,7 @@ def test_pomdp(env, target_class,
         target_hist[state] /= total_prob
 
     init_belief = pomdp_py.Histogram(target_hist)
-    add_pickup_target(nk_agent, target_id, init_belief, env)
+    add_target(nk_agent, target_id, init_belief, env)
     sensor = Laser2DSensor(robot_id,
                            fov=target_sensor_config.get("fov", 90),
                            min_range=target_sensor_config.get("min_range", 1),
@@ -122,7 +122,7 @@ def test_pomdp(env, target_class,
         print("Chosen action:", action, reward)
         rewards.append(reward)
         game_states.append(img)
-        if isinstance(action, Pickup):
+        if isinstance(action, DeclareFound):
             print("Done.")
             break
     game_states.append(img_world)

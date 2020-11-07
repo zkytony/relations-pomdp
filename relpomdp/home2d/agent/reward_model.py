@@ -1,7 +1,7 @@
 import pomdp_py
-from relpomdp.home2d.agent.transition_model import Pickup
+from relpomdp.home2d.agent.transition_model import DeclareFound
 
-class PickupRewardModel(pomdp_py.RewardModel):
+class DeclareFoundRewardModel(pomdp_py.RewardModel):
     """
     Reward model for search item task
     """
@@ -17,7 +17,7 @@ class PickupRewardModel(pomdp_py.RewardModel):
         argmax(self, state, action, next_state, **kwargs)
         Returns the most likely reward"""
         # Reward is 100 if picked up a target, -100 if wrong. -1 otherwise
-        if isinstance(action, Pickup):
+        if isinstance(action, DeclareFound):
             found = state.object_states[self.target_id].get("is_found", False)
             next_found = next_state.object_states[self.target_id].get("is_found", False)
             if next_found:

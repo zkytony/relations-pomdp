@@ -12,7 +12,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.constants import FILE_PATHS
 from test_utils import add_reach_target, difficulty, correlation,\
-    add_room_states, add_pickup_target, preferred_policy_model, update_map
+    add_room_states, add_target, preferred_policy_model, update_map
 import copy
 import time
 import subprocess
@@ -138,7 +138,7 @@ def _run_search(nk_agent, target_class, target_id,
                 **kwargs):
     """Runs the agent to search for target. By 'search', I mean
     that the target can be found by 'reaching' (if it's a subgoal),
-    or by 'pickup' (if it's the goal object).
+    or by 'pickup' (if it's the goal object). TODO: FIX THIS COMMENT (no pickup any more)
 
     reaching is True if the target is found by reaching to its location (instead
     of picking up)
@@ -161,7 +161,7 @@ def _run_search(nk_agent, target_class, target_id,
     actions = set(nk_agent.motion_actions)
     if not reaching:
         # We also have picking
-        actions.add(Pickup())
+        actions.add(DeclareFound())
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
                                           ap_args=[target_id],
@@ -310,7 +310,7 @@ def _run_search(nk_agent, target_class, target_id,
                return subgoals_done, _rewards
         else:
             # We are picking
-            if isinstance(action, Pickup):
+            if isinstance(action, DeclareFound):
                 print("Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.")
                 return [target_id], _rewards
     return None, _rewards
@@ -327,7 +327,7 @@ def test_subgoals_agent(env, target_class, config,
 
     Args:
         env: The environment
-        target_class (str): object class to search for (and pickup)
+        target_class (str): object class to search for (and pickup)  # TODO: FIX THIS COMMENT (no pickup anymore)
         config (dict): Configurations, read from a config file
         df_corr
         df_dffc
@@ -354,7 +354,7 @@ def test_subgoals_agent(env, target_class, config,
         nk_agent.add_sensor(sensor, noises)
     # Tell the agent that your task is to pick up the target object class
     init_belief = uniform_belief(target_class, nk_agent)
-    add_pickup_target(nk_agent, target_id, init_belief, env)
+    add_target(nk_agent, target_id, init_belief, env)
 
     # Create visualization
     with open(FILE_PATHS["colors"]) as f:

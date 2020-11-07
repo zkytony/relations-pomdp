@@ -5,8 +5,8 @@ from pomdp_py import Histogram
 from relpomdp.home2d.domain.maps.grid_map import GridMap
 from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.agent.observation_model import CanObserve, ObserveEffect
-from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect, Pickup
-from relpomdp.home2d.agent.reward_model import PickupRewardModel
+from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect, DeclareFound
+from relpomdp.home2d.agent.reward_model import DeclareFoundRewardModel
 from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.oopomdp.framework import ObjectObservation,\
@@ -353,44 +353,3 @@ class NKAgent:
                                reward_model)
         agent.grid_map = self.grid_map
         return agent
-
-
-    # def add_target(self, target_id, target_class, init_belief):
-    #     """
-    #     Adds target to search for, with an initial belief given.
-    #     """
-    #     pickup_condeff = (CanPickup(self.robot_id, target_id),
-    #                       PickupEffect())
-    #     self._transition_model.cond_effects.append(pickup_condeff)
-    #     self._reward_model.add_model(PickupRewardModel(self.robot_id, target_id))
-    #     self.add_belief(target_id, target_class, init_belief)
-
-    # def add_belief(self, objid, objclass, init_belief):
-    #     """
-    #     Expands belief to include one more object
-    #     """
-    #     self._init_belief.object_beliefs[objid] = init_belief
-
-
-
-    # def update(self, robot_pose=None, prev_robot_pose=None, action=None):
-    #     """After the map is updated, the policy model and the observation models
-    #     should be updated; But the observation model should be updated automatically
-    #     because we passed in the reference to self.grid_map when constructing it."""
-    #     legal_motions = self.grid_map.compute_legal_motions(self.motion_actions)
-    #     # action_prior = ExplorationActionPrior(self.robot_id, self.grid_map,
-    #     #                                       legal_motions,
-    #     #                                       10, 100)
-    #     # self._policy_model = PreferredPolicyModel(action_prior,
-    #     #                                           other_actions={Pickup()})
-    #     self._transition_model.cond_effects.pop(0)  # pop the MoveEffect
-    #     move_condeff = (CanMove(self.robot_id, legal_motions), MoveEffect(self.robot_id))
-    #     self._transition_model.cond_effects.insert(0, move_condeff)
-    #     memory = {} if self._policy_model is None else self._policy_model.memory
-    #     self._policy_model = PolicyModel(self.robot_id,
-    #                                      motions=self.motion_actions,
-    #                                      other_actions={Pickup()},
-    #                                      grid_map=self.grid_map,
-    #                                      memory=memory)
-    #     if robot_pose is not None:
-    #         self._policy_model.update(robot_pose, prev_robot_pose, action)  # This records invalid acitons
