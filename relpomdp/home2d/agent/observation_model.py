@@ -107,23 +107,20 @@ class ObserveEffect(OEffect):
                and objid in next_state.object_states:
                 objstate = next_state.object_states[objid]
                 true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
-                if objo["pose"] is not None\
-                   and objstate["pose"] != objo["pose"]:
-                    val = 1e-9
-                else:
-                    within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                                            grid_map=self.grid_map)
-                    if within_range:
-                        if objo["label"] == objstate.objclass:
 
-                            val = true_pos_rate
-                        else:
-                            val = 1. - true_pos_rate
+                within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
+                                                        grid_map=self.grid_map)
+                if within_range:
+                    if objo["label"] == objstate.objclass:
+
+                        val = true_pos_rate
                     else:
-                        if objo["label"] == "free":
-                            val = 1. - false_pos_rate
-                        else:
-                            val = false_pos_ratec
+                        val = 1. - true_pos_rate
+                else:
+                    if objo["label"] == "free":
+                        val = 1. - false_pos_rate
+                    else:
+                        val = false_pos_rate
                 prob *= val
         return prob
 
@@ -142,21 +139,21 @@ class ObserveEffect(OEffect):
                 # We will only observe objects that we have noise parameters for
                 true_pos_rate, false_pos_rate = self.noise_params[objstate.objclass]
                 label = None
-                pose = None
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
                                             grid_map=self.grid_map):
                     # observable.
                     if ObserveEffect.sensor_functioning(true_pos_rate, 1. - true_pos_rate):
                         # Sensor functioning.
                         label = objstate.objclass
-                        pose = objstate["pose"]
                     else:
                         # Sensor malfunction; not observing it
                         label = "free"
                 else:
-                    # TODO: HANDLE FALSE POSITIVE CORRECTLY!
-                    label = "free"
-                noisy_obs[objid] = Objobs(objstate.objclass, label=label, pose=pose)
+                    if ObserveEffect.sensor_functioning(1 - false_pos_rate, false_pos_rate):
+                        label = "free"
+                    else:
+                        label = objstate.objclass
+                noisy_obs[objid] = Objobs(objstate.objclass, label=label)
         return OOObservation(noisy_obs)
 
     @property
