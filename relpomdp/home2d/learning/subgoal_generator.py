@@ -1,6 +1,6 @@
 # Contains a function to generate subgoal,
 # based on correlation and difficulty scores
-from relpomdp.home2d.learning.testing.test_utils import difficulty, correlation, remap
+from relpomdp.home2d.planning.test_utils import difficulty, correlation, remap
 import pandas as pd
 import yaml
 import os

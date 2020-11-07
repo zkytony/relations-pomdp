@@ -19,8 +19,8 @@
 # for planning as well).
 
 import pomdp_py
-from relpomdp.home2d.learning.testing.test_utils import difficulty, correlation
-from relpomdp.home2d.learning.testing.subgoal_generator import correlation_score
+from relpomdp.home2d.planning.test_utils import difficulty, correlation
+from relpomdp.home2d.learning.subgoal_generator import correlation_score
 
 def compute_detections(observation, return_poses=False):
     """Given an observation (CombinedObservation),
