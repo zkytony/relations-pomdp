@@ -134,3 +134,12 @@ relpomdp/home2d/tests/mrf
 relpomdp/home2d/tests/mrf_old2
 relpomdp/home2d/tests/results
 relpomdp/home2d/tests/saved_trials
+relpomdp/home2d/learning/data/*.csv
+relpomdp/home2d/learning/data/*.pkl
+relpomdp/home2d/learning/testing/results
+relpomdp/home2d/learning/tmp
+relpomdp/object_search
+relpomdp/home2d/agent/tests/*.csv
+relpomdp/home2d/agent/tests/*.png
+relpomdp/home2d/agent/tests/demos
+relpomdp/home2d/agent/tests/*maps/*.pkl
