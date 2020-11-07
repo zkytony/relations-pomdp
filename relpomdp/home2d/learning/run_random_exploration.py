@@ -6,7 +6,7 @@
 import pomdp_py
 from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
-from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
+from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment

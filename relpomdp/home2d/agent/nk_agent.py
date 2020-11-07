@@ -7,7 +7,7 @@ from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.agent.observation_model import CanObserve, ObserveEffect
 from relpomdp.home2d.agent.transition_model import CanPickup, PickupEffect, Pickup
 from relpomdp.home2d.agent.reward_model import PickupRewardModel
-from relpomdp.home2d.tasks.common.sensor import Laser2DSensor
+from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.oopomdp.framework import ObjectObservation,\
     OOObservationModel, OOTransitionModel, CompositeRewardModel, OOBelief,\
