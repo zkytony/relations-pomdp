@@ -143,3 +143,4 @@ relpomdp/home2d/agent/tests/*.csv
 relpomdp/home2d/agent/tests/*.png
 relpomdp/home2d/agent/tests/demos
 relpomdp/home2d/agent/tests/*maps/*.pkl
+relpomdp/home2d/learning/experiments/results
