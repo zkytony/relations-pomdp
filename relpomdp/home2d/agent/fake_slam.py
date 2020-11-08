@@ -19,9 +19,8 @@ class FakeSLAM:
         based on environment's full map. Then update the partial map
         based on such readings.
 
-        We want to simulate the process of robot moving from a previous
-        robot pose to a current one so it will observe the walls in between.
-        For us it is straightforward; First update the angle, then update the x,y pose.
+        If there is a wall immediately next to the robot, even though
+        it falls outside of the FOV, the robot will sense it.
         """
         full_grid_map = env.grid_map
         if not self.sensor_cache.serving(full_grid_map):
@@ -30,7 +29,6 @@ class FakeSLAM:
         free_locs = set()
         walls = {}
         loc_to_room = {}
-        # We want to simulate the process of the robot
         for x in np.arange(-1, full_grid_map.width+1, 1):
             for y in np.arange(-1, full_grid_map.length+1, 1):
                 res, wall = self.range_sensor.within_range(
@@ -47,4 +45,18 @@ class FakeSLAM:
                         # TODO: REFACTOR: Getting wall id should not be necessary
                         wall_id, wall_state = wall
                         walls[wall_id] = wall_state
+        # Get touching walls
+        for wall_id in full_grid_map.walls:
+            wall_state = full_grid_map.walls[wall_id]
+            wx, wy = wall_state["pose"]
+            rx, ry = robot_pose[:2]
+            if wx == rx and wy == ry:
+                touching = True
+            else:
+                if wall_state["direction"] == "V":
+                    touching = wx + 1 == rx and wy == ry
+                else:
+                    touching = wx == rx and wy + 1== ry
+            if touching:
+                walls[wall_id] = wall_state
         partial_map.update(free_locs, walls, loc_to_room=loc_to_room)
