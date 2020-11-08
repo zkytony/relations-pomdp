@@ -7,7 +7,7 @@ from relpomdp.home2d.domain.action import *
 from relpomdp.home2d.agent.observation_model import CanObserve, ObserveEffect
 from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect, DeclareFound
 from relpomdp.home2d.agent.reward_model import DeclareFoundRewardModel
-from relpomdp.home2d.agent.sensor import Laser2DSensor
+from relpomdp.home2d.agent.sensor import Laser2DSensor, SensorCache
 from relpomdp.home2d.agent.partial_map import PartialGridMap
 from relpomdp.home2d.domain.condition_effect import CanMove, MoveEffect
 from relpomdp.oopomdp.framework import ObjectObservation,\
@@ -52,8 +52,9 @@ class NKAgent:
         self.move_condition = CanMove(robot_id, self.legal_motions)
         self.move_effect = MoveEffect(robot_id)
 
-        # It begins with no sensor. This dict maps from sensor name to (sensor, (cond, eff))
+        # It begins with no sensor. This dict maps from sensor name to (sensor, noise_params)
         self._sensors = {}
+        self._sensor_caches = {}  # maps from sensor name to SensorCache
 
         # It begins with no other actions and effects besides move
         # This is a set of (actions, (cond, eff)) that stores
@@ -90,6 +91,7 @@ class NKAgent:
         if sensor.name in self._sensors:
             raise ValueError("Sensor %s is already added." % sensor.name)
         self._sensors[sensor.name] = (sensor, noise_params)
+        self._sensor_caches[sensor.name] = SensorCache(sensor.name)
 
     def add_actions(self, actions, condition, effect):
         """Add (multiple) actions, and their condition / effect.
@@ -146,7 +148,10 @@ class NKAgent:
         for name in sensors_in_use:
             sensor, noise_params = self._sensors[name]
             observe_cond = CanObserve()
-            observe_eff = ObserveEffect(self.robot_id, sensor, grid_map, noise_params)
+            observe_eff = ObserveEffect(
+                self.robot_id, sensor,
+                grid_map, noise_params,
+                self._sensor_caches[sensor.name])
             cond_effects.append((observe_cond, observe_eff))
 
         observation_model = OOObservationModel(cond_effects)

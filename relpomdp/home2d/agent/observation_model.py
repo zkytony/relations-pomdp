@@ -25,7 +25,7 @@ class ObserveEffect(OEffect):
     of view of the sensor that can detect object i, it will be detected.
     """
 
-    def __init__(self, robot_id, sensor, grid_map, noise_params):
+    def __init__(self, robot_id, sensor, grid_map, noise_params, sensor_cache=None):
         """
         noise_params (dict): Maps from object class to (alpha, beta) which
             defines the noise level of detecting an object of this class
@@ -37,6 +37,13 @@ class ObserveEffect(OEffect):
         self.sensor = sensor
         self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
+        if sensor_cache is not None:
+            assert sensor_cache.sensor_name == sensor.name,\
+                "SensorCache's name must be equal to the given sensor"
+            # Here we enforce sensor cache to serve the given grid map upon creation.
+            assert sensor_cache.serving(self.grid_map),\
+                "SensorCache must be serving the given grid map."
+            self._sensor_cache = sensor_cache
 
         # Effect name is based on sensor name
         self._name = "ObserveEffect-%s" % sensor.name
@@ -109,7 +116,8 @@ class ObserveEffect(OEffect):
                 true_pos_rate, false_pos_rate = self.noise_params[objo.objclass]
 
                 within_range = self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                                        grid_map=self.grid_map)
+                                                        grid_map=self.grid_map,
+                                                        cache=self._sensor_cache)
                 if within_range:
                     if objo["label"] == objstate.objclass:
 
@@ -140,7 +148,8 @@ class ObserveEffect(OEffect):
                 true_pos_rate, false_pos_rate = self.noise_params[objstate.objclass]
                 label = None
                 if self.sensor.within_range(robot_state["pose"], objstate["pose"],
-                                            grid_map=self.grid_map):
+                                            grid_map=self.grid_map,
+                                            cache=self._sensor_cache):
                     # observable.
                     if ObserveEffect.sensor_functioning(true_pos_rate, 1. - true_pos_rate):
                         # Sensor functioning.

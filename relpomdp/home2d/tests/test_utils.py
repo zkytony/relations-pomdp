@@ -67,11 +67,11 @@ def update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env):
     nk_agent.check_integrity()
 
 
-def make_world(seed=100):
+def make_world(seed=100, worldsize=(6,6), init_robot_pose=(0,0,0), nrooms=3):
     """Creates a world for testing"""
     robot_id = 0
-    init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
+    w, l = world_size
+    init_state, grid_map = random_world(w, l, nrooms,
                                         ["Kitchen", "Office", "Office"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Salt": (1, (1,1)),

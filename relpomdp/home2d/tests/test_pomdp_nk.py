@@ -2,9 +2,7 @@
 
 import pomdp_py
 from relpomdp.home2d.tests.test_fake_slam import wait_for_action
-from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
-from relpomdp.home2d.agent.sensor import Laser2DSensor
-from relpomdp.home2d.agent.visual import NKAgentViz
+from relpomdp.home2d.agent import NKAgentViz, Laser2DSensor, NKAgent, FakeSLAM
 from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.policy_model import GreedyActionPrior
@@ -177,5 +175,8 @@ def test_pomdp_nk(env, target_class,
     return rewards
 
 if __name__ == "__main__":
-    env = make_world()
+    # To test an ordinary run: set seed to be 100. init robot pose (0,0,0)
+    # To test the 'unable to see wall next to robot' issue, set seed to 1459,
+    #    set init robot pose (0,1,0). Try a few times because doorway may open up differently
+    env = make_world(seed=1459)
     test_pomdp_nk(env, target_class="Salt", save=False, nsteps=100)

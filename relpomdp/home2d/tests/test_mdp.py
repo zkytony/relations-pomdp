@@ -1,8 +1,6 @@
 import pomdp_py
 from relpomdp.home2d.tests.test_fake_slam import wait_for_action
-from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
-from relpomdp.home2d.agent.sensor import Laser2DSensor
-from relpomdp.home2d.agent.visual import NKAgentViz
+from relpomdp.home2d.agent import NKAgent, FakeSLAM, Laser2DSensor, NKAgentViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
 from relpomdp.home2d.domain.env import Home2DEnvironment
@@ -13,7 +11,7 @@ import copy
 
 def test_mdp(env, target_class,
              discount_factor=0.95, max_depth=15,
-             num_sims=300, exploration_constant=100,
+             num_sims=300, exploration_constant=200,
              nsteps=100,
              target_sensor_config={},
              slam_sensor_config={}):
