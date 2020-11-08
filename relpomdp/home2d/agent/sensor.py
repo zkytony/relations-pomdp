@@ -118,7 +118,12 @@ class Laser2DSensor:
         if grid_map is None:
             grid_map = self.grid_map
         if (robot_pose, point) in self._cache:
-            return self._cache[(robot_pose, point)]
+            # TODO: THIS IS A MESS
+            result = self._cache[(robot_pose, point)]
+            if return_intersecting_wall:
+                return result
+            else:
+                return result[0]
         if robot_pose[:2] == point:
             result = True
         else:

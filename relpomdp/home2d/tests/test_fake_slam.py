@@ -6,6 +6,7 @@ from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
 from relpomdp.home2d.agent.visual import NKAgentViz
 from relpomdp.home2d.agent.sensor import Laser2DSensor
 from relpomdp.home2d.utils import save_images_and_compress
+from relpomdp.home2d.constants import FILE_PATHS
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -30,7 +31,7 @@ def wait_for_action(viz, timeout=10):
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(6, 6, 3,
+    init_state, grid_map = random_world(10, 10, 3,
                                         ["Office", "Office", "Kitchen", "Bathroom",
                                          "Office", "Office", "Kitchen", "Bathroom"],
                                         objects={"Office": {"Computer": (1, (1,1))},
@@ -39,7 +40,7 @@ def make_world():
                                                  "Bathroom": {"Toilet": (1, (1,1))}},
                                         robot_id=robot_id, init_robot_pose=init_robot_pose,
                                         ndoors=1,
-                                        seed=10)#random.randint(0,100))
+                                        seed=100)#random.randint(0,100))
     env = Home2DEnvironment(robot_id,
                             grid_map,
                             init_state)
@@ -51,21 +52,21 @@ def test_map_building(env):
     init_robot_pose = env.robot_state["pose"]
     agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=90, min_range=1,
+                                       fov=130, min_range=1,
                                        max_range=3, angle_increment=0.1))
     viz = NKAgentViz(agent,
                      env,
                      {},
                      res=30,
                      controllable=True,
-                     img_path="../../domain/imgs")
+                     img_path=FILE_PATHS["object_imgs"])
     viz.on_init()
 
     game_states = []
     for i in range(100):
         # Visualize
         viz.on_loop()
-        img, img_world = viz.on_render()
+        img, img_world = viz.on_render(range_sensor=fake_slam.range_sensor)
 
         action = wait_for_action(viz)
         prev_robot_pose = env.robot_state["pose"]

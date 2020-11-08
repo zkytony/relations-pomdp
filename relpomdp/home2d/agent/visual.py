@@ -33,14 +33,15 @@ class NKAgentViz(Home2DViz):
             patches.append(mpatches.Patch(color=np.array(color)/255.0, label=objclass))
         ax.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-    def on_render(self, belief=None):
+    def on_render(self, belief=None, **kwargs):
         # Renders the true world. Then plot agent's world
         img_world = super().on_render()
 
         plt.clf()
         fig = plt.gcf()
         ax = plt.gca()
-        img = self.make_agent_view(self._res)
+        img = self.make_agent_view(self._res,
+                                   range_sensor=kwargs.get("range_sensor", None))
         used_colors = {}
 
         if belief is not None:
@@ -97,10 +98,11 @@ class NKAgentViz(Home2DViz):
                     break
 
 
-    def make_agent_view(self, r):
+    def make_agent_view(self, r, range_sensor=None):
         # Preparing 2d array
         w, l = self._env.width, self._env.length
         state = self._env.state
+        rx, ry, rth = self._env.robot_state["pose"]
 
         agent_map = self._nkagent.grid_map
         frontier = agent_map.frontier()
@@ -125,10 +127,21 @@ class NKAgentViz(Home2DViz):
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               boundary_color, 1, 8)
+
+                # Draw indication of field of view
+                if range_sensor is not None:
+                    if (x,y) in agent_map.free_locations or (x,y) in frontier:
+                        # if (rx, ry) == (1, 0) and (x,y) == (5,5):
+                        #     import pdb; pdb.set_trace()
+                        if range_sensor.within_range((rx, ry, rth), (x,y), grid_map=agent_map):
+                            print((rx, ry, rth), (x,y))
+                            fov_color = (101, 213, 247)
+                            padding = r//5
+                            cv2.rectangle(img, (y*r+padding, x*r+padding), (y*r+r-padding, x*r+r-padding),
+                                          fov_color, -1)
         self.render_walls(self._nkagent.grid_map.walls, img, r)
 
         # draw robot
-        rx, ry, rth = self._env.robot_state["pose"]
         NKAgentViz.draw_robot(img, rx*r, ry*r, rth, r, r*0.85)
 
         return img

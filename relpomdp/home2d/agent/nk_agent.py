@@ -141,31 +141,20 @@ class FakeSLAM:
         walls = {}
         loc_to_room = {}
         # We want to simulate the process of the robot
-        interm_pose = prev_robot_pose[:2] + (robot_pose[2],)
         for x in np.arange(-1, full_grid_map.width+1, 1):
             for y in np.arange(-1, full_grid_map.length+1, 1):
-
-                res1, wall1 = self.range_sensor.within_range(
-                    interm_pose, (x,y), grid_map=full_grid_map,
-                    return_intersecting_wall=True)
-                # res2, wall2 = False, None
-                res2, wall2 = self.range_sensor.within_range(
+                res, wall = self.range_sensor.within_range(
                     robot_pose, (x,y), grid_map=full_grid_map,
                     return_intersecting_wall=True)
 
-                if res1 or res2:
+                if res:
                     free_locs.add((x,y))
                     loc_to_room[(x,y)] = full_grid_map.room_of((x,y))
                 else:
-                    if wall1 is not None:
+                    if wall is not None:
                         # The point is blocked by some wall that is in the FOV
                         # TODO: REFACTOR: Getting wall id should not be necessary
-                        wall_id, wall_state = wall1
-                        walls[wall_id] = wall_state
-                    if wall2 is not None:
-                        # The point is blocked by some wall that is in the FOV
-                        # TODO: REFACTOR: Getting wall id should not be necessary
-                        wall_id, wall_state = wall2
+                        wall_id, wall_state = wall
                         walls[wall_id] = wall_state
         partial_map.update(free_locs, walls, loc_to_room=loc_to_room)
 
