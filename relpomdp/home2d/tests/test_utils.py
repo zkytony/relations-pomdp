@@ -66,6 +66,14 @@ def update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env):
     nk_agent.move_condition.legal_motions = legal_motions
     nk_agent.check_integrity()
 
+    # # After agent's map is updated, update the caches maintained by the agent;
+    # # The pointers to these caches are used by the observe effect
+    for sensor_name in nk_agent.sensor_caches:
+        cache = nk_agent.sensor_caches[sensor_name]
+        if cache.serving(nk_agent.grid_map):
+            print("Updating caches for %s" % sensor_name)
+            cache.update(nk_agent.grid_map)
+
 
 def make_world(seed=100, worldsize=(6,6), init_robot_pose=(0,0,0), nrooms=3):
     """Creates a world for testing"""

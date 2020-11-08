@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+from relpomdp.home2d.domain.maps.grid_map import GridMap
 from relpomdp.home2d.agent.partial_map import PartialGridMap
 
 # Utility functions
@@ -277,7 +278,7 @@ class SensorCache:
         Updates the cache to be in sync with the given grid map
         """
         if self.serving(grid_map.name):
-            locations = grid_map.free_locations
+            locations = set(grid_map.free_locations)
             if isinstance(grid_map, PartialGridMap):
                 locations |= grid_map.frontier()
 
@@ -288,6 +289,8 @@ class SensorCache:
             raise ValueError("Cache is already used to serve for map %s" % self._map_serving)
 
     def serving(self, map_name, update=False):
+        if isinstance(map_name, GridMap):
+            map_name = map_name.name
         if update or self._map_serving is None:
             self._map_serving = map_name
             return True

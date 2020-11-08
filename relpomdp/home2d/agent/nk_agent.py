@@ -80,6 +80,10 @@ class NKAgent:
     def sensors(self):
         return self._sensors
 
+    @property
+    def sensor_caches(self):
+        return self._sensor_caches
+
     def all_actions(self):
         """Returns the set of unique actions at this point"""
         all_actions = set()
