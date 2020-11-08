@@ -20,7 +20,7 @@ import copy
 
 def test_pomdp(env, target_class,
                discount_factor=0.95, max_depth=15,
-               num_sims=300, exploration_constant=100,
+               num_sims=300, exploration_constant=200,
                nsteps=100, save=False,
                target_sensor_config={},
                slam_sensor_config={}):
