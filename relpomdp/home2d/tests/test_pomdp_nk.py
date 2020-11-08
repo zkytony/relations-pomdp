@@ -20,8 +20,8 @@ import subprocess
 
 
 def test_pomdp_nk(env, target_class,
-                  discount_factor=0.95, max_depth=15,
-                  num_sims=300, exploration_constant=100,
+                  discount_factor=0.95, max_depth=20,
+                  num_sims=600, exploration_constant=200,
                   nsteps=100, save=False,
                   target_sensor_config={},
                   slam_sensor_config={}):
@@ -42,10 +42,12 @@ def test_pomdp_nk(env, target_class,
     target_hist = {}
     total_prob = 0.0
     for x, y in nk_agent.grid_map.free_locations | frontier:
-        if (x,y) == init_robot_pose[:2]:
-            continue  # skip the robot's own pose because the target won't be there
         target_state = Objstate(target_class, pose=(x,y))
-        target_hist[target_state] = 1.
+        if (x,y) == init_robot_pose[:2]:
+            # the target won't be there
+            target_hist[target_state] = 1e-12
+        else:
+            target_hist[target_state] = 1.
         total_prob += target_hist[target_state]
     for state in target_hist:
         target_hist[state] /= total_prob
@@ -93,7 +95,7 @@ def test_pomdp_nk(env, target_class,
         planner.print_action_values()
         print("-----------------")
 
-        # environment transitions and obtains reward (note that we use agent's reward model for convenience)
+        # Environment transitions and obtains reward (note that we use agent's reward model for convenience)
         env_state = env.state.copy()
         prev_robot_pose = agent.belief.mpe().object_states[robot_id]["pose"]
         _ = env.state_transition(action, execute=True)
@@ -103,32 +105,56 @@ def test_pomdp_nk(env, target_class,
         observation = agent.observation_model.sample(env.state, action)
         print(observation)
 
-        # update belief of robot
+        # Updates
+        ## update belief of robot
         new_robot_belief = pomdp_py.Histogram({env.robot_state.copy() : 1.0})
         robot_pose = new_robot_belief.mpe()["pose"]
 
-        # update map (fake slam)
+        ## update map (fake slam)
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
         partial_map = nk_agent.grid_map
+        updated_map_locations = partial_map.frontier() | partial_map.free_locations
 
-        # Belief update.
-        ## First obtain the current belief, taking into account the frontier
-        target_hist = {}
+        ## Belief update.
         target_belief = nk_agent.object_belief(target_id)
-        assert target_belief == agent.belief.object_beliefs[target_id], "Target belief mismatch; Unexpected."
-        for x, y in partial_map.frontier() | partial_map.free_locations:
+        assert target_belief == agent.belief.object_beliefs[target_id], "Target belief mismatch; Unexpectedf."
+        ### Belief at state B(s) = Val(s) / Norm, where Val is the unnormalized belief,
+        ### and Norm is some normalizer. Here, we will regard the number of grid cells
+        ### in a map as the normalizer, and compute the unnormalized belief accordingly.
+        ### Basically we want to rescale the normalized belief to fit onto the updated map.
+        cur_norm = len(target_belief)
+        new_norm = len(updated_map_locations)
+
+        new_norm_target_hist = {state:target_belief[state]*(cur_norm/new_norm) for state in target_belief}
+        updated_total_prob = 1. - sum(new_norm_target_hist.values()) # The total unnormalized probability in the expanded region
+
+        target_hist = {}
+        for x, y in updated_map_locations:
             target_state = Objstate(target_class, pose=(x,y))
-            if target_state in target_belief:
-                target_hist[target_state] = target_belief[target_state]
+            if target_state in new_norm_target_hist:
+                target_hist[target_state] = new_norm_target_hist[target_state]
             else:
-                # Assign a uniform belief to the frontier; 1.0 / len(target_belief)
-                # means that the belief at frontier will be no higher or lower than
-                # the belief at any location currently in the explored map, by default
-                # (which is uniform 1.0 / len(target_belief))
-                target_hist[target_state] = 1.0 / len(target_belief)
+                if new_norm < cur_norm:
+                    # Not going to track belief for this state. This state
+                    # should lie outside of the map boundary
+                    assert not (0 <= x < env.grid_map.width)\
+                        or not (0 <= y < env.grid_map.length)
+                    continue
+
+                if new_norm - cur_norm == 0:
+                    # The map did not expand, but we encounter a new target state.
+                    # This can happen when target state is outside of the boundary wall
+                    assert abs(updated_total_prob) <= 1e-9
+                    target_hist[target_state] = updated_total_prob
+                else:
+                    target_hist[target_state] = updated_total_prob / (new_norm - cur_norm)
         ## Then, renormalize
         prob_sum = sum(target_hist[state] for state in target_hist)
+
         for target_state in target_hist:
+            assert target_hist[target_state] >= -1e-9,\
+                "Belief {} is invalid".format(target_hist[target_state])
+            target_hist[target_state] = max(target_hist[target_state], 1e-32)
             target_hist[target_state] /= prob_sum
 
         ## Now, do belief update based on observation
@@ -150,6 +176,8 @@ def test_pomdp_nk(env, target_class,
         nk_agent.set_belief(target_id, pomdp_py.Histogram(next_target_hist))
         ## Generate policy model
         # policy_model = random_policy_model(nk_agent, memory=agent.policy_model.memory)
+        planner.update(agent, action, observation)
+        tree = agent.tree
         policy_model = preferred_policy_model(nk_agent,
                                               GreedyActionPrior,
                                               ap_args=[target_id])
@@ -178,5 +206,5 @@ if __name__ == "__main__":
     # To test an ordinary run: set seed to be 100. init robot pose (0,0,0)
     # To test the 'unable to see wall next to robot' issue, set seed to 1459,
     #    set init robot pose (0,1,0). Try a few times because doorway may open up differently
-    env = make_world(seed=1459)
+    env = make_world(seed=1459, worldsize=(10,10))
     test_pomdp_nk(env, target_class="Salt", save=False, nsteps=100)
