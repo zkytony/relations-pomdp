@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+from relpomdp.home2d.agent.partial_map import PartialGridMap
 
 # Utility functions
 def euclidean_dist(p1, p2):
@@ -57,7 +58,7 @@ class Laser2DSensor:
     thus we can maintain a cache to compute more quickly if a point
     is observable or not."""
 
-    def __init__(self, robot_id, grid_map=None, name="laser2d",
+    def __init__(self, robot_id, name="laser2d",
                  fov=90, min_range=1, max_range=5,
                  angle_increment=5):
         """
@@ -67,12 +68,10 @@ class Laser2DSensor:
         angle_increment (float): angular distance between measurements (rad).
         """
         self.robot_id = robot_id
-        self.grid_map = grid_map
         self.fov = to_rad(fov)  # convert to radian
         self.min_range = min_range
         self.max_range = max_range
         self.angle_increment = to_rad(angle_increment)
-        self._cache = {}  # maps from (robot_pose, point) -> T/F
 
         # determines the range of angles;
         # For example, the fov=pi, means the range scanner scans 180 degrees
@@ -101,7 +100,9 @@ class Laser2DSensor:
         fov_right = (0, view_angles / 2)
         fov_left = (2*math.pi - view_angles/2, 2*math.pi)
 
-    def within_range(self, robot_pose, point, grid_map=None, return_intersecting_wall=False):
+    def within_range(self, robot_pose, point,
+                     grid_map=None, cache=None,
+                     return_intersecting_wall=False):
         """Returns true if the point is within range of the sensor (i.e. visible).
         To do this need to check if any wall is closer to the robot along the
         direction of the beam from robot to the `point`.x
@@ -110,43 +111,56 @@ class Laser2DSensor:
             robot_pose (tuple): (x,y,theta) pose of the robot
             point (tuple): (x,y) point to determine if in range
             grid_map (GridMap): The grid map whose walls can cause occlusions
+            cache (SensorCache): The cache that helps computing this faster
             return_intersecting_wall (bool): True if want to return the wall that
                 is intersecting the sensor beam. NOTE: This parameter affects what
                 the cache stores. If True, then the cache will also store the intersecting
                 wall for this (robot_pose, point) pair."""
+        if cache is not None and grid_map is not None:
+            if not cache.serving(grid_map):
+                raise ValueError("Cache is already used to serve for map %s" % cache.map_serving)
+
+        if cache is not None:
+            assert cache.sensor_name == self.name
+            result = cache.get(robot_pose, point)
+            if result is not None:
+                detectable, intersecting_wall = result
+                if return_intersecting_wall:
+                    return detectable, intersecting_wall
+                else:
+                    return detectable
+
+        detectable = True
         intersecting_wall = None
-        if grid_map is None:
-            grid_map = self.grid_map
-        if (robot_pose, point) in self._cache:
-            # TODO: THIS IS A MESS
-            result = self._cache[(robot_pose, point)]
-            if return_intersecting_wall:
-                return result
-            else:
-                return result[0]
-        if robot_pose[:2] == point:
-            result = True
-        else:
-            result = True
+
+        if robot_pose[:2] != point:
             point_dist, point_bearing = self.shoot_beam(robot_pose, point)
             point_in_range = (in_range(point_dist, (self.min_range, self.max_range)))\
                 and (in_range(point_bearing, self._fov_left)\
                      or in_range(point_bearing, self._fov_right))
             if not point_in_range:
-                result = False
+                detectable = False
             else:
-                for objid in grid_map.walls:
-                    wall = grid_map.walls[objid]
-                    if wall.intersect(robot_pose[:2], point):
-                        result = False
-                        intersecting_wall = (objid, wall)
-                        break
+                if grid_map is not None:
+                    # Check walls
+                    for objid in grid_map.walls:
+                        wall = grid_map.walls[objid]
+                        if wall.intersect(robot_pose[:2], point):
+                            detectable = False
+                            intersecting_wall = (objid, wall)
+                            break
+                else:
+                    print("Warning: within_range is not using map")
+
+        if cache is not None:
+            assert cache.sensor_name == self.name
+            cache.put(robot_pose, point, detectable, intersecting_wall)
+
         if return_intersecting_wall:
-            self._cache[(robot_pose, point)] = (result, intersecting_wall)
-            return result, intersecting_wall
+            return detectable, intersecting_wall
         else:
-            self._cache[(robot_pose, point)] = result
-            return result
+            return detectable
+
 
     def shoot_beam(self, robot_pose, point):
         """Shoots a beam from robot_pose at point. Returns the distance and bearing
@@ -214,3 +228,68 @@ class ProximitySensor(Laser2DSensor):
                          max_range=radius,
                          angle_increment=angle_increment,
                          occlusion_enabled=occlusion_enabled)
+
+
+class SensorCache:
+    """
+    A SensorCache caches the input/output pairs of the
+    within_range() function for a given sensor.
+
+    The cache itself is not associated with any grid map.
+    But, it can be updated given a gridmap, which basically
+    means discarding all stored caches that are for locations
+    not present in the grid map.
+    """
+    def __init__(self, sensor_name):
+        self.sensor_name = sensor_name
+
+        # maps from (robot_pose, point) -> (T/F, wall)
+        self._cache = {}
+
+        # The map that this Cache serves for. A cache is only consistent when
+        # its underlying map does not change.
+        self._map_serving = None
+
+    @property
+    def map_serving(self):
+        return self._map_serving
+
+    def get(self, robot_pose, point):
+        return self._cache.get((robot_pose, point), None)
+
+    def put(self, robot_pose, point, detectable, intersecting_wall):
+        """
+        Stores an entry into the cache
+
+        Args:
+            robot_pose (tuple): Robot pose
+            point (tuple): location
+            detectable (bool): Whether the robot can detect the point
+            intersecting_wall (WallState): The intersecting wall, if present.
+                Otherwise, should be None.
+        """
+        if (robot_pose, point) in self._cache:
+            print("Warning: ({}, {}) already exist in cache. Why add again?".format(robot_pose, point))
+        self._cache[(robot_pose, point)] = (detectable, intersecting_wall)
+
+    def update(self, grid_map):
+        """
+        Updates the cache to be in sync with the given grid map
+        """
+        if self.serving(grid_map.name):
+            locations = grid_map.free_locations
+            if isinstance(grid_map, PartialGridMap):
+                locations |= grid_map.frontier()
+
+            self._cache = {k:v
+                           for k,v in self._cache.items()
+                           if k[1] in locations}  # k[1] is the point
+        else:
+            raise ValueError("Cache is already used to serve for map %s" % self._map_serving)
+
+    def serving(self, map_name, update=False):
+        if update or self._map_serving is None:
+            self._map_serving = map_name
+            return True
+        else:
+            return self._map_serving == map_name

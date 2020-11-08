@@ -10,7 +10,7 @@ import math
 import sys
 
 class GridMap:
-    def __init__(self, width, length, walls, rooms):
+    def __init__(self, width, length, walls, rooms, name="grid_map"):
         """
         walls (dict): Map from objid to WallState.
         rooms (list): A list of rooms
@@ -31,6 +31,11 @@ class GridMap:
         self.free_locations = {(x,y) for x in range(width)
                                for y in range(length)}
 
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
 
     def room_of(self, position):
         if position in self.xy_to_room:

@@ -2,9 +2,7 @@ import pygame
 from relpomdp.home2d.domain.visual import Home2DViz
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment
-from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
-from relpomdp.home2d.agent.visual import NKAgentViz
-from relpomdp.home2d.agent.sensor import Laser2DSensor
+from relpomdp.home2d.agent import NKAgentViz, Laser2DSensor, NKAgent, FakeSLAM, SensorCache
 from relpomdp.home2d.utils import save_images_and_compress
 from relpomdp.home2d.constants import FILE_PATHS
 import numpy as np
