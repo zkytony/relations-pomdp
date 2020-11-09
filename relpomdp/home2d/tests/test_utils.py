@@ -4,6 +4,7 @@ from relpomdp.home2d.agent.policy_model import RandomPolicyModel, PreferredPolic
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.oopomdp.framework import Objstate, OOState
+from relpomdp.home2d.learning.generate_worlds import generate_world
 import pomdp_py
 
 def add_target(nk_agent, target_id, init_belief, env):
@@ -79,20 +80,23 @@ def update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env):
 
 def make_world(seed=100, worldsize=(6,6), init_robot_pose=(0,0,0), nrooms=3):
     """Creates a world for testing"""
-    robot_id = 0
-    w, l = worldsize
-    init_state, grid_map = random_world(w, l, nrooms,
-                                        ["Kitchen", "Office", "Office"],
-                                        objects={"Office": {"Computer": (1, (1,1))},
-                                                 "Kitchen": {"Salt": (1, (1,1)),
-                                                             "Pepper": (1, (1,1))},
-                                                 "Bathroom": {"Toilet": (1, (1,1))}},
-                                        robot_id=robot_id, init_robot_pose=init_robot_pose,
-                                        seed=seed)
-    env = Home2DEnvironment(robot_id,
-                            grid_map,
-                            init_state)
-    return env
+    config = {
+        "robot_id": 0,
+        "init_robot_pose": (0, 0, 0),
+        "width": worldsize[0],
+        "length": worldsize[1],
+        "nrooms": nrooms,
+        "ndoors": 2,
+        "room_types": ["Kitchen", "Office", "Office"],
+        "objects": {"Office": {"Computer": (1, (1,1))},
+                    "Kitchen": {"Salt": (1, (1,1)),
+                                "Pepper": (1, (1,1))},
+                    "Bathroom": {"Toilet": (1, (1,1))}},
+        "shuffle_rooms": False,
+        "min_room_size": 2,
+        "max_room_size": 3,
+    }
+    return generate_world(config, seed=seed)
 
 
 def belief_fit_map(target_belief, updated_partial_map, **kwargs):

@@ -6,6 +6,10 @@ from graphspn: github.com/zkytony/graphspn.
 
 The nodes here can have coordinates, used for plotting.
 """
+import copy
+import random
+from collections import deque
+from collections.abc import Iterable
 
 class Node:
     """A node, which could have an (x,y) location"""
@@ -44,11 +48,11 @@ class Edge:
             return self.nodes[0].id
         else:
             raise ValueError("nid %d does not exist in this edge.")
-        
+
     @property
     def degenerate(self):
         return len(self.nodes) == 1
-            
+
     def __repr__(self):
         if self.data is None:
             data = "--"
@@ -73,7 +77,7 @@ class EdgeNodeSet:
         """
         edges (set or dict) map from edge id to an edge object
         nodes (set or dict) map from node id to a node object
-        
+
         Both could be None.
         """
         if nodes is None:
@@ -81,7 +85,7 @@ class EdgeNodeSet:
         if edges is None:
             edges = {}
         if type(nodes) == set:
-            nodes = {e.id:e for e in nodes}        
+            nodes = {e.id:e for e in nodes}
         if type(edges) == set:
             edges = {e.id:e for e in edges}
 
@@ -91,17 +95,17 @@ class EdgeNodeSet:
     @property
     def nodes(self):
         return self._nodes
-    
+
     @property
     def edges(self):
         return self._edges
-    
+
     def num_nodes(self):
         return len(self._nodes)
-    
+
     def num_edges(self):
         return len(self._edges)
-    
+
     def _build_degen_edges(self):
         # Given that edges is empty, returns a set of degenerate edges, each
         # attached to a node
@@ -110,7 +114,7 @@ class EdgeNodeSet:
         for nid in self._nodes:
             edges.add(Edge(nid, self._nodes[nid]))
         return edges
-    
+
     def to_graph(self, directed=False):
         # Verify integrity
         for eid in self._edges:
@@ -121,7 +125,7 @@ class EdgeNodeSet:
                 return None
         return Graph(self._edges, directed=directed)
 
-    
+
     def to_unused_graph(self, directed=False, **params):
         edges = self._edges
         return UnusedGraph(edges, **params)
@@ -136,7 +140,7 @@ class Graph(EdgeNodeSet):
         A graph could be a simple/multi-graph and a (un)directed graph.
         """
         # Build nodes map
-        nodes = {}        
+        nodes = {}
         if type(edges) == set:
             for edge in edges:
                 endpoints = edge.nodes
@@ -159,7 +163,7 @@ class Graph(EdgeNodeSet):
 
         super().__init__(nodes, edges)
         self._directed = directed
-        
+
         # keep track of connections for faster graph operations
         self._conns = {nid : {} for nid in self._nodes}
         self._outedges = {nid : set({}) for nid in self._nodes}
@@ -168,10 +172,10 @@ class Graph(EdgeNodeSet):
     @property
     def directed(self):
         return self._directed
-    
+
     def is_empty(self):
         return self.num_edges() == 0
-    
+
     def _build_connections(self):
         """Builds the self._conns field, which is a map from node id to a dictionary of neighbor id -> edge(s).
         Implementation differs between different types of graphs."""
@@ -199,17 +203,17 @@ class Graph(EdgeNodeSet):
                     self._conns[node2.id][node1.id] = set({})
                 self._conns[node2.id][node1.id].add(eid)
                 self._outedges[node2.id].add(eid)
-                
+
     #--- Basic graph operations ---#
     def is_neighbor(self, node_id, test_id):
         return test_id in self._conns[node_id]
-    
+
     def neighbors(self, node_id):
         """
         Returns a set of neighbor node ids
         """
         return set(self._conns[node_id].keys())
-    
+
     def edges_between(self, node1_id, node2_id):
         """Return edge id(s) between node 1 and node 2; The returned object depends on
         the child class's implementation of _build_connections()"""
@@ -217,7 +221,7 @@ class Graph(EdgeNodeSet):
             return None
         else:
             return self._conns[node1_id][node2_id]# {self.edges[eid] for eid in }
-        
+
     def edges_from(self, node_id):
         """Return edge id(s) from node_id"""
         return self._outedges[node_id]
@@ -259,7 +263,7 @@ class Graph(EdgeNodeSet):
                             component_edge_ids.add(e)
                     else:
                         component_edge_ids.add(eid)
-                        
+
                     if neighbor_nid not in visited:
                         visited.add(neighbor_nid)
                         q.append(neighbor_nid)
@@ -300,7 +304,7 @@ class Graph(EdgeNodeSet):
             return []
         if nid1 == nid2:
             return []
-        
+
         V = set(graph.nodes.keys())
         S = set()
         d = {v:float("inf")
@@ -329,5 +333,3 @@ class Graph(EdgeNodeSet):
             path.append(pair)
             pair = prev[pair[0]]
         return list(reversed(path))
-            
-        
