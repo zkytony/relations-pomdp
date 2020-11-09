@@ -101,7 +101,6 @@ class PartialGridMap(GridMap):
         """This is done by creating a map from
         current free locations and frontier to a set of
         motions that can be executed there."""
-        print("HHHHHHHHHHHHHHHHHEYYYYYYYYYYYYYY")
         legal_actions = {}
         all_locations = self.free_locations | self.frontier()
         for x, y in all_locations:

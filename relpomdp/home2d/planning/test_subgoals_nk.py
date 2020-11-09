@@ -75,7 +75,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     print("    max_depth", kwargs.get("max_depth", -1))
     print("    num_sims", kwargs.get("num_sims", -1))
     print("    discount_factor", kwargs.get("discount_factor", 0.95))
-    print("    exploration const", kwargs.get("exploration_constant", 100))
+    print("    exploration const", kwargs.get("exploration_constant", 200))
     nsteps = kwargs.get("nsteps", 100)
     print("    num steps allowed", nsteps)
 
@@ -218,7 +218,7 @@ def _run_search(nk_agent, target_class, target_id,
 
         # Get observation using all sensors
         observation = observation_model.sample(env.state, action)
-        detected_classes, detected_ids = compute_detections(observation)
+        detected_classes, detected_ids, detected_poses = compute_detections(observation, return_poses=True)
         print("Detections: ", detected_classes)
 
         # update belief of robot
@@ -283,22 +283,16 @@ def _run_search(nk_agent, target_class, target_id,
         subgoal_classes = set(subgoal_class for subgoal_class, _ in all_reaching_goals)
         subgoals_done = set()
 
-        # TODO: THIS ISN"T CORRECT
-        # As long as --- the observation contains this subgoal, then we have
-        # accomplished it, even though the planning wants the robot to be on
-        # top of the object. But because the robot never truely knows the
-        # object pose, it shouldn't be able to check that it is on the
-        # object.  All it can rely on is its observation, which in this case
-        # does not contain pose.  Therefore, we check the label of the
-        # observation and if it matches this subgoal object, then we mark it as completed
+        # Subgoal is finished if we have detected an object of that class and
+        # the pose of the detection is close to the robot. (No check by id - so
+        # this won't work if the robot sets a second subgoal of finding an
+        # object of the same category).
         for subgoal_class, subgoal_id in all_reaching_goals:
-            # TODO: THIS SHOULD BE CHECKED BASED ON REWARD IN SUBGOAL!
-            if euclidean_dist(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"]) <= 2:
-            # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
-                subgoals_done.add(subgoal_id)
-                print("Subgoal %s, %d is done! ~~~~~~~~~~~~~~~~~~~" % (subgoal_class, subgoal_id))
-            else:
-                print(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"])
+            if subgoal_class in detected_classes:
+                if euclidean_dist(robot_state["pose"][:2], detected_poses[subgoal_class]) <= 2:
+                    # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
+                    subgoals_done.add(subgoal_id)
+                    print("Subgoal %s, %d is done! ~~~~~~~~~~~~~~~~~~~" % (subgoal_class, subgoal_id))
         # Remove reward for done subgoals
         for objid in subgoals_done:
             nk_agent.remove_reward_model(objid)
@@ -400,13 +394,15 @@ def main():
                         type=str, help="Path to .csv for subgoal selection")
     parser.add_argument("-T", "--target-class", default="Salt",
                         type=str, help="Target class to search for")
+    parser.add_argument("--seed",
+                        type=int, help="Seed for world generation")
     args = parser.parse_args()
 
     with open(args.config_file) as f:
         config = yaml.load(f)
 
     print("Generating environment that surely contains %s" % args.target_class)
-    seed = 150
+    seed = args.seed
     env = generate_world(config, seed=seed, required_classes={args.target_class})
 
     test_subgoals_agent(env, args.target_class, config,
