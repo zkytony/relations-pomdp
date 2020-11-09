@@ -3,6 +3,8 @@ from relpomdp.home2d.agent.reward_model import DeclareFoundRewardModel
 from relpomdp.home2d.agent.policy_model import RandomPolicyModel, PreferredPolicyModel
 from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.domain.maps.build_map import random_world
+from relpomdp.oopomdp.framework import Objstate, OOState
+import pomdp_py
 
 def add_target(nk_agent, target_id, init_belief, env):
     """Adds a pick up action and effect for the given target;
@@ -91,3 +93,70 @@ def make_world(seed=100, worldsize=(6,6), init_robot_pose=(0,0,0), nrooms=3):
                             grid_map,
                             init_state)
     return env
+
+
+def belief_fit_map(target_belief, updated_partial_map, **kwargs):
+    """Given a target belief over a partial map, rescale it and add belief at
+    additional locations in the updated partial map.
+
+    The updated partial map usually should be an expansion of the partial map
+    the `target_belief` is over, but could also be smaller, when some frontier
+    is dropped due to blocked by wall.
+
+    If `get_dict` is True in `kwargs`, return a dictionary from state to action.
+    Otherwise, return pomdp_py.Histogram.
+    """
+    # Methodology:
+    ### Belief at state B(s) = Val(s) / Norm, where Val is the unnormalized belief,
+    ### and Norm is some normalizer. Here, we will regard the number of grid cells
+    ### in a map as the normalizer, and compute the unnormalized belief accordingly.
+    ### Basically we want to rescale the normalized belief to fit onto the updated map.
+    updated_map_locations = updated_partial_map.frontier() | updated_partial_map.free_locations
+
+    ## Belief update.
+    cur_norm = len(target_belief)
+    new_norm = len(updated_map_locations)
+
+    new_norm_target_hist = {state:target_belief[state]*(cur_norm/new_norm) for state in target_belief}
+    updated_total_prob = 1. - sum(new_norm_target_hist.values()) # The total unnormalized probability in the expanded region
+    target_class = target_belief.random().objclass
+
+    target_hist = {}
+    for x, y in updated_map_locations:
+        target_state = Objstate(target_class, pose=(x,y))
+        if target_state in new_norm_target_hist:
+            target_hist[target_state] = new_norm_target_hist[target_state]
+        else:
+            if new_norm < cur_norm:
+                # Not going to track belief for this state. This state
+                # should lie outside of the map boundary. You can pass
+                # in a environment grid map for sanity check
+                env_grid_map = kwargs.get("env_grid_map", None)
+                if env_grid_map is not None:
+                    try:
+                        assert not (0 <= x < env_grid_map.width)\
+                            or not (0 <= y < env_grid_map.length)
+                    except AssertionError:
+                        import pdb; pdb.set_trace()
+                continue
+
+            if new_norm - cur_norm == 0:
+                # The map did not expand, but we encounter a new target state.
+                # This can happen when target state is outside of the boundary wall
+                assert abs(updated_total_prob) <= 1e-9
+                target_hist[target_state] = updated_total_prob
+            else:
+                target_hist[target_state] = updated_total_prob / (new_norm - cur_norm)
+    ## Then, renormalize
+    prob_sum = sum(target_hist[state] for state in target_hist)
+
+    for target_state in target_hist:
+        assert target_hist[target_state] >= -1e-9,\
+            "Belief {} is invalid".format(target_hist[target_state])
+        target_hist[target_state] = max(target_hist[target_state], 1e-32)
+        target_hist[target_state] /= prob_sum
+
+    if kwargs.get("get_dict", False):
+        return target_hist
+    else:
+        return pomdp_py.Histogram(target_hist)

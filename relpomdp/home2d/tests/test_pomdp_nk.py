@@ -13,7 +13,7 @@ from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.utils import save_images_and_compress
 from relpomdp.oopomdp.framework import Objstate, OOState
 from test_utils import add_target, random_policy_model, make_world, update_map,\
-    preferred_policy_model
+    preferred_policy_model, belief_fit_map
 import copy
 import time
 import subprocess
@@ -112,50 +112,13 @@ def test_pomdp_nk(env, target_class,
 
         ## update map (fake slam)
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
-        partial_map = nk_agent.grid_map
-        updated_map_locations = partial_map.frontier() | partial_map.free_locations
 
-        ## Belief update.
         target_belief = nk_agent.object_belief(target_id)
         assert target_belief == agent.belief.object_beliefs[target_id], "Target belief mismatch; Unexpectedf."
-        ### Belief at state B(s) = Val(s) / Norm, where Val is the unnormalized belief,
-        ### and Norm is some normalizer. Here, we will regard the number of grid cells
-        ### in a map as the normalizer, and compute the unnormalized belief accordingly.
-        ### Basically we want to rescale the normalized belief to fit onto the updated map.
-        cur_norm = len(target_belief)
-        new_norm = len(updated_map_locations)
 
-        new_norm_target_hist = {state:target_belief[state]*(cur_norm/new_norm) for state in target_belief}
-        updated_total_prob = 1. - sum(new_norm_target_hist.values()) # The total unnormalized probability in the expanded region
-
-        target_hist = {}
-        for x, y in updated_map_locations:
-            target_state = Objstate(target_class, pose=(x,y))
-            if target_state in new_norm_target_hist:
-                target_hist[target_state] = new_norm_target_hist[target_state]
-            else:
-                if new_norm < cur_norm:
-                    # Not going to track belief for this state. This state
-                    # should lie outside of the map boundary
-                    assert not (0 <= x < env.grid_map.width)\
-                        or not (0 <= y < env.grid_map.length)
-                    continue
-
-                if new_norm - cur_norm == 0:
-                    # The map did not expand, but we encounter a new target state.
-                    # This can happen when target state is outside of the boundary wall
-                    assert abs(updated_total_prob) <= 1e-9
-                    target_hist[target_state] = updated_total_prob
-                else:
-                    target_hist[target_state] = updated_total_prob / (new_norm - cur_norm)
-        ## Then, renormalize
-        prob_sum = sum(target_hist[state] for state in target_hist)
-
-        for target_state in target_hist:
-            assert target_hist[target_state] >= -1e-9,\
-                "Belief {} is invalid".format(target_hist[target_state])
-            target_hist[target_state] = max(target_hist[target_state], 1e-32)
-            target_hist[target_state] /= prob_sum
+        ## Update belief based on map update/expansion
+        target_hist = belief_fit_map(target_belief, nk_agent.grid_map,
+                                     env_grid_map=env.grid_map, get_dict=True)
 
         ## Now, do belief update based on observation
         next_target_hist = {}
