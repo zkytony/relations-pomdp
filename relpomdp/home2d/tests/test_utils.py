@@ -114,10 +114,13 @@ def belief_fit_map(target_belief, updated_partial_map, **kwargs):
     updated_map_locations = updated_partial_map.frontier() | updated_partial_map.free_locations
 
     ## Belief update.
-    cur_norm = len(target_belief)
-    new_norm = len(updated_map_locations)
+    if len(target_belief) <= len(updated_map_locations):
+        smaller_norm, bigger_norm = len(target_belief), len(updated_map_locations)
+    else:
+        smaller_norm, bigger_norm = len(updated_map_locations), len(target_belief)
 
-    new_norm_target_hist = {state:target_belief[state]*(cur_norm/new_norm) for state in target_belief}
+    new_norm_target_hist = {state:target_belief[state]*(smaller_norm/bigger_norm)
+                            for state in target_belief}
     updated_total_prob = 1. - sum(new_norm_target_hist.values()) # The total unnormalized probability in the expanded region
     target_class = target_belief.random().objclass
 
@@ -127,19 +130,13 @@ def belief_fit_map(target_belief, updated_partial_map, **kwargs):
         if target_state in new_norm_target_hist:
             target_hist[target_state] = new_norm_target_hist[target_state]
         else:
-            if new_norm < cur_norm:
-                # Not going to track belief for this state. This state
-                # should lie outside of the map boundary. You can pass
-                # in a environment grid map for sanity check
-                continue
-
-            if new_norm - cur_norm == 0:
+            if bigger_norm - smaller_norm == 0:
                 # The map did not expand, but we encounter a new target state.
                 # This can happen when target state is outside of the boundary wall
-                assert abs(updated_total_prob) <= 1e-9
+                assert abs(updated_total_prob) <= 1e-9, "updated_total_prob: {}".format(abs(updated_total_prob))
                 target_hist[target_state] = updated_total_prob
             else:
-                target_hist[target_state] = updated_total_prob / (new_norm - cur_norm)
+                target_hist[target_state] = updated_total_prob / (bigger_norm - smaller_norm)
     ## Then, renormalize
     prob_sum = sum(target_hist[state] for state in target_hist)
 
