@@ -57,6 +57,7 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
            df_difficulty, df_corr, df_subgoal,
            difficulty_threshold="Kitchen",
            use_correlation_belief_update=True,
+           logger=None,
            **kwargs):
     """
     Searches for an instance of the given target class.
@@ -70,14 +71,19 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     the global goal.
     """
     # Print info
-    print("Target class: %s" % target_class)
-    print("Searcher parameters:")
-    print("    max_depth", kwargs.get("max_depth", -1))
-    print("    num_sims", kwargs.get("num_sims", -1))
-    print("    discount_factor", kwargs.get("discount_factor", 0.95))
-    print("    exploration const", kwargs.get("exploration_constant", 200))
+    _search_info = "\n"
+    _search_info += "Target class: %s\n" % target_class
+    _search_info += "Searcher parameters:\n"
+    _search_info += "    max_depth: %d\n" % kwargs.get("max_depth", -1)
+    _search_info += "    num_sims: %d\n" % kwargs.get("num_sims", -1)
+    _search_info += "    discount_factor: %f\n" % kwargs.get("discount_factor", 0.95)
+    _search_info += "    exploration const: %f\n" % kwargs.get("exploration_constant", 200)
     nsteps = kwargs.get("nsteps", 100)
-    print("    num steps allowed", nsteps)
+    _search_info += "    num steps allowed: %d" % nsteps
+    if logger is None:
+        print(_search_info)
+    else:
+        logger(_search_info)
 
     if type(difficulty_threshold) == str:
         difficulty_threshold = difficulty(df_difficulty, difficulty_threshold)
@@ -87,11 +93,16 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     subgoals = [(target_class, target_id)]
     excluded_classes = set()
     while task_difficulty > difficulty_threshold:
+        # Select subgoal
         subgoal_class = select_subgoal(df_subgoal, subgoals[-1][0],
                                        excluded_classes=excluded_classes)
         subgoal_id = list(env.ids_for(subgoal_class))[0]
         subgoals.append((subgoal_class, subgoal_id))
-        print("Selected subgoal class: %s" % subgoal_class)
+        _info = "Selected subgoal class: %s" % subgoal_class
+        if logger is None:
+            print(_info)
+        else:
+            logger(_info)
 
         # Add the subgoal to nk_agent; So the agent is aware of
         # all of them in its reward model when planning.
@@ -104,37 +115,47 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
 
     # Start with the last subgoal
     all_reaching_goals = subgoals[1:]
-    rewards = []
+    _rewards = []
+    _states = [copy.deepcopy(env.state)]
+    _history = []
+    _disc_reward = [0.0]  # trick
+    _gamma = [1.0]
     nsteps_remaining = nsteps
     while len(subgoals) > 0:
         subgoal_class, subgoal_id = subgoals[-1]
         reaching = subgoal_class != target_class
         kwargs["nsteps"] = nsteps_remaining
-        subgoals_done, subgoal_rewards =\
+        subgoals_done, steps_taken =\
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
                         reaching=reaching, all_reaching_goals=all_reaching_goals,
                         use_correlation_belief_update=use_correlation_belief_update,
+                        logger=logger,
+                        # for logging (will modify)
+                        _rewards=_rewards, _states=_states, _history=_history,
+                        _gamma=_gamma, _disc_reward=_disc_reward,
                         **kwargs)
-        nsteps_remaining -= len(subgoal_rewards)
+        nsteps_remaining -= steps_taken
         if subgoals_done is not None:
             # subgoals_done should be a set of object ids
             subgoals = [tup for tup in subgoals
                         if tup[1] not in subgoals_done]
             all_reaching_goals = subgoals[1:]
-        rewards.extend(subgoal_rewards)
         if nsteps_remaining == 0:
             break
-    viz.on_cleanup()
-    _discount_factor = kwargs.get("discount_factor", 0.95)
-    disc_cum = discounted_cumulative_reward(rewards, _discount_factor)
-    print("Discounted cumulative reward: %.4f" % disc_cum)
-    return rewards
+
+    if viz is not None:
+        viz.on_cleanup()
+    return _rewards, _states, _history
 
 def _run_search(nk_agent, target_class, target_id,
                 df_corr, fake_slam, env, viz,
                 reaching=False, all_reaching_goals=[],
                 use_correlation_belief_update=True,
+                visualize=False, logger=None,
+                # for logging (will modify)
+                _rewards=None, _states=None, _history=None,
+                _gamma=None, _disc_reward=None,
                 **kwargs):
     """Runs the agent to search for target. By 'search', I mean
     that the target can be found by 'reaching' (if it's a subgoal),
@@ -194,19 +215,22 @@ def _run_search(nk_agent, target_class, target_id,
                              num_sims=_num_sims,
                              exploration_const=_exploration_constant,  # todo: is 100 still good?
                              rollout_policy=planning_agent.policy_model)
-    _rewards = []
+
     _nsteps = kwargs.get("nsteps", 100)
     for step in range(_nsteps):
-        viz.on_loop()
-        img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
+        # Visualize
+        if viz is not None:
+            viz.on_loop()
+            img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
 
         # Plan action
         start_time = time.time()
         action = planner.plan(planning_agent)
-        print("__ (Step %d/%d) Searching for %s, %d ____" % (step, _nsteps, target_class, target_id))
-        print("#### POUCT (took %.4fs) ####" % (time.time() - start_time))
-        planner.print_action_values()
-        print("##############################")
+
+        if logger is None:
+            print("__ (Step %d/%d) Searching for %s, %d ____" % (step+1, _nsteps, target_class, target_id))
+            print("#### POUCT (took %.4fs) ####" % (time.time() - start_time))
+            planner.print_action_values()
 
         # Environment transition
         env_state = env.state.copy()
@@ -214,19 +238,16 @@ def _run_search(nk_agent, target_class, target_id,
         _ = env.state_transition(action, execute=True)
         env_next_state = env.state.copy()
         reward = env.reward_model.sample(env_state, action, env_next_state)
-        _rewards.append(reward)
 
         # Get observation using all sensors
         observation = observation_model.sample(env.state, action)
         detected_classes, detected_ids, detected_poses = compute_detections(observation, return_poses=True)
-        print("Detections: ", detected_classes)
 
         # update belief of robot
         new_robot_belief = pomdp_py.Histogram({env.robot_state.copy() : 1.0})
         robot_state = new_robot_belief.mpe()
 
         # update map (fake slam)
-        old_frontier = nk_agent.grid_map.frontier()
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_state["pose"], env)
 
         partial_map = nk_agent.grid_map
@@ -238,7 +259,7 @@ def _run_search(nk_agent, target_class, target_id,
                 continue
             # First, expand the belief space to cover the expanded map
             obj_belief = nk_agent.object_beliefs[objid]
-            obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map, old_frontier,
+            obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map,
                                       env_grid_map=env.grid_map, get_dict=True)
 
             # Then, perform belief update
@@ -275,8 +296,23 @@ def _run_search(nk_agent, target_class, target_id,
                                               objects_tracking=objects_tracking)
         planner.set_rollout_policy(planning_agent.policy_model)
 
-        print("Action executed: ", action)
-        print("Reward: ", reward)
+        # Info and logging
+        next_state = copy.deepcopy(env.state)
+        _disc_reward[0] += _gamma[0]*reward
+        _gamma[0] *= _discount_factor
+        _step_info = "Step {}/{} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    "\
+            "Detections: {}    RobotPose: {}   TargetFound: {}"\
+            .format(step+1, _nsteps, action, reward, _disc_reward[0], detected_classes,
+                    next_state.object_states[env.robot_id]["pose"],
+                    next_state.object_states[target_id].get("is_found", False))
+        if logger is None:
+            print(_step_info)
+        else:
+            logger(_step_info)
+
+        _rewards.append(reward)
+        _states.append(next_state)
+        _history.append((action, observation, copy.deepcopy(nk_agent.object_belief)))
 
         # Check termination
         subgoal_ids = set(subgoal_id for _, subgoal_id in all_reaching_goals)
@@ -291,29 +327,41 @@ def _run_search(nk_agent, target_class, target_id,
                 if euclidean_dist(robot_state["pose"][:2], detected_poses[subgoal_class]) <= 2:
                     # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
                     subgoals_done.add(subgoal_id)
-                    print("Subgoal %s, %d is done! ~~~~~~~~~~~~~~~~~~~" % (subgoal_class, subgoal_id))
+                    _info = "Subgoal %s, %d is done!" % (subgoal_class, subgoal_id)
+                    if logger is None:
+                        print(_info)
+                    else:
+                        logger(_info)
+
         # Remove reward for done subgoals
         for objid in subgoals_done:
             nk_agent.remove_reward_model(objid)
         # If our purpose is to reach a certain class, then we can return if it is done
         if reaching:
            if target_class in detected_classes:
-               return subgoals_done, _rewards
+               return subgoals_done, step+1
         else:
             # We are picking
             if isinstance(action, DeclareFound):
-                print("Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!.")
-                return [target_id], _rewards
-    return None, _rewards
+                if logger is None:
+                    print("Done!")
+                else:
+                    logger("Done!")
+                return [target_id], step+1
+    return None, _nsteps
 
 
 def test_subgoals_agent(env, target_class, config,
                         df_corr, df_dffc, df_subgoal,
                         difficulty_threshold="Kitchen",
-                        nsteps=100, discount_factor=0.95, max_depth=15,
+                        nsteps=10, discount_factor=0.95, max_depth=15,
                         num_sims=300, exploration_constant=100,
                         use_correlation_belief_update=True,
-                        full_map=False):
+                        target_sensor_config={},
+                        slam_sensor_config={},
+                        full_map=False,
+                        visualize=True,
+                        logger=None):
     """The function to call.
 
     Args:
@@ -326,6 +374,7 @@ def test_subgoals_agent(env, target_class, config,
         difficulty_threshold (str): The class that if difficulty is above the difficulty
             of searching for this class, then will generate a subgoal.
     """
+    robot_id = env.robot_id
     target_id = list(env.ids_for(target_class))[0]
 
     # Build an NKAgent, equipped with all sensors
@@ -333,15 +382,18 @@ def test_subgoals_agent(env, target_class, config,
         nk_agent = NKAgent(env.robot_id, env.robot_state["pose"], grid_map=env.grid_map)
     else:
         nk_agent = NKAgent(env.robot_id, env.robot_state["pose"])
+
     for sensor_name in config["sensors"]:
         cfg = config["sensors"][sensor_name]
+        noises = cfg["noises"]
+        if target_class in noises and len(target_sensor_config) > 0:
+            cfg = target_sensor_config
         sensor = Laser2DSensor(env.robot_id,
                                name=sensor_name,
                                fov=float(cfg["fov"]),
                                min_range=float(cfg["min_range"]),
                                max_range=float(cfg["max_range"]),
                                angle_increment=float(cfg["angle_increment"]))
-        noises = cfg["noises"]
         nk_agent.add_sensor(sensor, noises)
     # Tell the agent that your task is to pick up the target object class
     init_belief = uniform_belief(target_class, nk_agent)
@@ -352,23 +404,32 @@ def test_subgoals_agent(env, target_class, config,
         colors = yaml.load(f)
         for objclass in colors:
             colors[objclass] = pomdp_py.util.hex_to_rgb(colors[objclass])
-    viz = NKAgentViz(nk_agent,
-                     env,
-                     colors,
-                     res=30,
-                     controllable=True,
-                     img_path=FILE_PATHS["object_imgs"])
-    viz.on_init()
+
+    viz = None
+    if visualize:
+        viz = NKAgentViz(nk_agent,
+                         env,
+                         colors,
+                         res=30,
+                         controllable=True,
+                         img_path=FILE_PATHS["object_imgs"])
+        viz.on_init()
 
     # SLAM sensor has same range as room sensor
-    room_sensor = nk_agent.sensors[list(nk_agent.sensors_for("Kitchen"))[0]][0]
+    if slam_sensor_config is None:
+        room_sensor = nk_agent.sensors[list(nk_agent.sensors_for("Kitchen"))[0]][0]
+        slam_sensor_config = {
+            "fov": room_sensor.fov,
+            "min_range": room_sensor.min_range,
+            "max_range": room_sensor.max_range,
+            "angle_increment": room_sensor.angle_increment,
+        }
 
-    fake_slam = FakeSLAM(Laser2DSensor(nk_agent.robot_id,
-                                       fov=to_deg(room_sensor.fov),
-                                       min_range=room_sensor.min_range,
-                                       max_range=room_sensor.max_range,
-                                       angle_increment=to_deg(room_sensor.angle_increment)))
-
+    fake_slam = FakeSLAM(Laser2DSensor(robot_id,
+                                       fov=slam_sensor_config.get("fov", 90),
+                                       min_range=slam_sensor_config.get("min_range", 1),
+                                       max_range=slam_sensor_config.get("max_range", 3),
+                                       angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     rewards = search(target_class, target_id, nk_agent, fake_slam, env, viz,
                      df_dffc, df_corr, df_subgoal,
                      difficulty_threshold=difficulty_threshold,
@@ -377,7 +438,9 @@ def test_subgoals_agent(env, target_class, config,
                      max_depth=max_depth,
                      num_sims=num_sims,
                      nsteps=nsteps,
-                     use_correlation_belief_update=use_correlation_belief_update)
+                     use_correlation_belief_update=use_correlation_belief_update,
+                     visualize=visualize,
+                     logger=logger)
     return rewards
 
 

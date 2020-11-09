@@ -38,7 +38,8 @@ class RelPOMDPTrial(Trial):
                               "pomdp-nk",        # only cares about the target, no full map
                               "pomdp-subgoal-nk",   # uses subgoal, no full map
                               "pomdp-subgoal-nk-no_corr",   # uses subgoal, no correlation belief udpate, no full map
-                              "random-nk"}       # randomly move to unexplored place, no full map
+                              "random-nk",       # random action
+                              "heuristic-nk"}    # heuristic
 
         # Target class
         target_class = self._config["target_class"]

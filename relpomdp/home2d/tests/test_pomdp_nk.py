@@ -165,6 +165,8 @@ def test_pomdp_nk(env, target_class,
     _rewards = []
     _states = [init_state]
     _history = []
+    _disc_reward = 0.0
+    _gamma = 1.0
     game_states = []
     for i in range(nsteps):
         # Visualize
@@ -178,8 +180,10 @@ def test_pomdp_nk(env, target_class,
             step_pomdp_nk(env, nk_agent, fake_slam, planner, target_id, logger=logger)
 
         # Info and logging
-        _step_info = "Step {} : Action: {}    Reward: {}    RobotPose: {}   TargetFound: {}"\
-            .format(i+1, action, reward,
+        _disc_reward += _gamma*reward
+        _gamma *= discount_factor
+        _step_info = "Step {} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    RobotPose: {}   TargetFound: {}"\
+            .format(i+1, action, reward, _disc_reward,
                     next_state.object_states[env.robot_id]["pose"],
                     next_state.object_states[target_id].get("is_found", False))
         if logger is None:
