@@ -75,7 +75,7 @@ class NKAgentViz(Home2DViz):
 
     @staticmethod
     def draw_object_belief(img, r, belief, color,
-                           circle_drawn={}):
+                           circle_drawn={}, use_alpha=True):
         """
         circle_drawn: map from pose to number of times drawn;
             Used to determine sizxe of circle to draw at a location
@@ -83,7 +83,6 @@ class NKAgentViz(Home2DViz):
         radius = int(round(r / 2))
         size = r // 3
         last_val = -1
-        count = 0
         hist = belief.get_histogram()
         for state in reversed(sorted(hist, key=hist.get)):
             if last_val != -1:
@@ -98,7 +97,6 @@ class NKAgentViz(Home2DViz):
                                  tx*r+radius), size//circle_drawn[(tx,ty)], color, thickness=-1)
                 last_val = hist[state]
 
-                count +=1
                 if last_val <= 0:
                     break
 
