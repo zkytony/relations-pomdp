@@ -110,19 +110,19 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
         subgoal_class, subgoal_id = subgoals[-1]
         reaching = subgoal_class != target_class
         kwargs["nsteps"] = nsteps_remaining
-        subgoals_done, rewards =\
+        subgoals_done, subgoal_rewards =\
             _run_search(nk_agent, subgoal_class, subgoal_id,
                         df_corr, fake_slam, env, viz,
                         reaching=reaching, all_reaching_goals=all_reaching_goals,
                         use_correlation_belief_update=use_correlation_belief_update,
                         **kwargs)
-        nsteps_remaining -= len(rewards)
+        nsteps_remaining -= len(subgoal_rewards)
         if subgoals_done is not None:
             # subgoals_done should be a set of object ids
             subgoals = [tup for tup in subgoals
                         if tup[1] not in subgoals_done]
             all_reaching_goals = subgoals[1:]
-        rewards.extend(rewards)
+        rewards.extend(subgoal_rewards)
         if nsteps_remaining == 0:
             break
     viz.on_cleanup()
@@ -282,11 +282,10 @@ def _run_search(nk_agent, target_class, target_id,
         subgoal_ids = set(subgoal_id for _, subgoal_id in all_reaching_goals)
         subgoal_classes = set(subgoal_class for subgoal_class, _ in all_reaching_goals)
         subgoals_done = set()
-
-        # Subgoal is finished if we have detected an object of that class and
-        # the pose of the detection is close to the robot. (No check by id - so
-        # this won't work if the robot sets a second subgoal of finding an
-        # object of the same category).
+        ## Subgoal is finished if we have detected an object of that class and
+        ## the pose of the detection is close to the robot. (No check by id - so
+        ## this won't work if the robot sets a second subgoal of finding an
+        ## object of the same category).
         for subgoal_class, subgoal_id in all_reaching_goals:
             if subgoal_class in detected_classes:
                 if euclidean_dist(robot_state["pose"][:2], detected_poses[subgoal_class]) <= 2:
