@@ -104,7 +104,7 @@ def generate_world(config, seed=None, required_classes=set()):
             if not has_req_c:
                 print("Generated map does not contain required classes {}. Regenerate"\
                       .format(required_classes))
-            if not coverablec:
+            if not coverable:
                 print("Generated map is not fully coverable. Regenerate.")
     return env
 

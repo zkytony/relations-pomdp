@@ -12,7 +12,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.constants import FILE_PATHS
 from test_utils import add_reach_target, difficulty, correlation,\
-    add_room_states, add_target, preferred_policy_model, update_map, belief_fit_map
+    add_target, preferred_policy_model, update_map, belief_fit_map
 import copy
 import time
 import subprocess
@@ -405,12 +405,8 @@ def main():
         config = yaml.load(f)
 
     print("Generating environment that surely contains %s" % args.target_class)
-    seed = 100
-    env = generate_world(config, seed=seed)
-    add_room_states(env)
-    while len(env.ids_for(args.target_class)) == 0:
-        env = generate_world(config, seed=seed)
-        add_room_states(env)
+    seed = None
+    env = generate_world(config, seed=seed, required_classes={args.target_class})
 
     test_subgoals_agent(env, args.target_class, config,
                         df_corr=pd.read_csv(args.corr_score_file),

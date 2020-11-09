@@ -26,6 +26,7 @@ class NKAgentViz(Home2DViz):
     def on_init(self):
         super().on_init()
         plt.ion()
+        self._fig, (self._ax1, self._ax2) = plt.subplots(1,2, figsize=(12,5))
         plt.show(block=False)
 
     def _make_legend(self, ax, used_colors):
@@ -39,9 +40,7 @@ class NKAgentViz(Home2DViz):
         # Renders the true world. Then plot agent's world
         img_world = super().on_render()
 
-        plt.clf()
-        fig = plt.gcf()
-        ax = plt.gca()
+        # self._fig.clear()
         img = self.make_agent_view(self._res,
                                    range_sensor=kwargs.get("range_sensor", None))
         used_colors = {}
@@ -61,13 +60,17 @@ class NKAgentViz(Home2DViz):
 
         # rotate 90 deg CCW to match the pygame display
         img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        ax.imshow(img, interpolation='none')
+        self._ax2.imshow(img, interpolation='none')
         # These must happen after imshow
-        ax.set_aspect("equal")
-        self._make_legend(ax, used_colors)
+        self._ax2.set_aspect("equal")
+        self._make_legend(self._ax2, used_colors)
 
-        fig.canvas.draw()
-        fig.canvas.flush_events()
+        img_world_copy = cv2.flip(img_world, 1)  # flip horizontally
+        img_world_copy = cv2.rotate(img_world_copy, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        self._ax1.imshow(img_world_copy, interpolation='none')
+
+        self._fig.canvas.draw()
+        self._fig.canvas.flush_events()
         return img, img_world
 
     @staticmethod
@@ -100,7 +103,7 @@ class NKAgentViz(Home2DViz):
                     break
 
 
-    def make_agent_view(self, r, range_sensor=None):
+    def make_agent_view(self, r, range_sensor=None, visualize_room_segmentation=False):
         # Preparing 2d array
         w, l = self._env.width, self._env.length
         state = self._env.state
@@ -125,13 +128,14 @@ class NKAgentViz(Home2DViz):
                     room_color = (66, 66, 66)
                     boundary_color = (66, 66, 66)
 
-                # room_name = agent_map._location_to_room.get((x,y), None)
-                # if room_name is not None:
-                #     if room_name not in self._room_colors:
-                #         self._room_colors[room_name] =\
-                #             pomdp_py.util.random_unique_color(self._room_colors.values())
-                #         self._room_colors[room_name] = pomdp_py.util.hex_to_rgb(self._room_colors[room_name])
-                #     room_color = self._room_colors[room_name]
+                if visualize_room_segmentation:
+                    room_name = agent_map._location_to_room.get((x,y), None)
+                    if room_name is not None:
+                        if room_name not in self._room_colors:
+                            self._room_colors[room_name] =\
+                                pomdp_py.util.random_unique_color(self._room_colors.values())
+                            self._room_colors[room_name] = pomdp_py.util.hex_to_rgb(self._room_colors[room_name])
+                        room_color = self._room_colors[room_name]
 
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               room_color, -1)
