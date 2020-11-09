@@ -18,12 +18,10 @@ from test_utils import add_target, random_policy_model, make_world,\
 import subprocess
 import copy
 
-def test_pomdp(env, target_class,
-               discount_factor=0.95, max_depth=15,
-               num_sims=300, exploration_constant=200,
-               nsteps=100, save=False,
-               target_sensor_config={},
-               slam_sensor_config={}):
+def build_pomdp_agent(env, target_class,
+                      target_sensor_config={},
+                      slam_sensor_config={}):
+    """Build POMDP agent"""
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     # The agent can access the full map
@@ -55,7 +53,66 @@ def test_pomdp(env, target_class,
                            angle_increment=target_sensor_config.get("angle_increment", 0.1))
     nk_agent.add_sensor(sensor,
                         {target_class: target_sensor_config.get("noises", (0.8, 0.01))})
-    # policy_model = random_policy_model(nk_agent)
+    return nk_agent
+
+
+def step_pomdp(env, agent, planner, target_class):
+    """Runs a step in the POMDP simulation"""
+    robot_id = env.robot_id
+    target_id = list(env.ids_for(target_class))[0]
+
+    action = planner.plan(agent)
+    print("-------POUCT-----")
+    planner.print_action_values()
+    print("-----------------")
+
+    # environment transitions and obtains reward (note that we use agent's reward model for convenience)
+    env_state = env.state.copy()
+    _ = env.state_transition(action, execute=True)
+    env_next_state = env.state.copy()
+    reward = agent.reward_model.sample(env_state, action, env_next_state)
+
+    observation = agent.observation_model.sample(env.state, action)
+    print(observation)
+
+    # update belief of robot
+    agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
+        env.robot_state.copy() : 1.0
+    })
+
+    # update belief of target
+    next_target_hist = {}
+    target_belief = agent.belief.object_beliefs[target_id]
+    total_prob = 0.0
+    for target_state in target_belief:
+        robot_state = agent.belief.object_beliefs[robot_id].mpe()
+        oostate = OOState({robot_id: robot_state,
+                           target_id: target_state})
+        obs_prob = agent.observation_model.probability(observation, oostate, action)
+        next_target_hist[target_state] = obs_prob * target_belief[target_state]
+        total_prob += next_target_hist[target_state]
+    for target_state in next_target_hist:
+        next_target_hist[target_state] /= total_prob
+    agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
+    planner.update(agent, action, observation)
+    return action, copy.deepcopy(env.state), observation, reward
+
+
+def test_pomdp(env, target_class,
+               discount_factor=0.95, max_depth=15,
+               num_sims=300, exploration_constant=200,
+               nsteps=100, save=False,
+               target_sensor_config={},
+               slam_sensor_config={},
+               visualize=True,
+               logger=None):
+    robot_id = env.robot_id
+    target_id = list(env.ids_for(target_class))[0]
+
+    nk_agent = build_pomdp_agent(env, target_class,
+                                 target_sensor_config=target_sensor_config,
+                                 slam_sensor_config=slam_sensor_config)
+
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
                                           ap_args=[target_id])
@@ -69,71 +126,58 @@ def test_pomdp(env, target_class,
                              rollout_policy=agent.policy_model)
 
     # Visualize and run
-    viz = NKAgentViz(agent,
-                     env,
-                     {},
-                     res=30,
-                     controllable=True,
-                     img_path=FILE_PATHS["object_imgs"])
-    viz.on_init()
-    rewards = []
-    game_states = []
+    if visualize:
+        viz = NKAgentViz(agent,
+                         env,
+                         {},
+                         res=30,
+                         controllable=True,
+                         img_path=FILE_PATHS["object_imgs"])
+        viz.on_init()
+    init_state = copy.deepcopy(env.state)
+    _rewards = []
+    _states = [init_state]
+    _history = []
+    game_imgs = []
     for i in range(nsteps):
         # Visualize
-        viz.on_loop()
-        img, img_world = viz.on_render(agent.belief)
+        if visualize:
+            viz.on_loop()
+            img, img_world = viz.on_render(agent.belief)
+            game_imgs.append(img)
 
-        action = planner.plan(agent)
-        print("-------POUCT-----")
-        planner.print_action_values()
-        print("-----------------")
+        action, next_state, observation, reward =\
+            step_pomdp(env, agent, planner, target_class)
+        _step_info = "Step {} : Action: {}    Reward: {}    RobotPose: {}   TargetFound: {}"\
+            .format(i+1, action, reward,
+                    next_state.object_states[env.robot_id]["pose"],
+                    next_state.object_states[target_id].get("is_found", False))
+        if logger is None:
+            print(_step_info)
+        else:
+            logger(_step_info)
 
-        # environment transitions and obtains reward (note that we use agent's reward model for convenience)
-        env_state = env.state.copy()
-        _ = env.state_transition(action, execute=True)
-        env_next_state = env.state.copy()
-        reward = agent.reward_model.sample(env_state, action, env_next_state)
-
-        observation = agent.observation_model.sample(env.state, action)
-        print(observation)
-
-        # update belief of robot
-        agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
-            env.robot_state.copy() : 1.0
-        })
-
-        # update belief of target
-        next_target_hist = {}
-        target_belief = agent.belief.object_beliefs[target_id]
-        total_prob = 0.0
-        for target_state in target_belief:
-            robot_state = agent.belief.object_beliefs[robot_id].mpe()
-            oostate = OOState({robot_id: robot_state,
-                               target_id: target_state})
-            obs_prob = agent.observation_model.probability(observation, oostate, action)
-            next_target_hist[target_state] = obs_prob * target_belief[target_state]
-            total_prob += next_target_hist[target_state]
-        for target_state in next_target_hist:
-            next_target_hist[target_state] /= total_prob
-        agent.belief.object_beliefs[target_id] = pomdp_py.Histogram(next_target_hist)
-        planner.update(agent, action, observation)
-        print("Chosen action:", action, reward)
-        rewards.append(reward)
-        game_states.append(img)
+        _rewards.append(reward)
+        _states.append(next_state)
+        _history.append((action, observation, copy.deepcopy(agent.belief)))
         if isinstance(action, DeclareFound):
-            print("Done.")
+            if logger is None:
+                print("Done!")
+            else:
+                logger("Done!")
             break
-    game_states.append(img_world)
-    viz.on_cleanup()
+    if visualize:
+        viz.on_cleanup()
+        game_imgs.append(img_world)
 
-    if save:
-        print("Saving images...")
-        dirp = "./demos/test_pomdp"
-        save_images_and_compress(game_states,
-                                 dirp)
-        subprocess.Popen(["nautilus", dirp])
+        if save:
+            print("Saving images...")
+            dirp = "./demos/test_pomdp"
+            save_images_and_compress(game_imgs,
+                                     dirp)
+            subprocess.Popen(["nautilus", dirp])
 
-    return rewards
+    return _rewards, _states, _history
 
 if __name__ == "__main__":
     env = make_world()

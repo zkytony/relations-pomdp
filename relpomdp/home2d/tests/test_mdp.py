@@ -12,7 +12,8 @@ import copy
 
 def build_mdp_agent(env, target_class,
                     target_sensor_config={},
-                    slam_sensor_config={},):
+                    slam_sensor_config={}):
+    """Build MDP agent"""
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
@@ -35,6 +36,7 @@ def build_mdp_agent(env, target_class,
 
 
 def step_mdp(env, agent, planner):
+    """Runs a step in the MDP simulation"""
     action = planner.plan(agent)
 
     # environment transitions and obtains reward (note that we use agent's reward model for convenience)
@@ -83,18 +85,19 @@ def test_mdp(env, target_class,
                          res=30,
                          controllable=True,
                          img_path=FILE_PATHS["object_imgs"])
-    viz.on_init()
-    _rewards = []
-    _states = []
-    _history = []
+        viz.on_init()
     init_state = copy.deepcopy(env.state)
+    _rewards = []
+    _states = [init_state]
+    _history = []
     for i in range(nsteps):
         # Visualize
         if visualize:
             viz.on_loop()
             viz.on_render()
 
-        action, next_state, observation, reward = step_mdp(env, agent, planner)
+        action, next_state, observation, reward =\
+            step_mdp(env, agent, planner)
         _step_info = "Step {} : Action: {}    Reward: {}    RobotPose: {}   TargetFound: {}"\
             .format(i+1, action, reward,
                     next_state.object_states[env.robot_id]["pose"],
