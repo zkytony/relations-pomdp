@@ -1,6 +1,7 @@
 # Visualize agent, allows control, visualize its map versus the true map
 
 import pygame
+import pomdp_py
 from relpomdp.home2d.domain.visual import Home2DViz, lighter
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.domain.env import Home2DEnvironment
@@ -20,6 +21,7 @@ class NKAgentViz(Home2DViz):
                          res=res, fps=fps, controllable=controllable)
 
         self._nkagent = nkagent
+        self._room_colors = {}
 
     def on_init(self):
         super().on_init()
@@ -122,6 +124,15 @@ class NKAgentViz(Home2DViz):
                 else:
                     room_color = (66, 66, 66)
                     boundary_color = (66, 66, 66)
+
+                # room_name = agent_map._location_to_room.get((x,y), None)
+                # if room_name is not None:
+                #     if room_name not in self._room_colors:
+                #         self._room_colors[room_name] =\
+                #             pomdp_py.util.random_unique_color(self._room_colors.values())
+                #         self._room_colors[room_name] = pomdp_py.util.hex_to_rgb(self._room_colors[room_name])
+                #     room_color = self._room_colors[room_name]
+
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               room_color, -1)
                 # Draw boundary

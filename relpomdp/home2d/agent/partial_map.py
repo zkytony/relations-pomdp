@@ -38,6 +38,11 @@ class PartialGridMap(GridMap):
             cell_to_walls[cell2].add(wall_id)
         return cell_to_walls
 
+    def room_of(self, position):
+        if position in self._location_to_room:
+            return self._location_to_room[position]
+        return None
+
     def same_room(self, loc1, loc2):
         """Returns true if loc1 and loc2 (both x,y) are in the same room"""
         try:

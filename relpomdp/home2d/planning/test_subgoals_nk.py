@@ -295,7 +295,7 @@ def _run_search(nk_agent, target_class, target_id,
             if euclidean_dist(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"]) <= 2:
             # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
                 subgoals_done.add(subgoal_id)
-                print("Subgoal %s, %d is done! &! &! &! &! &!" % (subgoal_class, subgoal_id))
+                print("Subgoal %s, %d is done! ~~~~~~~~~~~~~~~~~~~" % (subgoal_class, subgoal_id))
             else:
                 print(robot_state["pose"][:2], env.state.object_states[subgoal_id]["pose"])
         # Remove reward for done subgoals

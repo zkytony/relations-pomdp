@@ -274,8 +274,6 @@ def pcg_map(width, length, nrooms, categories, seed=None,
             if len(room_doors[rm_name]) < ndoors:
                 room_doors[rm_name].add(wall)
     ## Remove candidate walls identified above.
-    rm1, rm2 = list(room_doors.keys())[:2]
-    print(name_to_rooms[rm1].doorways is name_to_rooms[rm2].doorways)
     for rm_name in room_doors:
         doorway_walls = room_doors[rm_name]
         # Remove these walls from the room
