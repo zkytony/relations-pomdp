@@ -26,11 +26,6 @@ def build_pomdp_agent(env, target_class,
     init_robot_pose = env.robot_state["pose"]
     # The agent can access the full map
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
-    fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=slam_sensor_config.get("fov", 90),
-                                       min_range=slam_sensor_config.get("min_range", 1),
-                                       max_range=slam_sensor_config.get("max_range", 3),
-                                       angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
 
     # Uniform belief
@@ -56,15 +51,15 @@ def build_pomdp_agent(env, target_class,
     return nk_agent
 
 
-def step_pomdp(env, agent, planner, target_class):
+def step_pomdp(env, agent, planner, target_id, logger=None):
     """Runs a step in the POMDP simulation"""
     robot_id = env.robot_id
-    target_id = list(env.ids_for(target_class))[0]
 
+    # Plan action
     action = planner.plan(agent)
-    print("-------POUCT-----")
-    planner.print_action_values()
-    print("-----------------")
+    if logger is None:
+        print("------POUCT------")
+        planner.print_action_values()
 
     # environment transitions and obtains reward (note that we use agent's reward model for convenience)
     env_state = env.state.copy()
@@ -73,7 +68,10 @@ def step_pomdp(env, agent, planner, target_class):
     reward = agent.reward_model.sample(env_state, action, env_next_state)
 
     observation = agent.observation_model.sample(env.state, action)
-    print(observation)
+    if logger is not None:
+        logger(observation)
+    else:
+        print(observation)
 
     # update belief of robot
     agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
@@ -103,15 +101,13 @@ def test_pomdp(env, target_class,
                num_sims=300, exploration_constant=200,
                nsteps=100, save=False,
                target_sensor_config={},
-               slam_sensor_config={},
                visualize=True,
                logger=None):
     robot_id = env.robot_id
     target_id = list(env.ids_for(target_class))[0]
 
     nk_agent = build_pomdp_agent(env, target_class,
-                                 target_sensor_config=target_sensor_config,
-                                 slam_sensor_config=slam_sensor_config)
+                                 target_sensor_config=target_sensor_config)
 
     policy_model = preferred_policy_model(nk_agent,
                                           GreedyActionPrior,
@@ -146,8 +142,11 @@ def test_pomdp(env, target_class,
             img, img_world = viz.on_render(agent.belief)
             game_imgs.append(img)
 
+        # Take a step
         action, next_state, observation, reward =\
-            step_pomdp(env, agent, planner, target_class)
+            step_pomdp(env, agent, planner, target_id, logger=logger)
+
+        # Info and logging
         _step_info = "Step {} : Action: {}    Reward: {}    RobotPose: {}   TargetFound: {}"\
             .format(i+1, action, reward,
                     next_state.object_states[env.robot_id]["pose"],
@@ -160,6 +159,8 @@ def test_pomdp(env, target_class,
         _rewards.append(reward)
         _states.append(next_state)
         _history.append((action, observation, copy.deepcopy(agent.belief)))
+
+        # Termination check
         if isinstance(action, DeclareFound):
             if logger is None:
                 print("Done!")

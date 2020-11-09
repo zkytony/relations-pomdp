@@ -11,17 +11,11 @@ from test_utils import add_target, random_policy_model, make_world
 import copy
 
 def build_mdp_agent(env, target_class,
-                    target_sensor_config={},
-                    slam_sensor_config={}):
+                    target_sensor_config={}):
     """Build MDP agent"""
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
-    fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=slam_sensor_config.get("fov", 90),
-                                       min_range=slam_sensor_config.get("min_range", 1),
-                                       max_range=slam_sensor_config.get("max_range", 3),
-                                       angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
     init_belief = pomdp_py.Histogram({env.state.object_states[target_id]:1.0})
     add_target(nk_agent, target_id, init_belief, env)
@@ -37,6 +31,7 @@ def build_mdp_agent(env, target_class,
 
 def step_mdp(env, agent, planner):
     """Runs a step in the MDP simulation"""
+    # Plan action
     action = planner.plan(agent)
 
     # environment transitions and obtains reward (note that we use agent's reward model for convenience)
@@ -59,14 +54,12 @@ def test_mdp(env, target_class,
              num_sims=300, exploration_constant=200,
              nsteps=100,
              target_sensor_config={},
-             slam_sensor_config={},
              visualize=True,
              logger=None):
 
     target_id = list(env.ids_for(target_class))[0]
     nk_agent = build_mdp_agent(env, target_class,
-                               target_sensor_config=target_sensor_config,
-                               slam_sensor_config=slam_sensor_config)
+                               target_sensor_config=target_sensor_config)
     policy_model = random_policy_model(nk_agent)
 
     agent = nk_agent.instantiate(policy_model)
@@ -96,8 +89,11 @@ def test_mdp(env, target_class,
             viz.on_loop()
             viz.on_render()
 
+        # Take a step
         action, next_state, observation, reward =\
             step_mdp(env, agent, planner)
+
+        # Info and logging
         _step_info = "Step {} : Action: {}    Reward: {}    RobotPose: {}   TargetFound: {}"\
             .format(i+1, action, reward,
                     next_state.object_states[env.robot_id]["pose"],
@@ -110,6 +106,8 @@ def test_mdp(env, target_class,
         _rewards.append(reward)
         _states.append(next_state)
         _history.append((action, observation))
+
+        # Termination check
         if isinstance(action, DeclareFound):
             if logger is None:
                 print("Done!")
