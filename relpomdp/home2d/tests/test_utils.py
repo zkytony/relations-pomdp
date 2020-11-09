@@ -99,7 +99,7 @@ def make_world(seed=100, worldsize=(6,6), init_robot_pose=(0,0,0), nrooms=3):
     return generate_world(config, seed=seed)
 
 
-def belief_fit_map(target_belief, updated_partial_map, **kwargs):
+def belief_fit_map(target_belief, updated_partial_map, old_frontier, **kwargs):
     """Given a target belief over a partial map, rescale it and add belief at
     additional locations in the updated partial map.
 
@@ -131,7 +131,7 @@ def belief_fit_map(target_belief, updated_partial_map, **kwargs):
     target_hist = {}
     for x, y in updated_map_locations:
         target_state = Objstate(target_class, pose=(x,y))
-        if target_state in new_norm_target_hist:
+        if target_state in new_norm_target_hist:# and (x,y) not in old_frontier:
             target_hist[target_state] = new_norm_target_hist[target_state]
         else:
             if bigger_norm - smaller_norm == 0:

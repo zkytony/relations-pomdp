@@ -106,9 +106,11 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         assert grid_map is not None, "Required argument: grid_map"
 
         frontier = grid_map.frontier()
-
         given_object_state = next_state.object_states[objid]
         given_class_pose = given_object_state["pose"]
+
+        if given_class_pose in frontier:
+            return 1.0
 
         if type(observation) == tuple:
             detected_classes, detected_ids, detected_poses = observation

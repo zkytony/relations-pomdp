@@ -226,6 +226,7 @@ def _run_search(nk_agent, target_class, target_id,
         robot_state = new_robot_belief.mpe()
 
         # update map (fake slam)
+        old_frontier = nk_agent.grid_map.frontier()
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_state["pose"], env)
 
         partial_map = nk_agent.grid_map
@@ -237,7 +238,7 @@ def _run_search(nk_agent, target_class, target_id,
                 continue
             # First, expand the belief space to cover the expanded map
             obj_belief = nk_agent.object_beliefs[objid]
-            obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map,
+            obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map, old_frontier,
                                       env_grid_map=env.grid_map, get_dict=True)
 
             # Then, perform belief update
@@ -405,7 +406,7 @@ def main():
         config = yaml.load(f)
 
     print("Generating environment that surely contains %s" % args.target_class)
-    seed = None
+    seed = 150
     env = generate_world(config, seed=seed, required_classes={args.target_class})
 
     test_subgoals_agent(env, args.target_class, config,
