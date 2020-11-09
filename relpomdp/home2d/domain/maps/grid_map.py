@@ -7,7 +7,78 @@ from relpomdp.home2d.domain.condition_effect import *
 from relpomdp.oopomdp.framework import Objstate
 from relpomdp.utils_geometry import intersect, euclidean_dist
 import math
+import json
 import sys
+
+class Room:
+    def __init__(self, name, walls, locations, doorways=None):
+        """walls: A set of (x,y,"H"|"V") walls, (not WallState!)
+        locations: A set of (x,y) locations.
+        name (str): Assumed to be of the format Class-#
+        doorways (set): A set of (x,y) locations that are at the doorway.
+            Default is empty."""
+        self.name = name
+        self.walls = walls
+        self.locations = locations
+        self.room_type = self.name.split("-")[0]
+        if doorways is None:
+            doorways = set()  # must not use set() as default parameter
+        self.doorways = doorways
+
+        # Compute top-left corner and width/length; The room is,
+        # however, not always a rectangle.
+        self.top_left = (
+            min(locations, key=lambda l: l[0])[0],
+            min(locations, key=lambda l: l[1])[1]
+        )
+        self.width = max(locations, key=lambda l: l[0])[0] - self.top_left[0] + 1
+        self.length = max(locations, key=lambda l: l[1])[1] - self.top_left[1] + 1
+
+        mean = np.mean(np.array([*self.locations]),axis=0)
+        self._center_of_mass = tuple(np.round(mean).astype(int))
+
+    # def to_state(self):
+    #     return ContainerState(self.room_type, self.name, tuple(self.locations))
+
+    @property
+    def center_of_mass(self):
+        return self._center_of_mass
+
+    def __str__(self):
+        return "Room(%s;%d,%d,%d,%d)" % (self.name, self.top_left[0], self.top_left[1],
+                                         self.width, self.length)
+
+    def __repr__(self):
+        return str(self)
+
+    def add_doorway_by_wall(self, wall):
+        """Adds the x,y grid cell that touches the wall
+        as the doorway; You can think of this as, the wall
+        is removed, and the x,y grid cell is the 'entrance'
+        to the room.
+
+        The wall is represented as a tuple (x, y, direction)
+        """
+        wx, wy, direction = wall
+        if (wx, wy) in self.locations:
+            self.doorways.add((wx, wy))
+            return
+
+        if direction == "V":
+            # Vertical wall. So either the doorway is at wx, wy,
+            # or it is at wx+1, wy, whichever is a valid location in
+            # this room. (wx, wy) case has been checked above
+            assert (wx+1, wy) in self.locations,\
+                "Expecting room location on right side of vertical wall."
+            self.doorways.add((wx+1, wy))
+        else:
+            # Horizontal wall. Similar reasoning
+            assert (wx, wy+1) in self.locations,\
+                "Expecting room location on above the horizontal wall at (%d, %d)."\
+                % (wx, wy+1)
+            self.doorways.add((wx, wy + 1))
+
+
 
 class GridMap:
     def __init__(self, width, length, walls, rooms, name="grid_map"):
@@ -118,3 +189,54 @@ class GridMap:
             for y in range(self.length):
                 legal_actions[(x,y)] = self.legal_motions_at(x, y, all_motion_actions)
         return legal_actions
+
+    def to_json(self):
+        """Returns a json object of this grid map instance"""
+        # First we need a json representation of the grid map
+        result = {"width": self.width,
+                  "length": self.length,
+                  "walls": {},
+                  "rooms": {},
+                  "name": self.name}
+        for wall_id in self.walls:
+            wall_state = self.walls[wall_id]
+            result["walls"][wall_id] = {"pose": list(wall_state.pose),
+                                        "direction": wall_state.direction}
+        for room_name in self.rooms:
+            room = self.rooms
+            result["rooms"][room_name] = {
+                "name": room.name,
+                "walls": [list(wall) for wall in room.walls],
+                "locations": [list(location) for location in room.locations],
+                "doorways": [list(location) for location in room.doorways]
+            }
+        return result
+
+    @classmethod
+    def from_json(cls, json_str):
+        """Method to load an grid map instance from a json format"""
+        if isinstance(json_str, dict):
+            # already parsed
+            data = json_str
+        else:
+            data = json.loads(json_str)
+        # First, build walls
+        walls = {}
+        for wall_id in data["walls"]:
+            wall_state = WallState(data["walls"][wall_id]["pose"],
+                                   data["walls"][wall_id]["direction"])
+            walls[wall_id] = wall_state
+        # Then, build rooms
+        rooms = {}
+        for room_name in data["rooms"]:
+            assert data["rooms"]["name"] == room_name, "room name not equal."
+            room_walls = set(tuple(w) for w in data["rooms"]["walls"])
+            locations = set(tuple(l) for l in data["rooms"]["locations"])
+            doorways = set(tuple(l) for l in data["rooms"]["doorways"])
+            room = Room(room_name, walls, locations, doorways=doorways)
+            rooms[room_name] = room
+        return GridMap(int(data["width"]),
+                       int(data["length"]),
+                       walls,
+                       rooms,
+                       name=data["name"])

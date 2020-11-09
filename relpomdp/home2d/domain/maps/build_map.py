@@ -1,77 +1,9 @@
 import numpy as np
 from relpomdp.home2d.domain.state import WallState
-from relpomdp.home2d.domain.maps.grid_map import GridMap
+from relpomdp.home2d.domain.maps.grid_map import GridMap, Room
 from relpomdp.oopomdp.framework import Objstate
 import random
 import pickle
-
-class Room:
-    def __init__(self, name, walls, locations, doorways=None):
-        """walls: A set of (x,y,"H"|"V") walls,
-        locations: A set of (x,y) locations.
-        name (str): Assumed to be of the format Class-#
-        doorways (set): A set of (x,y) locations that are at the doorway.
-            Default is empty."""
-        self.name = name
-        self.walls = walls
-        self.locations = locations
-        self.room_type = self.name.split("-")[0]
-        if doorways is None:
-            doorways = set()  # must not use set() as default parameter
-        self.doorways = doorways
-
-        # Compute top-left corner and width/length; The room is,
-        # however, not always a rectangle.
-        self.top_left = (
-            min(locations, key=lambda l: l[0])[0],
-            min(locations, key=lambda l: l[1])[1]
-        )
-        self.width = max(locations, key=lambda l: l[0])[0] - self.top_left[0] + 1
-        self.length = max(locations, key=lambda l: l[1])[1] - self.top_left[1] + 1
-
-        mean = np.mean(np.array([*self.locations]),axis=0)
-        self._center_of_mass = tuple(np.round(mean).astype(int))
-
-    # def to_state(self):
-    #     return ContainerState(self.room_type, self.name, tuple(self.locations))
-
-    @property
-    def center_of_mass(self):
-        return self._center_of_mass
-
-    def __str__(self):
-        return "Room(%s;%d,%d,%d,%d)" % (self.name, self.top_left[0], self.top_left[1],
-                                         self.width, self.length)
-
-    def __repr__(self):
-        return str(self)
-
-    def add_doorway_by_wall(self, wall):
-        """Adds the x,y grid cell that touches the wall
-        as the doorway; You can think of this as, the wall
-        is removed, and the x,y grid cell is the 'entrance'
-        to the room.
-
-        The wall is represented as a tuple (x, y, direction)
-        """
-        wx, wy, direction = wall
-        if (wx, wy) in self.locations:
-            self.doorways.add((wx, wy))
-            return
-
-        if direction == "V":
-            # Vertical wall. So either the doorway is at wx, wy,
-            # or it is at wx+1, wy, whichever is a valid location in
-            # this room. (wx, wy) case has been checked above
-            assert (wx+1, wy) in self.locations,\
-                "Expecting room location on right side of vertical wall."
-            self.doorways.add((wx+1, wy))
-        else:
-            # Horizontal wall. Similar reasoning
-            assert (wx, wy+1) in self.locations,\
-                "Expecting room location on above the horizontal wall at (%d, %d)."\
-                % (wx, wy+1)
-            self.doorways.add((wx, wy + 1))
 
 
 
