@@ -59,17 +59,29 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
     def _spatially_correlated(self,
                               object_pose, object_class,
                               reference_pose, reference_class,
-                              grid_map):
+                              grid_map, frontier):
         """
         Returns True if the object (e.g. salt) and the reference (e.g. pepper, or Kitchen)
         are spatially correlated, on given grid_map
         """
-        # Actually it seems like I will just check the room
-        # Not sure why passing in the class names. But maybe useful later?
-        if object_class in self.room_types\
-           and reference_class in self.room_types:
+        if object_pose in frontier:
+            # pose in frontier - will be treated as having the same
+            # room type as an adjacent room node. (Note: ad-hoc)
+            reference_room = grid_map.room_of(reference_pose)
+            if reference_room is None:
+                return False
+
+            assert grid_map.room_of(object_pose) is None
+            x, y = object_pose
+            if grid_map.room_of((x+1,y)) == reference_room\
+               or grid_map.room_of((x-1,y)) == reference_room\
+               or grid_map.room_of((x,y+1)) == reference_room\
+               or grid_map.room_of((x,y-1)) == reference_room:
+                return True
             return False
-        return grid_map.same_room(object_pose, reference_pose)
+
+        else:
+            return grid_map.same_room(object_pose, reference_pose)
 
 
     def probability(self, observation, next_state, action,
@@ -89,24 +101,34 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         # the binary variable of 'near' (using the same function in compute_correlations.py).
         # If 'near' is true, and correlation between the detected class and the
         # given object class is high, then return a high probability. Otherwise,
-        # return a low probability.
+        # return a low probability. (This is an ad-hoc way for the 2d world)
+        assert objid is not None, "Required argument: objid"
+        assert grid_map is not None, "Required argument: grid_map"
+
+        frontier = grid_map.frontier()
+
         given_object_state = next_state.object_states[objid]
         given_class_pose = given_object_state["pose"]
 
-        detected_classes, detected_ids, detected_poses = compute_detections(observation,
-                                                                            return_poses=True)
+        if type(observation) == tuple:
+            detected_classes, detected_ids, detected_poses = observation
+        else:
+            detected_classes, detected_ids, detected_poses = compute_detections(observation,
+                                                                                return_poses=True)
         prob = 1.0
         for detected_class in detected_classes:
             detected_class_pose = detected_poses[detected_class]
-            if detected_class_pose == "IN_FOV":
-                # TODO: FIX THIS
-                detected_class_pose = next_state.object_states[self.robot_id]["pose"][:2]
-
-            correlated = self._spatially_correlated(given_class_pose, given_object_state.objclass,
-                                                    detected_class_pose, detected_class,
-                                                    grid_map)
-            score = correlation_score(given_object_state.objclass,
-                                      detected_class, self.df_corr)
+            correlated = self._spatially_correlated(given_class_pose,
+                                                    given_object_state.objclass,
+                                                    detected_class_pose,
+                                                    detected_class,
+                                                    grid_map,
+                                                    frontier)
+            if given_object_state.objclass == detected_class:
+                score = 1.0
+            else:
+                score = correlation_score(given_object_state.objclass,
+                                          detected_class, self.df_corr)
             if score > 0.5:
                 # the two classes are correlated in the training environments
                 if correlated:
