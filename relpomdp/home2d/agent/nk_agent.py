@@ -141,21 +141,29 @@ class NKAgent:
                                for reward_model in self._reward_models
                                if reward_model.target_id != target_id]
 
-    def build_observation_model(self, sensors_in_use=None, grid_map=None):
+    def build_observation_model(self, sensors_in_use=None, grid_map=None, caches=None):
         """Build an observation model for a given subset of sensors"""
         if grid_map is None:
             grid_map = self.grid_map
+
         if sensors_in_use is None:
             sensors_in_use = self._sensors
 
         cond_effects = []
         for name in sensors_in_use:
             sensor, noise_params = self._sensors[name]
+            sensor_cache = None
+            if self._sensor_caches[sensor.name].map_serving == grid_map.name:
+                sensor_cache = self._sensor_caches[sensor.name]
+            elif caches is not None:
+                if caches[name].map_serving == grid_map.name:
+                    sensor_cache = caches[name]
+
             observe_cond = CanObserve()
             observe_eff = ObserveEffect(
                 self.robot_id, sensor,
                 grid_map, noise_params,
-                self._sensor_caches[sensor.name])
+                sensor_cache=sensor_cache)
             cond_effects.append((observe_cond, observe_eff))
 
         observation_model = OOObservationModel(cond_effects)

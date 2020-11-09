@@ -37,6 +37,7 @@ class ObserveEffect(OEffect):
         self.sensor = sensor
         self.grid_map = grid_map  # should be partial for agent
         self.noise_params = noise_params
+        self._sensor_cache = None
         if sensor_cache is not None:
             assert sensor_cache.sensor_name == sensor.name,\
                 "SensorCache's name must be equal to the given sensor"

@@ -12,7 +12,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.constants import FILE_PATHS
 from test_utils import add_reach_target, difficulty, correlation,\
-    add_room_states, add_target, preferred_policy_model, update_map
+    add_room_states, add_target, preferred_policy_model, update_map, belief_fit_map
 import copy
 import time
 import subprocess
@@ -169,8 +169,14 @@ def _run_search(nk_agent, target_class, target_id,
     planning_agent = nk_agent.instantiate(policy_model,
                                           sensors_in_use=sensor_names,
                                           objects_tracking=objects_tracking)
-    # build the sensor observation model
-    observation_model = nk_agent.build_observation_model(grid_map=env.grid_map)
+    # Build the sensor observation model
+    # env grid map observation model has its own cache (that needs no update).
+    caches = {}
+    for name in nk_agent.sensors:
+        caches[name] = SensorCache(name)
+        caches[name].serving(env.grid_map.name)
+    observation_model = nk_agent.build_observation_model(grid_map=env.grid_map,
+                                                         caches=caches)
 
     # build the correlation observation model
     room_types = set(env.grid_map.rooms[name].room_type
@@ -221,6 +227,7 @@ def _run_search(nk_agent, target_class, target_id,
 
         # update map (fake slam)
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_state["pose"], env)
+
         partial_map = nk_agent.grid_map
         map_locations = partial_map.frontier() | partial_map.free_locations
 
@@ -228,20 +235,10 @@ def _run_search(nk_agent, target_class, target_id,
         for objid in nk_agent.object_beliefs:
             if objid == nk_agent.robot_id:
                 continue
-            obj_belief = nk_agent.object_beliefs[objid]
-            objclass = obj_belief.random().objclass
-            obj_hist = {}
             # First, expand the belief space to cover the expanded map
-            for x, y in map_locations:
-                obj_state = Objstate(objclass, pose=(x,y))
-                if obj_state in obj_belief:
-                    obj_hist[obj_state] = obj_belief[obj_state]
-                else:
-                    obj_hist[obj_state] = 1.0 / len(obj_belief)
-            ## renormalize
-            prob_sum = sum(obj_hist[state] for state in obj_hist)
-            for obj_state in obj_hist:
-                obj_hist[obj_state] /= prob_sum
+            obj_belief = nk_agent.object_beliefs[objid]
+            obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map,
+                                      env_grid_map=env.grid_map, get_dict=True)
 
             # Then, perform belief update
             next_obj_hist = {}

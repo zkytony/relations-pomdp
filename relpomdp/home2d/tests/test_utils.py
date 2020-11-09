@@ -131,13 +131,6 @@ def belief_fit_map(target_belief, updated_partial_map, **kwargs):
                 # Not going to track belief for this state. This state
                 # should lie outside of the map boundary. You can pass
                 # in a environment grid map for sanity check
-                env_grid_map = kwargs.get("env_grid_map", None)
-                if env_grid_map is not None:
-                    try:
-                        assert not (0 <= x < env_grid_map.width)\
-                            or not (0 <= y < env_grid_map.length)
-                    except AssertionError:
-                        import pdb; pdb.set_trace()
                 continue
 
             if new_norm - cur_norm == 0:
