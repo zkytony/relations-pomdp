@@ -28,7 +28,8 @@ def make_trials(env_file,
                 subgoal_score_file,
                 num_envs=10,
                 trials_per_env=1,
-                difficulty_threshold="Kitchen"):
+                difficulty_threshold="Kitchen",
+                target_classes={"Salt"}):
     env_path = os.path.join(FILE_PATHS["exp_worlds"], env_file)
     with open(env_path, "rb") as f:
         envs = pickle.load(f)
@@ -58,40 +59,40 @@ def make_trials(env_file,
 
     all_trials = []
     count = 0
-    for env_id in envs:
-        env = envs[env_id]
-        shared_config["env_id"] = env_id
-        # We will do:
-        agent_types = {
-            "pomdp-nk", "pomdp-subgoal-nk",
-            "pomdp-subgoal-nk-nocorr",
-            "random-nk", "heuristic-nk"
-        }
-        target_class = "Salt"  # TODO: TRY MORE?
-        shared_config["target_class"] = target_class
-        if len(env.ids_for(target_class)) == 0:
-            continue
+    for target_class in target_classes:
+        for env_id in envs:
+            env = envs[env_id]
+            shared_config["env_id"] = env_id
+            # We will do:
+            agent_types = {
+                "pomdp-nk", "pomdp-subgoal-nk",
+                "pomdp-subgoal-nk-nocorr",
+                "random-nk", "heuristic-nk"
+            }
+            shared_config["target_class"] = target_class
+            if len(env.ids_for(target_class)) == 0:
+                continue
 
-        subgoals = subgoal_sequence(target_class, df_subgoal, df_dffc,
-                                    difficulty_threshold=difficulty_threshold)
-        shared_config["subgoal_sequence"] = subgoals
+            subgoals = subgoal_sequence(target_class, df_subgoal, df_dffc,
+                                        difficulty_threshold=difficulty_threshold)
+            shared_config["subgoal_sequence"] = subgoals
 
-        for agent_type in agent_types:
-            config = copy.deepcopy(shared_config)
-            config["agent_type"] = agent_type
-            if "subgoal" in agent_type:
-                config["planning"]["difficulty_threshold"] = difficulty_threshold
+            for agent_type in agent_types:
+                config = copy.deepcopy(shared_config)
+                config["agent_type"] = agent_type
+                if "subgoal" in agent_type:
+                    config["planning"]["difficulty_threshold"] = difficulty_threshold
 
-            for i in range(trials_per_env):
-                trial_name = "search-%s-w%d-l%d-nrooms%d-nsubgoals%d_%d%d_%s"\
-                    % (target_class, domain_config["width"], domain_config["length"],
-                       domain_config["nrooms"], len(subgoals),
-                       env_id, i, agent_type)
-                trial = RelPOMDPTrial(trial_name, config, verbose=True)
-                all_trials.append(trial)
-        count += 1
-        if count >= num_envs:\
-            break
+                for i in range(trials_per_env):
+                    trial_name = "search-%s-w%d-l%d-nrooms%d-nsubgoals%d_%d%d_%s"\
+                        % (target_class, domain_config["width"], domain_config["length"],
+                           domain_config["nrooms"], len(subgoals),
+                           env_id, i, agent_type)
+                    trial = RelPOMDPTrial(trial_name, config, verbose=True)
+                    all_trials.append(trial)
+            count += 1
+            if count >= num_envs:\
+                break
 
     random.shuffle(all_trials)
     output_dir = "./results"
@@ -115,6 +116,8 @@ if __name__ == "__main__":
     corr_score_file = "correlation-try1-10-20-2020.csv"
     subgoal_score_file = "subgoal-scores=try1.csv"
 
+    target_classes = {"Salt", "Toilet", "Oven", "Kitchen"}
+
     num_envs = 10
     trials_per_env = 1
 
@@ -124,4 +127,5 @@ if __name__ == "__main__":
                 corr_score_file,
                 subgoal_score_file,
                 num_envs=num_envs,
-                trials_per_env=trials_per_env)
+                trials_per_env=trials_per_env,
+                target_classes=target_classes)

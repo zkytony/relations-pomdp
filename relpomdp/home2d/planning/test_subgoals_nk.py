@@ -228,10 +228,10 @@ def _run_search(nk_agent, target_class, target_id,
                                                  room_types,
                                                  df_corr)
 
-    _depth = kwargs.get("max_depth", 15)
+    _depth = kwargs.get("max_depth", 20)
     _discount_factor = kwargs.get("discount_factor", 0.95)
-    _num_sims = kwargs.get("num_sims", 300)
-    _exploration_constant = kwargs.get("exploration_constant", 100)
+    _num_sims = kwargs.get("num_sims", 600)
+    _exploration_constant = kwargs.get("exploration_constant", 200)
     planner = pomdp_py.POUCT(max_depth=_depth,
                              discount_factor=_discount_factor,
                              num_sims=_num_sims,
@@ -347,7 +347,7 @@ def _run_search(nk_agent, target_class, target_id,
         ## object of the same category).
         for subgoal_class, subgoal_id in all_reaching_goals:
             if subgoal_class in detected_classes:
-                if euclidean_dist(robot_state["pose"][:2], detected_poses[subgoal_class]) <= 2:
+                if euclidean_dist(robot_state["pose"][:2], detected_poses[subgoal_class]) <= 1:
                     # if robot_state["pose"][:2] == env.state.object_states[subgoal_id]["pose"]:
                     subgoals_done.add(subgoal_id)
                     _info = "Subgoal %s, %d is done!" % (subgoal_class, subgoal_id)

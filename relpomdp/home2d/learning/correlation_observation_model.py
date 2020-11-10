@@ -62,12 +62,18 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
                               grid_map, frontier):
         """
         Returns True if the object (e.g. salt) and the reference (e.g. pepper, or Kitchen)
-        are spatially correlated, on given grid_map
+        are spatially correlated, on given grid_map. For now spatially correlated means
+        object_pose and reference_pose are in the same room.
         """
-        assert object_pose not in frontier,\
-            "Object pose in frontier;"\
-            "Room-based spatial correlation shouldn't be tested for this pose"
-        return grid_map.same_room(object_pose, reference_pose)
+        if object_pose in frontier:
+            # So we can't determine spatial correlation of the object pose at
+            # the frontier, because we don't know what's at the frontier. Return
+            # true because we don't want to reduce the chance that it could be a
+            # spatially correlated location
+            return True
+
+        else:
+            return grid_map.same_room(object_pose, reference_pose)
 
 
     def probability(self, observation, next_state, action,
@@ -95,19 +101,12 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         given_object_state = next_state.object_states[objid]
         given_class_pose = given_object_state["pose"]
 
-        if given_class_pose in frontier:
-            # Give uniform probability to poses in frontier, whose
-            # spatial correlation probability will not be computed;
-            # If a location keeps being in the frontier, its correlation
-            # will be decreasing compared to other explored locations inside
-            # the room of the reference (i.e. detected class).
-            return 0.5
-
         if type(observation) == tuple:
             detected_classes, detected_ids, detected_poses = observation
         else:
             detected_classes, detected_ids, detected_poses = compute_detections(observation,
                                                                                 return_poses=True)
+
         prob = 1.0
         for detected_class in detected_classes:
             detected_class_pose = detected_poses[detected_class]
