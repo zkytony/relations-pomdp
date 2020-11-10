@@ -449,9 +449,9 @@ def test_subgoals_agent(env, target_class, config,
         }
 
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=slam_sensor_config.get("fov", 90),
+                                       fov=slam_sensor_config.get("fov", 360),
                                        min_range=slam_sensor_config.get("min_range", 1),
-                                       max_range=slam_sensor_config.get("max_range", 3),
+                                       max_range=slam_sensor_config.get("max_range", 4),
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     rewards = search(target_class, target_id, nk_agent, fake_slam, env, viz,
                      df_dffc, df_corr, df_subgoal,

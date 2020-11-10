@@ -77,11 +77,13 @@ class NKAgentViz(Home2DViz):
         # Create a banner at the bottom as a legend...
         _legend_bg = 20.0
         _legend_text_color = (255, 255, 255)
-        _legend_item_span = 4  # number of grid cells the legend item spans (cirlce+text)
         img_legend = np.full((self.img_width*2, self._legend_height, 3), _legend_bg)
         x, y = 0, 0
         radius = int(round(self._res / 2))
         for objclass in used_colors:
+            _legend_item_span = max(2,int(round(len(objclass)/3)))  # number of grid cells the legend item spans (cirlce+text)
+            if (x+_legend_item_span)*self._res+radius*2 > img_legend.shape[0]:
+                continue
             color = used_colors[objclass]
             cv2.circle(img_legend, (y*self._res+radius,
                                     x*self._res+radius),
@@ -90,9 +92,9 @@ class NKAgentViz(Home2DViz):
             # so I'm creating `img_text` according to this convention
             img_text = np.full((self._res, self._res*_legend_item_span, 3), _legend_bg)
             cv2.putText(img_text, objclass,
-                        (int(self._res/3), int(self._res/1.5)),  # bottom-left corner of text
+                        (int(self._res/10), int(self._res/1.5)),  # bottom-left corner of text
                         cv2.FONT_HERSHEY_SIMPLEX,   # font type
-                        0.5,  # font scale
+                        0.4,  # font scale
                         color=_legend_text_color)  # color of font
             # Now I need to transpose the img_text to fit my convention (x,y)
             img_text = np.swapaxes(img_text, 0, 1)

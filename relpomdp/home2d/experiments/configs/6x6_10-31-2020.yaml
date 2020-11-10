@@ -14,6 +14,9 @@ init_robot_pose: [0, 0, 0]
 
 room_types:
   - Kitchen
+  - Office
+  - Bathroom
+  - Bedroom
 
 objects:
   Office:
