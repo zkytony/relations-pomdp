@@ -84,7 +84,7 @@ def make_trials(env_file,
 
     random.shuffle(all_trials)
     output_dir = "./results"
-    exp = Experiment("Search2DExperiment",
+    exp = Experiment("Search2DExperiment_%d-%d" % (domain_config["width"], domain_config["length"]),
                      all_trials, output_dir, verbose=True, add_timestamp=False)
     exp.generate_trial_scripts(split=6, exist_ok=True)
     print("Find multiple computers to run these experiments.")
@@ -92,7 +92,7 @@ def make_trials(env_file,
 
 if __name__ == "__main__":
     env_file = "test-envs-1.pkl"
-    domain_config_file = "10x10_10-20-2020.yaml"
+    domain_config_file = "6x6_10-31-2020.yaml" #"10x10_10-20-2020.yaml"
     dffc_score_file = "difficulty-try1-10-20-2020-20201026162744897.csv"
     corr_score_file = "correlation-try1-10-20-2020.csv"
     subgoal_score_file = "subgoal-scores=try1.csv"

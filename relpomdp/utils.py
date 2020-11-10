@@ -7,7 +7,7 @@ def mean_ci_normal(series, confidence_interval=0.95):
     ### CODE BY CLEMENT at LIS ###
     """Confidence interval for normal distribution with unknown mean and variance.
 
-    Interpretation: 
+    Interpretation:
     An easy way to remember the relationship between a 95%
     confidence interval and a p-value of 0.05 is to think of the confidence interval
     as arms that "embrace" values that are consistent with the data. If the null
@@ -41,10 +41,10 @@ def perplexity(p, base=2):
     The interpretation of entropy is "level of information",
     or "level of uncertainty" inherent in the distribution.
     Higher entropy indicates higher "randomness" of the
-    distribution. You can actually observe the scale of 
+    distribution. You can actually observe the scale of
 
     "p(x) * log_2 p(x)" in a graph tool (e.g. Desmos).
-    
+
     I made the probability distribution of x to be P(x) = 1/2 * (sin(x)+1).
     (It's not normalized, but it's still a distribution.)
     You observe that when P(x) approaches 1, the value of p(x) * log_2 p(x)
@@ -52,7 +52,7 @@ def perplexity(p, base=2):
     is the value of p(x) * log_2 p(x). You can understand it has,
     if p(x) * log_2 p(x) --> 0, then the value of x here does not
     contribute much to the uncertainty since P(x) --> 1.
-    Thus, if we sum up these quantities 
+    Thus, if we sum up these quantities
 
     "sum_x p(x) * log_2 p(x)"
     we can understand it as: the lower this sum, the more uncertainty there is.
@@ -70,7 +70,7 @@ def perplexity(p, base=2):
     how "different" two distributions are. KL divergence of 0 means identical.
 
     How do you use perplexity to compare two distributions? You compute the
-    perplexity of both. 
+    perplexity of both.
 
     Also refer to: https://www.cs.rochester.edu/u/james/CSC248/Lec6.pdf
 
@@ -125,7 +125,7 @@ def compute_mean_ci(results):
     """Given `results`, a dictionary mapping "result_type" to a list of values
     for this result_type, compute the mean and confidence intervals for each
     of the result type. It will add a __summary__ key to the given dictionary.x"""
-    results["__summary__"] = {}    
+    results["__summary__"] = {}
     for restype in results:
         if restype.startswith("__"):
             continue
