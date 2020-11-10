@@ -70,11 +70,7 @@ def main():
     try:
         for i in range(args.num_trials):
             print("Generating environment that surely contains %s" % args.target_class)
-            env = generate_world(config, seed=100)
-            add_room_states(env)
-            while len(env.ids_for(args.target_class)) == 0:
-                env = generate_world(config)
-                add_room_states(env)
+            env = generate_world(config, seed=100, required_classes={args.target_class})
 
             # # MDP
             # env_copy = copy.deepcopy(env)

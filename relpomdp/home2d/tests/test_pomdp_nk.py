@@ -1,13 +1,9 @@
 # This POMDP begins with no map
 
 import pomdp_py
-from relpomdp.home2d.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent import NKAgentViz, Laser2DSensor, NKAgent, FakeSLAM
-from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
 from relpomdp.home2d.domain.maps.build_map import random_world
 from relpomdp.home2d.agent.policy_model import GreedyActionPrior
-from relpomdp.home2d.domain.action import MoveN
-from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.utils import save_images_and_compress

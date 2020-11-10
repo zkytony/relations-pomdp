@@ -2,12 +2,7 @@
 # Begins with uniform prior
 
 import pomdp_py
-from relpomdp.home2d.tests.test_fake_slam import wait_for_action
-from relpomdp.home2d.tests.test_pomdp_nk import test_pomdp_nk
 from relpomdp.home2d.agent import NKAgent, FakeSLAM, Laser2DSensor, NKAgentViz
-from relpomdp.home2d.domain.maps.build_map import random_world
-from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
-from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.policy_model import GreedyActionPrior
 from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS

@@ -54,7 +54,7 @@ class RandomPolicyModel(pomdp_py.RolloutPolicy):
 
     @property
     def all_motion_actions(self):
-        return self._motion_actions
+        return self._motions
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]

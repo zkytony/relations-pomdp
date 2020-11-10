@@ -1,10 +1,6 @@
 import pomdp_py
 from sciex import Event
-from relpomdp.home2d.tests.test_fake_slam import wait_for_action
 from relpomdp.home2d.agent import NKAgent, FakeSLAM, Laser2DSensor, NKAgentViz
-from relpomdp.home2d.domain.maps.build_map import random_world
-from relpomdp.home2d.agent.transition_model import CanDeclareFound, DeclareFoundEffect
-from relpomdp.home2d.domain.env import Home2DEnvironment
 from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
 from test_utils import add_target, random_policy_model, make_world
