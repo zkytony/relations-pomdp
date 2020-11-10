@@ -117,38 +117,35 @@ def belief_fit_map(target_belief, updated_partial_map, **kwargs):
     ### Basically we want to rescale the normalized belief to fit onto the updated map.
     updated_map_locations = updated_partial_map.frontier() | updated_partial_map.free_locations
 
-    ## Belief update.
-    if len(target_belief) <= len(updated_map_locations):
-        smaller_norm, bigger_norm = len(target_belief), len(updated_map_locations)
-    else:
-        smaller_norm, bigger_norm = len(updated_map_locations), len(target_belief)
+    belief_size = len(target_belief)
+    next_belief_size = len(updated_map_locations)
 
-    new_norm_target_hist = {state:target_belief[state]*(smaller_norm/bigger_norm)
-                            for state in target_belief}
-    updated_total_prob = 1. - sum(new_norm_target_hist.values()) # The total unnormalized probability in the expanded region
-    target_class = target_belief.random().objclass
+    # Make sure target belief is normalized
+    total_prob = sum(target_belief[s] for s in target_belief)
+    assert abs(total_prob - 1.0) <= 1e-9
 
+    # Update/Rescale existing beliefs
     target_hist = {}
-    for x, y in updated_map_locations:
-        target_state = Objstate(target_class, pose=(x,y))
-        if target_state in new_norm_target_hist:
-            target_hist[target_state] = new_norm_target_hist[target_state]
-        else:
-            if bigger_norm - smaller_norm == 0:
-                # The map did not expand, but we encounter a new target state.
-                # This can happen when target state is outside of the boundary wall
-                assert abs(updated_total_prob) <= 1e-9, "updated_total_prob: {}".format(abs(updated_total_prob))
-                target_hist[target_state] = updated_total_prob
-            else:
-                target_hist[target_state] = updated_total_prob / (bigger_norm - smaller_norm)
-    ## Then, renormalize
-    prob_sum = sum(target_hist[state] for state in target_hist)
+    locations_in_hist = set()
+    prob_in_hist = 0.0
+    for target_state in target_belief:
+        if target_state["pose"] in updated_map_locations:
+            target_hist[target_state] = target_belief[target_state] * (belief_size / next_belief_size)
+            locations_in_hist.add(target_state["pose"])
+            prob_in_hist += target_hist[target_state]
 
+    # Assign uniform complement belief over new locations
+    target_class = target_belief.random().objclass
+    new_locations = updated_map_locations - locations_in_hist
+    for x, y in new_locations:
+        target_state = Objstate(target_class, pose=(x,y))
+        target_hist[target_state] = (1.0 - prob_in_hist) / len(new_locations)
+        prob_in_hist += target_hist[target_state]
+
+    # Renormalize
+    prob_sum = sum(target_hist[state] for state in target_hist)
     for target_state in target_hist:
-        assert target_hist[target_state] >= -1e-9,\
-            "Belief {} is invalid".format(target_hist[target_state])
-        target_hist[target_state] = max(target_hist[target_state], 1e-32)
-        target_hist[target_state] /= prob_sum
+        target_hist[target_state] /= prob_in_hist
 
     if kwargs.get("get_dict", False):
         return target_hist
