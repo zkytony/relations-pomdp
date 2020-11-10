@@ -36,6 +36,28 @@ def select_subgoal(df_subgoal, target_class, excluded_classes=set()):
             best_subgoal = subgoal_class
     return best_subgoal
 
+def subgoal_sequence(target_class,
+                     df_subgoal, df_difficulty,
+                     difficulty_threshold="Kitchen"):
+    """Utility function that returns a sequence of subgoals needed
+    to find the given target class. Not actually used by any other
+    function in this file."""
+    if type(difficulty_threshold) == str:
+        difficulty_threshold = difficulty(df_difficulty, difficulty_threshold)
+    task_difficulty = difficulty(df_difficulty, target_class)
+    subgoals = [target_class]
+    excluded_classes = set()
+    while task_difficulty > difficulty_threshold:
+        # Select subgoal
+        subgoal_class = select_subgoal(df_subgoal, subgoals[-1],
+                                       excluded_classes=excluded_classes)
+        subgoals.append(subgoal_class)
+        # Recompute difficulty
+        task_difficulty = difficulty(df_difficulty, subgoal_class)
+        excluded_classes.add(subgoal_class)
+    return subgoals
+
+
 def uniform_belief(objclass, nk_agent):
     obj_hist = {}
     total_prob = 0.0
