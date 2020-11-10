@@ -3,7 +3,7 @@
 width: 6
 length: 6
 
-nrooms: 2
+nrooms: 1
 ndoors: 2
 
 min_room_size: 2
@@ -14,9 +14,6 @@ init_robot_pose: [0, 0, 0]
 
 room_types:
   - Kitchen
-  - Office
-  - Bedroom
-  - Bathroom
 
 objects:
   Office:

@@ -3,11 +3,15 @@ from sciex import Experiment, Trial, Event, Result,\
 import pickle
 import os
 import copy
-
+from relpomdp.home2d.tests import *
+from relpomdp.home2d.constants import FILE_PATHS
+from relpomdp.home2d.experiments.reward_result import RewardsResult
+from relpomdp.home2d.experiments.states_result import StatesResult
+from relpomdp.home2d.experiments.history_result import HistoryResult
 
 
 class RelPOMDPTrial(Trial):
-    RESULT_TYPES = [RewardsResult, StatesResult]
+    RESULT_TYPES = [RewardsResult, StatesResult, HistoryResult]
     def __init__(self, name, config, verbose=False):
         super().__init__(name, config, verbose=verbose)
 
@@ -16,7 +20,7 @@ class RelPOMDPTrial(Trial):
 
     def run(self, logging=False):
         # Path where the test environments are stored
-        env_path = self._config["env_path"]
+        env_path = os.path.join(FILE_PATHS["exp_worlds"], self._config["env_file"])
 
         # ID of the environment to be used for this trial
         env_id = self._config["env_id"]
@@ -47,8 +51,8 @@ class RelPOMDPTrial(Trial):
         # target sensor and slam sensor params
         target_sensor_config = {}
         slam_sensor_config = {}
-        for sensor_name in config["sensors"]:
-            cfg = config["sensors"][sensor_name]
+        for sensor_name in domain_config["sensors"]:
+            cfg = domain_config["sensors"][sensor_name]
             if target_class in cfg["noises"]:
                 target_sensor_config = copy.deepcopy(cfg)
                 target_sensor_config["noises"] = target_sensor_config["noises"][target_class]
@@ -58,9 +62,9 @@ class RelPOMDPTrial(Trial):
 
         # Load scoring files, for subgoal agents
         if "subgoal" in agent_type:
-            df_corr = pd.read_csv(self._config["corr_score_file"])
-            df_dffc = pd.read_csv(self._config["diffc_score_file"])
-            df_subgoal = pd.read_csv(self._config["args.subgoal_score_file"])
+            df_corr = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["corr_score_file"]))
+            df_dffc = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["diffc_score_file"]))
+            df_subgoal = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["subgoal_score_file"]))
 
         # Run
         visualize = self._config["visualize"]
@@ -77,44 +81,50 @@ class RelPOMDPTrial(Trial):
                                                   slam_sensor_config=slam_sensor_config,
                                                   visualize=visualize,
                                                   logger=self.logg,
-                                                  **params)
+                                                  **planning_config)
         elif agent_type == "pomdp-nk":
             rewards, states, history = test_pomdp_nk(env, target_class,
                                                      target_sensor_config=target_sensor_config,
                                                      slam_sensor_config=slam_sensor_config,
                                                      visualize=visualize,
                                                      logger=self.logg,
-                                                     **params)
+                                                     **planning_config)
         elif agent_type == "pomdp-subgoal":
-            rewards, states, history = test_subgoals_agent(env_copy, args.target_class, config,
+            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
                                                            visualize=visualize,
                                                            full_map=True,
                                                            logger=self.logg,
-                                                           **params)
+                                                           **planning_config)
         elif agent_type == "pomdp-subgoal-nk":
-            rewards, states, history = test_subgoals_agent(env_copy, args.target_class, config,
+            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
                                                            visualize=visualize,
                                                            full_map=False,
                                                            logger=self.logg,
-                                                           **params)
+                                                           **planning_config)
         elif agent_type == "pomdp-subgoal-nk-no_corr":
-            rewards, states, history = test_subgoals_agent(env_copy, args.target_class, config,
+            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=False,
                                                            visualize=visualize,
                                                            full_map=False,
                                                            logger=self.logg,
-                                                           **params)
+                                                           **planning_config)
         elif agent_type == "random-nk":
-            rewards, states, history = test_random_nk(env_copy, args.target_class,
+            rewards, states, history = test_random_nk(env_copy, target_class,
                                                       slam_sensor_config=slam_sensor_config,
                                                       visualize=visualize,
                                                       logger=self.logg,
-                                                      **params)
+                                                      **planning_config)
+        elif agent_type == "heuristic-nk":
+            rewards, states, history = test_heuristic_nk(env_copy, target_class,
+                                                         slam_sensor_config=slam_sensor_config,
+                                                         visualize=visualize,
+                                                         logger=self.logg,
+                                                         **planning_config)
         else:
             if logging:
                 self.log_event(Event("Trial %s | ERROR unknown agent type %s" % (self.name, agent_type)))
