@@ -5,10 +5,12 @@ import pickle
 import yaml
 import copy
 import time
+import subprocess
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.tests.test_utils import update_map
 from relpomdp.oopomdp.framework import Objstate, OOState, OOBelief
 from relpomdp.home2d.agent import NKAgentViz, Laser2DSensor, NKAgent, FakeSLAM
+from relpomdp.home2d.utils import save_images_and_compress
 
 def main():
     parser = argparse.ArgumentParser(description="replay a trial")
@@ -68,6 +70,7 @@ def main():
     _gamma = 1.0
     _discount_factor = trial.config["planning"]["discount_factor"]
     _disc_reward = 0.0
+    _game_states = []
     target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
         start_time = time.time()
@@ -94,14 +97,23 @@ def main():
                     env.state.object_states[target_id].get("is_found", False))
 
         viz.on_loop()
-        viz.on_render(belief)
+        _, _, img = viz.on_render(belief)
         print(_step_info)
+        _game_states.append(img)
 
         step_time = time.time() - start_time
         if args.delay is not None and step_time < args.delay:
             time.sleep(args.delay - step_time)
 
+
     viz.on_cleanup()
+
+    if args.save:
+        print("Saving images...")
+        dirp = args.trial_path
+        save_images_and_compress(_game_states,
+                                 dirp)
+        subprocess.Popen(["nautilus", dirp])
 
 
 if __name__ == "__main__":

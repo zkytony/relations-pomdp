@@ -116,7 +116,7 @@ class NKAgentViz(Home2DViz):
                                    (rx, ry, th,
                                     fps_text))
         pygame.display.flip()
-        return img_agent, img_world
+        return img_agent, img_world, img
 
     @staticmethod
     def draw_object_belief(img, r, belief, color,

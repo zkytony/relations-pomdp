@@ -46,9 +46,13 @@ class RewardsResult(YamlResult):
     def save_gathered_results(cls, gathered_results, path):
         all_rows = []
         for global_name in gathered_results:
-            target_class = global_name.split("-")[1]
-            world_width = global_name.split("-")[2]
-            world_length = global_name.split("-")[3]
+            # Oops - TODO: You should fix this when generating trials
+            global_name_parsing = global_name.replace("Single-bed", "Single#bed")
+            global_name_parsing = global_name_parsing.replace("Countertop-wood", "Countertop#wood")
+
+            target_class = global_name_parsing.split("-")[1]
+            world_width = global_name_parsing.split("-")[2][1:]
+            world_length = global_name_parsing.split("-")[3][1:]
 
             case_rows = gathered_results[global_name]
             for row in case_rows:
@@ -90,5 +94,5 @@ class RewardsResult(YamlResult):
                                 line_offset=0.02,
                                 offset_basis="ymean",
                                 verbose=2)
-
+        ax.set_title("Overall Performance (%s x %s)" % (world_width, world_length))
         plt.savefig(os.path.join(path, "rewards.png"))

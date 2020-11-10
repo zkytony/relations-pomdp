@@ -85,7 +85,7 @@ def make_trials(env_file,
 
                 for i in range(trials_per_env):
                     trial_name = "search-%s-w%d-l%d-nrooms%d-nsubgoals%d_%d%d_%s"\
-                        % (target_class, domain_config["width"], domain_config["length"],
+                        % (target_class.replace("-","#"), domain_config["width"], domain_config["length"],
                            domain_config["nrooms"], len(subgoals),
                            env_id, i, agent_type)
                     trial = RelPOMDPTrial(trial_name, config, verbose=True)
