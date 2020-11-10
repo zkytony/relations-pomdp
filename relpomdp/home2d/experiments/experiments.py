@@ -58,8 +58,8 @@ def make_trials(env_file,
     }
 
     all_trials = []
-    count = 0
     for target_class in target_classes:
+        count = 0
         for env_id in envs:
             env = envs[env_id]
             shared_config["env_id"] = env_id
@@ -104,7 +104,7 @@ def make_trials(env_file,
 
 if __name__ == "__main__":
     # Experiment-level configurations
-    dims = (10, 10)
+    dims = (6, 6)
     if dims == (10, 10):
         env_file = "test-envs-10x10.pkl"
         domain_config_file = "10x10_10-20-2020.yaml"
