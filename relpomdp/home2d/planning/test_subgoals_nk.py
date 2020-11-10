@@ -11,7 +11,7 @@ from relpomdp.home2d.learning.correlation_observation_model\
     import compute_detections, CorrelationObservationModel
 from relpomdp.oopomdp.framework import OOState, OOBelief
 from relpomdp.home2d.constants import FILE_PATHS
-from test_utils import add_reach_target, difficulty, correlation,\
+from relpomdp.home2d.planning.test_utils import add_reach_target, difficulty, correlation,\
     add_target, preferred_policy_model, update_map, belief_fit_map
 import copy
 import time
@@ -218,7 +218,7 @@ def _run_search(nk_agent, target_class, target_id,
 
     _nsteps = kwargs.get("nsteps", 100)
     for step in range(_nsteps):
-        # Visualize
+
         if viz is not None:
             viz.on_loop()
             img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
@@ -354,7 +354,7 @@ def _run_search(nk_agent, target_class, target_id,
 def test_subgoals_agent(env, target_class, config,
                         df_corr, df_dffc, df_subgoal,
                         difficulty_threshold="Kitchen",
-                        nsteps=10, discount_factor=0.95, max_depth=15,
+                        nsteps=100, discount_factor=0.95, max_depth=15,
                         num_sims=300, exploration_constant=100,
                         use_correlation_belief_update=True,
                         target_sensor_config={},

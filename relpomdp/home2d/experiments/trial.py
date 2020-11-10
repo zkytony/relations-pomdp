@@ -41,7 +41,7 @@ class RelPOMDPTrial(Trial):
                               "pomdp-subgoal",   # uses subgoal, with full map
                               "pomdp-nk",        # only cares about the target, no full map
                               "pomdp-subgoal-nk",   # uses subgoal, no full map
-                              "pomdp-subgoal-nk-no_corr",   # uses subgoal, no correlation belief udpate, no full map
+                              "pomdp-subgoal-nk-nocorr",   # uses subgoal, no correlation belief udpate, no full map
                               "random-nk",       # random action
                               "heuristic-nk"}    # heuristic
 
@@ -105,7 +105,7 @@ class RelPOMDPTrial(Trial):
                                                            full_map=False,
                                                            logger=self.logg,
                                                            **planning_config)
-        elif agent_type == "pomdp-subgoal-nk-no_corr":
+        elif agent_type == "pomdp-subgoal-nk-nocorr":
             rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=False,

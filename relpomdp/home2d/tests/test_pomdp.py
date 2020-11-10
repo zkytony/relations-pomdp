@@ -8,7 +8,7 @@ from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.oopomdp.framework import Objstate, OOState
 from relpomdp.home2d.utils import save_images_and_compress
-from test_utils import add_target, random_policy_model, make_world,\
+from relpomdp.home2d.tests.test_utils import add_target, random_policy_model, make_world,\
     preferred_policy_model
 import subprocess
 import copy

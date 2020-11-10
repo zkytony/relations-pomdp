@@ -3,7 +3,7 @@ from sciex import Event
 from relpomdp.home2d.agent import NKAgent, FakeSLAM, Laser2DSensor, NKAgentViz
 from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
-from test_utils import add_target, random_policy_model, make_world
+from relpomdp.home2d.tests.test_utils import add_target, random_policy_model, make_world
 import copy
 
 def build_mdp_agent(env, target_class,
