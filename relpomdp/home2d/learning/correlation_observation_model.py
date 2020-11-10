@@ -64,24 +64,10 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         Returns True if the object (e.g. salt) and the reference (e.g. pepper, or Kitchen)
         are spatially correlated, on given grid_map
         """
-        if object_pose in frontier:
-            # pose in frontier - will be treated as having the same
-            # room type as an adjacent room node. (Note: ad-hoc)
-            reference_room = grid_map.room_of(reference_pose)
-            if reference_room is None:
-                return False
-
-            assert grid_map.room_of(object_pose) is None
-            x, y = object_pose
-            if grid_map.room_of((x+1,y)) == reference_room\
-               or grid_map.room_of((x-1,y)) == reference_room\
-               or grid_map.room_of((x,y+1)) == reference_room\
-               or grid_map.room_of((x,y-1)) == reference_room:
-                return True
-            return False
-
-        else:
-            return grid_map.same_room(object_pose, reference_pose)
+        assert object_pose not in frontier,\
+            "Object pose in frontier;"\
+            "Room-based spatial correlation shouldn't be tested for this pose"
+        return grid_map.same_room(object_pose, reference_pose)
 
 
     def probability(self, observation, next_state, action,
@@ -110,7 +96,12 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         given_class_pose = given_object_state["pose"]
 
         if given_class_pose in frontier:
-            return 1.0
+            # Give uniform probability to poses in frontier, whose
+            # spatial correlation probability will not be computed;
+            # If a location keeps being in the frontier, its correlation
+            # will be decreasing compared to other explored locations inside
+            # the room of the reference (i.e. detected class).
+            return 0.5
 
         if type(observation) == tuple:
             detected_classes, detected_ids, detected_poses = observation

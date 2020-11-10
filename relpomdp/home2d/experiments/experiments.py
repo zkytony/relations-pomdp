@@ -45,7 +45,7 @@ def make_trials(env_file,
         "planning": {
             "discount_factor": 0.95,
             "nsteps": 100,
-            "max_depth": 30,
+            "max_depth": 20,
             "num_sims": 1000
         }
     }
@@ -86,13 +86,13 @@ def make_trials(env_file,
     output_dir = "./results"
     exp = Experiment("Search2DExperiment_%d-%d" % (domain_config["width"], domain_config["length"]),
                      all_trials, output_dir, verbose=True, add_timestamp=False)
-    exp.generate_trial_scripts(split=6, exist_ok=True)
+    exp.generate_trial_scripts(split=6, exist_ok=False)
     print("Find multiple computers to run these experiments.")
 
 
 if __name__ == "__main__":
     # Experiment-level configurations
-    dims = (6, 6)
+    dims = (10, 10)
     if dims == (10, 10):
         env_file = "test-envs-10x10.pkl"
         domain_config_file = "10x10_10-20-2020.yaml"
