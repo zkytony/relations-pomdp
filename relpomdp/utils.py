@@ -3,7 +3,7 @@ import scipy.stats
 import pandas as pd
 import random
 
-def mean_ci_normal(series, confidence_interval=0.95):
+def ci_normal(series, confidence_interval=0.95):
     ### CODE BY CLEMENT at LIS ###
     """Confidence interval for normal distribution with unknown mean and variance.
 
@@ -25,7 +25,7 @@ def mean_ci_normal(series, confidence_interval=0.95):
     y_error = scipy.stats.sem(series)
 
     half_width = y_error * tscore
-    return y_mean, half_width
+    return half_width
 
 def perplexity(p, base=2):
     """Measures how well a probability model predicts a sample (from the same
