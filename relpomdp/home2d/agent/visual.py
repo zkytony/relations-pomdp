@@ -40,8 +40,9 @@ class NKAgentViz(Home2DViz):
         """pygame init"""
         pygame.init()  # calls pygame.font.init()
         # init main screen and background
+        self._legend_height = self._res
         self._display_surf = pygame.display.set_mode((self.img_width*2,
-                                                      self.img_height),
+                                                      self.img_height+self._legend_height),
                                                      pygame.HWSURFACE)
         self._background = pygame.Surface(self._display_surf.get_size()).convert()
         self._clock = pygame.time.Clock()
@@ -55,14 +56,11 @@ class NKAgentViz(Home2DViz):
         img_world = self.render_env(self._display_surf)
         img_world = cv2.flip(img_world, 1)
 
-        # # Renders the true world. Then plot agent's world
-        # img_world = super().on_render()
-
-        # self._fig.clear()
         img_agent = self.make_agent_view(self._res,
                                          range_sensor=kwargs.get("range_sensor", None))
-        used_colors = {}
 
+        # Draw beliefs
+        used_colors = {}
         if belief is not None:
             circle_drawn = {}
             for objid in belief.object_beliefs:
@@ -76,9 +74,37 @@ class NKAgentViz(Home2DViz):
                                               circle_drawn=circle_drawn)
                 used_colors[objclass] = color
 
+        # Create a banner at the bottom as a legend...
+        _legend_bg = 20.0
+        _legend_text_color = (255, 255, 255)
+        _legend_item_span = 4  # number of grid cells the legend item spans (cirlce+text)
+        img_legend = np.full((self.img_width*2, self._legend_height, 3), _legend_bg)
+        x, y = 0, 0
+        radius = int(round(self._res / 2))
+        for objclass in used_colors:
+            color = used_colors[objclass]
+            cv2.circle(img_legend, (y*self._res+radius,
+                                    x*self._res+radius),
+                       self._res // 3, color, thickness=-1)
+            # put text; Notice that opencv wants (y, x) coordinates,
+            # so I'm creating `img_text` according to this convention
+            img_text = np.full((self._res, self._res*_legend_item_span, 3), _legend_bg)
+            cv2.putText(img_text, objclass,
+                        (int(self._res/3), int(self._res/1.5)),  # bottom-left corner of text
+                        cv2.FONT_HERSHEY_SIMPLEX,   # font type
+                        0.5,  # font scale
+                        color=_legend_text_color)  # color of font
+            # Now I need to transpose the img_text to fit my convention (x,y)
+            img_text = np.swapaxes(img_text, 0, 1)
+            img_legend[x*self._res+radius*2:(x+_legend_item_span)*self._res+radius*2, :]\
+                = img_text
+            x += _legend_item_span  # skip over enough
+
+
         # rotate 90 deg CCW to match the pygame display
         img_agent = cv2.flip(img_agent, 1)
-        img = np.vstack([img_world, img_agent])
+        img = np.vstack([img_agent, img_world])
+        img = np.hstack([img, img_legend])
         pygame.surfarray.blit_array(self._display_surf, img)
 
         # The rest is a copy-paste from super's on_render
@@ -95,7 +121,7 @@ class NKAgentViz(Home2DViz):
                            circle_drawn={}, use_alpha=True):
         """
         circle_drawn: map from pose to number of times drawn;
-            Used to determine sizxe of circle to draw at a location
+            Used to determine size of circle to draw at a location
         """
         radius = int(round(r / 2))
         size = r // 3
