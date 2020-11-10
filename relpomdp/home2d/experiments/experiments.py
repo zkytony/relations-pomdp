@@ -73,7 +73,9 @@ def make_trials(env_file,
                 config["planning"]["difficulty_threshold"] = "Kitchen"
 
             for i in range(trials_per_env):
-                trial_name = "search-%s_%d%d_%s" % (target_class, env_id, i, agent_type)
+                trial_name = "search-%s-%d-%d_%d%d_%s"\
+                    % (target_class, domain_config["width"], domain_config["length"],
+                       env_id, i, agent_type)
                 trial = RelPOMDPTrial(trial_name, config, verbose=True)
                 all_trials.append(trial)
         count += 1

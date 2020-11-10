@@ -71,7 +71,7 @@ class RelPOMDPTrial(Trial):
         # Run
         ## FOR DEBUGGING
         # visualize = True #self._config["visualize"]
-        # planning_config["nsteps"] = 5
+        # planning_config["nsteps"] = 10
         visualize = self._config["visualize"]
         if agent_type == "mdp":
             rewards, states, history = test_mdp(env, target_class,
