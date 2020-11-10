@@ -31,6 +31,9 @@ def main():
     with open(os.path.join(args.trial_path, "history.pkl"), "rb") as f:
         history = pickle.load(f)
 
+    with open(os.path.join(args.trial_path, "rewards.yaml"), "rb") as f:
+        rewards = yaml.load(f, Loader=yaml.Loader)
+
     init_robot_pose = env.state.object_states[env.robot_id]["pose"]
     nk_agent = NKAgent(env.robot_id, init_robot_pose)
 
@@ -44,14 +47,24 @@ def main():
                                        min_range=slam_sensor_config.get("min_range", 1),
                                        max_range=slam_sensor_config.get("max_range", 3),
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
+
+    # Create visualization
+    with open(FILE_PATHS["colors"]) as f:
+        colors = yaml.load(f)
+        for objclass in colors:
+            colors[objclass] = pomdp_py.util.hex_to_rgb(colors[objclass])
     viz = NKAgentViz(nk_agent,
                      env,
-                     {},
+                     colors,
                      res=30,
                      controllable=True,
                      img_path=FILE_PATHS["object_imgs"])
     viz.on_init()
 
+    _gamma = 1.0
+    _discount_factor = trial.config["planning"]["discount_factor"]
+    _disc_reward = 0.0
+    target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
         viz.on_loop()
 
@@ -64,10 +77,19 @@ def main():
         viz.on_render(belief)
 
         prev_robot_pose = env.state.object_states[env.robot_id]["pose"]
-        reward = env.state_transition(action, execute=True,
-                                      robot_id=env.robot_id)
+        _ = env.state_transition(action, execute=True,
+                                 robot_id=env.robot_id)
+        reward = rewards[i]
         robot_pose = env.state.object_states[env.robot_id]["pose"]
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
+
+        _disc_reward += reward * gamma
+        _gamma *= discount_factor
+        _step_info = "Step {} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    RobotPose: {}   TargetFound: {}"\
+            .format(i+1, action, reward, _disc_reward,
+                    robot_pose,
+                    env.state.object_states[target_id].get("is_found", False))
+        print(_step_info)
 
     viz.on_cleanup()
 
