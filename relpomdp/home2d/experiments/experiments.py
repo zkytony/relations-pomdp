@@ -116,9 +116,12 @@ if __name__ == "__main__":
     corr_score_file = "correlation-try1-10-20-2020.csv"
     subgoal_score_file = "subgoal-scores=try1.csv"
 
-    target_classes = {"Salt", "Toilet", "Oven", "Kitchen"}
+    target_classes = {"Salt", # Hard to detect, 1 subgoal
+                      "Pepper", # Hard to detect, 2 subgoals
+                      "Single-bed", # Easy to detect, 1 subgoals
+                      "Computer"} # Easy to detect, 2 subgoals
 
-    num_envs = 10
+    num_envs = 15
     trials_per_env = 1
 
     make_trials(env_file,
