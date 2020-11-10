@@ -52,7 +52,9 @@ def heuristic_action_selection(nk_agent, robot_pose, visit_counts={}):
             chosen_motion = motion
     return chosen_motion
 
-def step_heuristic_nk(env, nk_agent, fake_slam, target_id, declare_next=False, visit_counts={}):
+def step_heuristic_nk(env, nk_agent, fake_slam, target_id,
+                      declare_next=False, visit_counts={},
+                      true_pos_rate=1.0):
     """Runs a step in the MDP simulation"""
     policy_model = random_policy_model(nk_agent)
     agent = nk_agent.instantiate(policy_model)
@@ -89,23 +91,25 @@ def step_heuristic_nk(env, nk_agent, fake_slam, target_id, declare_next=False, v
     # See if declare next
     if observation.object_observations[target_id]["pose"] is not None:
         if robot_pose[:2] == observation.object_observations[target_id]["pose"]:
-            declare_next = True
+            if random.uniform(0,1) < true_pos_rate:
+                # Sensor functioning - believes in observation
+                declare_next = True
     return action, copy.deepcopy(env.state), observation, reward, declare_next
 
 
 def test_heuristic_nk(env, target_class,
-                   discount_factor=0.95,
-                   nsteps=100, save=False,
-                   target_sensor_config={},
-                   slam_sensor_config={},
-                   visualize=True,
-                   logger=None, **kwargs):
+                      discount_factor=0.95,
+                      nsteps=100, save=False,
+                      target_sensor_config={},
+                      slam_sensor_config={},
+                      visualize=True,
+                      logger=None, **kwargs):
     robot_id = env.robot_id
     target_id = list(env.ids_for(target_class))[0]
 
     nk_agent, fake_slam = build_heuristic_nk_agent(env, target_class,
-                                               target_sensor_config=target_sensor_config,
-                                               slam_sensor_config=slam_sensor_config)
+                                                   target_sensor_config=target_sensor_config,
+                                                   slam_sensor_config=slam_sensor_config)
 
     # policy_model = heuristic_policy_model(nk_agent)
     # Visualize and run
@@ -133,9 +137,12 @@ def test_heuristic_nk(env, target_class,
             game_states.append(img)
 
         # Take a step
+        if len(target_sensor_config) > 0:
+            true_pos_rate, false_pos_rate = target_sensor_config["noises"][target_class]
         action, next_state, observation, reward, declare_next = \
             step_heuristic_nk(env, nk_agent, fake_slam, target_id,
-                           declare_next=declare_next)
+                              true_pos_rate=true_pos_rate,
+                              declare_next=declare_next)
 
         # Info and logging
         _disc_reward += _gamma*reward

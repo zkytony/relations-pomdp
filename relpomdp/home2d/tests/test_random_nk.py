@@ -20,7 +20,9 @@ def build_random_nk_agent(env, target_class,
     return nk_agent, fake_slam
 
 
-def step_random_nk(env, nk_agent, fake_slam, target_id, declare_next=False):
+def step_random_nk(env, nk_agent, fake_slam, target_id,
+                   true_pos_rate=1.0,
+                   declare_next=False):
     """Runs a step in the MDP simulation"""
     policy_model = random_policy_model(nk_agent)
     agent = nk_agent.instantiate(policy_model)
@@ -53,7 +55,9 @@ def step_random_nk(env, nk_agent, fake_slam, target_id, declare_next=False):
     # See if declare next
     if observation.object_observations[target_id]["pose"] is not None:
         if robot_pose[:2] == observation.object_observations[target_id]["pose"]:
-            declare_next = True
+            if random.uniform(0,1) < true_pos_rate:
+                # Sensor functioning - believes in observation
+                declare_next = True
     return action, copy.deepcopy(env.state), observation, reward, declare_next
 
 
@@ -97,8 +101,11 @@ def test_random_nk(env, target_class,
             game_states.append(img)
 
         # Take a step
+        if len(target_sensor_config) > 0:
+            true_pos_rate, false_pos_rate = target_sensor_config["noises"][target_class]
         action, next_state, observation, reward, declare_next = \
             step_random_nk(env, nk_agent, fake_slam, target_id,
+                           true_pos_rate=true_pos_rate,
                            declare_next=declare_next)
 
         # Info and logging
