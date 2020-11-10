@@ -68,8 +68,9 @@ def main():
     _disc_reward = 0.0
     target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
-        if len(history) == 2:
+        if len(history[i]) == 2:
             action, observation = history[i]
+            belief = None
         else:
             action, observation, belief = history[i]
             if isinstance(belief, dict):
