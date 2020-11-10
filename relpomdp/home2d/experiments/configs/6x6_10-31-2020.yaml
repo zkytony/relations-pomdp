@@ -3,7 +3,7 @@
 width: 6
 length: 6
 
-nrooms: 1
+nrooms: 2
 ndoors: 2
 
 min_room_size: 2
