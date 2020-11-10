@@ -66,11 +66,7 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         object_pose and reference_pose are in the same room.
         """
         if object_pose in frontier:
-            # So we can't determine spatial correlation of the object pose at
-            # the frontier, because we don't know what's at the frontier. Return
-            # true because we don't want to reduce the chance that it could be a
-            # spatially correlated location
-            return True
+            raise ValueError("Unexpected")
 
         else:
             return grid_map.same_room(object_pose, reference_pose)
@@ -100,6 +96,13 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         frontier = grid_map.frontier()
         given_object_state = next_state.object_states[objid]
         given_class_pose = given_object_state["pose"]
+
+        if given_class_pose in frontier:
+            # So we can't determine spatial correlation of the object pose at
+            # the frontier, because we don't know what's at the frontier. Return
+            # 0.5 because we don't want to rule out the chance that it could be a
+            # spatially correlated location, but we don't want to be absolutely certain.
+            return 0.5
 
         if type(observation) == tuple:
             detected_classes, detected_ids, detected_poses = observation
