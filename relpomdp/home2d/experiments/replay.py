@@ -4,6 +4,7 @@ import pomdp_py
 import pickle
 import yaml
 import copy
+import time
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.tests.test_utils import update_map
 from relpomdp.oopomdp.framework import Objstate, OOState, OOBelief
@@ -13,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description="replay a trial")
     parser.add_argument("trial_path", type=str, help="Path to trial directory")
     parser.add_argument("--save", action="store_true")
+    parser.add_argument("--delay", type=float, help="delay in seconds between two steps")
     args = parser.parse_args()
 
     with open(os.path.join(args.trial_path, "trial.pkl"), "rb") as f:
@@ -68,6 +70,7 @@ def main():
     _disc_reward = 0.0
     target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
+        start_time = time.time()
         if len(history[i]) == 2:
             action, observation = history[i]
             belief = None
@@ -93,6 +96,10 @@ def main():
         viz.on_loop()
         viz.on_render(belief)
         print(_step_info)
+
+        step_time = time.time() - start_time
+        if args.delay is not None and step_time < args.delay:
+            time.sleep(args.delay - step_time)
 
     viz.on_cleanup()
 
