@@ -29,19 +29,13 @@ def heuristic_action_selection(nk_agent, robot_pose, visit_counts={}):
     legal_motions = list(nk_agent.legal_motions[robot_pose[:2]])
     random.shuffle(legal_motions)
 
-    # If frontier is significantly large (30% of free cells)
-    if len(frontier) / len(partial_map.free_locations) >= 0.3:
-        closest_point = None
-        closest_dist = float('inf')
-        for x, y in frontier:
-            dist = euclidean_dist((x, y), robot_pose[:2])
-            if dist <= closest_dist:
-                closest_dist = dist
-                closest_point = (x,y)
-
+    # If frontier is significantly large
+    if len(frontier) >= 5:
+        frontier_point = random.sample(frontier, 1)[0]
+        closest_dist = euclidean_dist(robot_pose[:2], frontier_point)
         for motion in legal_motions:
             next_robot_pose = MoveEffect.move_by(robot_pose, motion)
-            if euclidean_dist(next_robot_pose[:2], closest_point) < closest_dist:
+            if euclidean_dist(next_robot_pose[:2], frontier_point) < closest_dist:
                 return motion
 
     # We don't have a good motion to explore the map. Then,
