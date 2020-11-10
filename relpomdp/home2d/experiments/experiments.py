@@ -40,8 +40,8 @@ def make_trials(env_file,
         "env_file": env_file,
         "visualize": False,
         "corr_score_file": corr_score_file,
-        "dffc_score_file": corr_score_file,
-        "subgoal_score_file": corr_score_file,
+        "dffc_score_file": dffc_score_file,
+        "subgoal_score_file": subgoal_score_file,
         "planning": {
             "discount_factor": 0.95,
             "nsteps": 100,
@@ -62,6 +62,7 @@ def make_trials(env_file,
             "random-nk", "heuristic-nk"
         }
         target_class = "Salt"  # TODO: TRY MORE?
+        shared_config["target_class"] = target_class
         if len(env.ids_for(target_class)) == 0:
             continue
 

@@ -3,7 +3,9 @@ from sciex import Experiment, Trial, Event, Result,\
 import pickle
 import os
 import copy
+import pandas as pd
 from relpomdp.home2d.tests import *
+from relpomdp.home2d.planning.test_subgoals_nk import test_subgoals_agent
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.experiments.reward_result import RewardsResult
 from relpomdp.home2d.experiments.states_result import StatesResult
@@ -63,10 +65,13 @@ class RelPOMDPTrial(Trial):
         # Load scoring files, for subgoal agents
         if "subgoal" in agent_type:
             df_corr = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["corr_score_file"]))
-            df_dffc = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["diffc_score_file"]))
+            df_dffc = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["dffc_score_file"]))
             df_subgoal = pd.read_csv(os.path.join(FILE_PATHS["exp_data"], self._config["subgoal_score_file"]))
 
         # Run
+        ## FOR DEBUGGING
+        # visualize = True #self._config["visualize"]
+        # planning_config["nsteps"] = 5
         visualize = self._config["visualize"]
         if agent_type == "mdp":
             rewards, states, history = test_mdp(env, target_class,
@@ -90,7 +95,7 @@ class RelPOMDPTrial(Trial):
                                                      logger=self.logg,
                                                      **planning_config)
         elif agent_type == "pomdp-subgoal":
-            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
+            rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
                                                            visualize=visualize,
@@ -98,7 +103,7 @@ class RelPOMDPTrial(Trial):
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "pomdp-subgoal-nk":
-            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
+            rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
                                                            visualize=visualize,
@@ -106,7 +111,7 @@ class RelPOMDPTrial(Trial):
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "pomdp-subgoal-nk-nocorr":
-            rewards, states, history = test_subgoals_agent(env_copy, target_class, config,
+            rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=False,
                                                            visualize=visualize,
@@ -114,13 +119,13 @@ class RelPOMDPTrial(Trial):
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "random-nk":
-            rewards, states, history = test_random_nk(env_copy, target_class,
+            rewards, states, history = test_random_nk(env, target_class,
                                                       slam_sensor_config=slam_sensor_config,
                                                       visualize=visualize,
                                                       logger=self.logg,
                                                       **planning_config)
         elif agent_type == "heuristic-nk":
-            rewards, states, history = test_heuristic_nk(env_copy, target_class,
+            rewards, states, history = test_heuristic_nk(env, target_class,
                                                          slam_sensor_config=slam_sensor_config,
                                                          visualize=visualize,
                                                          logger=self.logg,

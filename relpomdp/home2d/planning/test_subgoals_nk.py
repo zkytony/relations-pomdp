@@ -300,9 +300,10 @@ def _run_search(nk_agent, target_class, target_id,
         next_state = copy.deepcopy(env.state)
         _disc_reward[0] += _gamma[0]*reward
         _gamma[0] *= _discount_factor
-        _step_info = "Step {}/{} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    "\
+        _step_info = "Step {}/{} : SearchingFor: {}    Action: {}    NumSims:  {}    Reward: {}    DiscCumReward: {:.4f}    "\
             "Detections: {}    RobotPose: {}   TargetFound: {}"\
-            .format(step+1, _nsteps, action, reward, _disc_reward[0], detected_classes,
+            .format(step+1, _nsteps, target_class, action, planner.last_num_sims,
+                    reward, _disc_reward[0], detected_classes,
                     next_state.object_states[env.robot_id]["pose"],
                     next_state.object_states[target_id].get("is_found", False))
         if logger is None:
@@ -312,7 +313,7 @@ def _run_search(nk_agent, target_class, target_id,
 
         _rewards.append(reward)
         _states.append(next_state)
-        _history.append((action, observation, copy.deepcopy(nk_agent.object_belief)))
+        _history.append((action, observation, copy.deepcopy(nk_agent.object_beliefs)))
 
         # Check termination
         subgoal_ids = set(subgoal_id for _, subgoal_id in all_reaching_goals)

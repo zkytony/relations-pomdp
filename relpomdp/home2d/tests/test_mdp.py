@@ -94,8 +94,8 @@ def test_mdp(env, target_class,
         # Info and logging
         _disc_reward += _gamma*reward
         _gamma *= discount_factor
-        _step_info = "Step {} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    RobotPose: {}   TargetFound: {}"\
-            .format(i+1, action, reward, _disc_reward,
+        _step_info = "Step {} : Action: {}    NumSims: {}    Reward: {}    DiscCumReward: {:.4f}    RobotPose: {}   TargetFound: {}"\
+            .format(i+1, action, planner.last_num_sims, reward, _disc_reward,
                     next_state.object_states[env.robot_id]["pose"],
                     next_state.object_states[target_id].get("is_found", False))
         if logger is None:
