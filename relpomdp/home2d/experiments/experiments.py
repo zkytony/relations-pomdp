@@ -33,7 +33,7 @@ def make_trials(env_file,
         envs = pickle.load(f)
 
     with open(os.path.join(FILE_PATHS["exp_config"], domain_config_file)) as f:
-        domain_config = yaml.load(f)
+        domain_config = yaml.load(f, Loader=yaml.Loader)
 
     shared_config = {
         "domain": domain_config,
@@ -79,7 +79,7 @@ def make_trials(env_file,
                 trial = RelPOMDPTrial(trial_name, config, verbose=True)
                 all_trials.append(trial)
         count += 1
-        if count >= num_envs:
+        if count >= num_envs:\
             break
 
     random.shuffle(all_trials)
@@ -91,11 +91,19 @@ def make_trials(env_file,
 
 
 if __name__ == "__main__":
-    env_file = "test-envs-1.pkl"
-    domain_config_file = "6x6_10-31-2020.yaml" #"10x10_10-20-2020.yaml"
+    # Experiment-level configurations
+    dims = (6, 6)
+    if dims == (10, 10):
+        env_file = "test-envs-10x10.pkl"
+        domain_config_file = "10x10_10-20-2020.yaml"
+    elif dims == (6, 6):
+        env_file = "test-envs-6x6.pkl"
+        domain_config_file = "6x6_10-31-2020.yaml"
+
     dffc_score_file = "difficulty-try1-10-20-2020-20201026162744897.csv"
     corr_score_file = "correlation-try1-10-20-2020.csv"
     subgoal_score_file = "subgoal-scores=try1.csv"
+
     num_envs = 10
     trials_per_env = 1
 

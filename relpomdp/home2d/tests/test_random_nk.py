@@ -102,7 +102,7 @@ def test_random_nk(env, target_class,
 
         # Take a step
         if len(target_sensor_config) > 0:
-            true_pos_rate, false_pos_rate = target_sensor_config["noises"][target_class]
+            true_pos_rate, false_pos_rate = target_sensor_config["noises"]
         action, next_state, observation, reward, declare_next = \
             step_random_nk(env, nk_agent, fake_slam, target_id,
                            true_pos_rate=true_pos_rate,
