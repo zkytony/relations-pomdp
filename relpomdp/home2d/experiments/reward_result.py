@@ -75,7 +75,7 @@ class RewardsResult(YamlResult):
         sns.barplot(x="agent_type", y="disc_reward", ci=95,
                     data=df, ax=ax)
         ## Add statistical significance annotation, when there's enough trials
-        if grouped.size()[-1] > 30:
+        if grouped.size()[-1] >= 15:
             boxpairs = [
                 ("S+B", "Heur"),
                 ("S+B", "S"),
