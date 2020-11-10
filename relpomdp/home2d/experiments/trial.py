@@ -70,9 +70,9 @@ class RelPOMDPTrial(Trial):
 
         # Run
         ## FOR DEBUGGING
-        # visualize = True #self._config["visualize"]
+        visualize = True #self._config["visualize"]
         # planning_config["nsteps"] = 10
-        visualize = self._config["visualize"]
+        # visualize = self._config["visualize"]
         if agent_type == "mdp":
             rewards, states, history = test_mdp(env, target_class,
                                                 target_sensor_config=target_sensor_config,
@@ -98,34 +98,42 @@ class RelPOMDPTrial(Trial):
             rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
-                                                           visualize=visualize,
                                                            full_map=True,
+                                                           visualize=visualize,
+                                                           slam_sensor_config=slam_sensor_config,
+                                                           target_sensor_config=target_sensor_config,
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "pomdp-subgoal-nk":
             rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=True,
-                                                           visualize=visualize,
                                                            full_map=False,
+                                                           visualize=visualize,
+                                                           slam_sensor_config=slam_sensor_config,
+                                                           target_sensor_config=target_sensor_config,
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "pomdp-subgoal-nk-nocorr":
             rewards, states, history = test_subgoals_agent(env, target_class, domain_config,
                                                            df_corr, df_dffc, df_subgoal,
                                                            use_correlation_belief_update=False,
-                                                           visualize=visualize,
                                                            full_map=False,
+                                                           slam_sensor_config=slam_sensor_config,
+                                                           target_sensor_config=target_sensor_config,
+                                                           visualize=visualize,
                                                            logger=self.logg,
                                                            **planning_config)
         elif agent_type == "random-nk":
             rewards, states, history = test_random_nk(env, target_class,
+                                                      target_sensor_config=target_sensor_config,
                                                       slam_sensor_config=slam_sensor_config,
                                                       visualize=visualize,
                                                       logger=self.logg,
                                                       **planning_config)
         elif agent_type == "heuristic-nk":
             rewards, states, history = test_heuristic_nk(env, target_class,
+                                                         target_sensor_config=target_sensor_config,
                                                          slam_sensor_config=slam_sensor_config,
                                                          visualize=visualize,
                                                          logger=self.logg,

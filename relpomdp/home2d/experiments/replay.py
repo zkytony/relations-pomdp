@@ -1,5 +1,6 @@
 import argparse
 import os
+import pomdp_py
 import pickle
 import yaml
 import copy
@@ -60,21 +61,19 @@ def main():
                      controllable=True,
                      img_path=FILE_PATHS["object_imgs"])
     viz.on_init()
+    viz.on_render()
 
     _gamma = 1.0
     _discount_factor = trial.config["planning"]["discount_factor"]
     _disc_reward = 0.0
     target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
-        viz.on_loop()
-
         if len(history) == 2:
             action, observation = history[i]
         else:
             action, observation, belief = history[i]
             if isinstance(belief, dict):
                 belief = OOBelief(belief)
-        viz.on_render(belief)
 
         prev_robot_pose = env.state.object_states[env.robot_id]["pose"]
         _ = env.state_transition(action, execute=True,
@@ -83,12 +82,15 @@ def main():
         robot_pose = env.state.object_states[env.robot_id]["pose"]
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
 
-        _disc_reward += reward * gamma
-        _gamma *= discount_factor
+        _disc_reward += reward * _gamma
+        _gamma *= _discount_factor
         _step_info = "Step {} : Action: {}    Reward: {}    DiscCumReward: {:.4f}    RobotPose: {}   TargetFound: {}"\
             .format(i+1, action, reward, _disc_reward,
                     robot_pose,
                     env.state.object_states[target_id].get("is_found", False))
+
+        viz.on_loop()
+        viz.on_render(belief)
         print(_step_info)
 
     viz.on_cleanup()
