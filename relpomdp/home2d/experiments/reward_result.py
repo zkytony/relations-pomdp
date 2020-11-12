@@ -68,18 +68,56 @@ class RewardsResult(YamlResult):
         flatten_column_names(agg)
         agg.to_csv(os.path.join(path, "rewards-summary.csv"))
 
-        # Plotting
-        fig, ax = plt.subplots(figsize=(5.5,4))
         baselines = ["Rand", "Heur", "NS", "S", "S+B"]
         df["agent_type"] = df["agent_type"].replace(METHOD_TO_NAME)
         df = df.sort_values(by="agent_type",
                             key=lambda col: pd.Series(baselines.index(col[i])
                                                       for i in range(len(col))))
-        ## Barplot
+        cls._plot_summary(df,
+                          "Overall Performance (%s x %s)" % (world_width, world_length),
+                          "rewards", path,
+                          add_stat_annot=(grouped.size()[-1] >= 15))
+
+        # Easier sensor (single bed or computer)
+        df_easy_sensor = df.loc[df["target_class"].isin({"Single-bed", "Computer"})]
+        cls._plot_summary(df_easy_sensor,
+                          "Single-bed & Computer (better detector) (%s x %s)"
+                          % (world_width, world_length),
+                          "rewards-better-sensor", path,
+                          add_stat_annot=(grouped.size()[-1] >= 15))
+
+        # Harder sensor (single bed or computer)
+        df_hard_sensor = df.loc[df["target_class"].isin({"Salt", "Pepper"})]
+        cls._plot_summary(df_hard_sensor,
+                          "Salt & Pepper (worse detector) (%s x %s)" % (world_width, world_length),
+                          "rewards-worse-sensor", path,
+                          add_stat_annot=(grouped.size()[-1] >= 15))
+
+        # Fewer subgoals (single bed or salt)
+        df_few_subgoals = df.loc[df["target_class"].isin({"Salt", "Single-bed"})]
+        cls._plot_summary(df_few_subgoals,
+                          "Salt & Single-bed (nsubgoals=1) (%s x %s)" % (world_width, world_length),
+                          "rewards-few-subgoals", path,
+                          add_stat_annot=(grouped.size()[-1] >= 15))
+
+        # More subgoals (Pepper or computer)
+        df_more_subgoals = df.loc[df["target_class"].isin({"Pepper", "Computer"})]
+        cls._plot_summary(df_more_subgoals,
+                          "Pepper & Computer (nsubgoals=2) (%s x %s)" % (world_width, world_length),
+                          "rewards-more-subgoals", path,
+                          add_stat_annot=(grouped.size()[-1] >= 15))
+
+    @classmethod
+    def _plot_summary(cls, df, title, filename, savepath, add_stat_annot=False):
+        """
+        baselines: ["Rand", "Heur", "NS", "S", "S+B"]
+        """
+        # Plotting
+        fig, ax = plt.subplots(figsize=(5.5,4))
         sns.barplot(x="agent_type", y="disc_reward", ci=95,
                     data=df, ax=ax)
         ## Add statistical significance annotation, when there's enough trials
-        if grouped.size()[-1] >= 15:
+        if add_stat_annot:
             boxpairs = [
                 ("S+B", "Heur"),
                 ("S+B", "S"),
@@ -94,5 +132,5 @@ class RewardsResult(YamlResult):
                                 line_offset=0.02,
                                 offset_basis="ymean",
                                 verbose=2)
-        ax.set_title("Overall Performance (%s x %s)" % (world_width, world_length))
-        plt.savefig(os.path.join(path, "rewards.png"))
+        ax.set_title(title)
+        plt.savefig(os.path.join(savepath, "%s.png" % filename))

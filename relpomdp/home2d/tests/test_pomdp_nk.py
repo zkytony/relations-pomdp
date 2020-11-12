@@ -168,7 +168,7 @@ def test_pomdp_nk(env, target_class,
         # Visualize
         if visualize:
             viz.on_loop()
-            img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
+            img, img_world, _ = viz.on_render(OOBelief(nk_agent.object_beliefs))
             game_states.append(img)
 
         # Take a step
