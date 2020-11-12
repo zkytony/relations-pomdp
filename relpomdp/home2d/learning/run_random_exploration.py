@@ -4,16 +4,13 @@
 # in the mean time.
 
 import pomdp_py
-from relpomdp.home2d.agent.tests.test_fake_slam import wait_for_action
-from relpomdp.home2d.agent.nk_agent import NKAgent, FakeSLAM
-from relpomdp.home2d.agent.sensor import Laser2DSensor
-from relpomdp.home2d.agent.visual import NKAgentViz
-from relpomdp.home2d.domain.maps.build_map import random_world
-from relpomdp.home2d.domain.env import Home2DEnvironment
+from relpomdp.home2d.agent import NKAgentViz, Laser2DSensor, NKAgent, FakeSLAM
 from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.learning.random_explorer import RandomPlanner
 from relpomdp.oopomdp.framework import Objstate
-from relpomdp.home2d.agent.tests.test_utils import random_policy_model
+from relpomdp.home2d.tests.test_utils import random_policy_model
+from relpomdp.home2d.learning.correlation_observation_model\
+    import compute_detections, CorrelationObservationModel
 import argparse
 import pickle
 import yaml
@@ -21,33 +18,10 @@ import os
 import copy
 from datetime import datetime as dt
 
-
-def run_single(env, sensor_configs, nsteps=100):
-    """
-    Given an environment, deploy an agent that randomly moves in this environment.
-    The `sensors` specify the sensor parameters and uncertainty when detecting different objects;
-
-    It maps from a class_name to a (alpha, beta) tuple.
-
-    `sensors` is a dictionary, {sensor_name -> {'fov':FOV, 'min_range':min_range, 'max_range':max_range,
-                                                'noises': {object_class: [alpha, beta]}}}
-    """
+def build_training_agent(env, sensor_configs):
     robot_id = env.robot_id
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose, grid_map=env.grid_map)
-
-    # We will add to the environment state grid cells for each room
-    room_states = {}
-    room_id = 2000
-    for room_name in env.grid_map.rooms:
-        room = env.grid_map.rooms[room_name]
-        grid_id = 0
-        for x, y in room.locations:
-            s = Objstate(room.room_type, pose=(x,y))
-            room_states[room_id + grid_id] = s
-            grid_id += 1
-        room_id += 100
-    env.state.object_states.update(room_states)
 
     for sensor_name in sensor_configs:
         cfg = sensor_configs[sensor_name]
@@ -59,24 +33,38 @@ def run_single(env, sensor_configs, nsteps=100):
                                angle_increment=float(cfg["angle_increment"]))
         noises = cfg["noises"]
         nk_agent.add_sensor(sensor, noises)
+    return nk_agent
+
+
+def run_single(env, sensor_configs, nsteps=100, visualize=True):
+    """
+    Given an environment, deploy an agent that randomly moves in this environment.
+    The `sensors` specify the sensor parameters and uncertainty when detecting different objects;
+
+    It maps from a class_name to a (alpha, beta) tuple.
+
+    `sensors` is a dictionary, {sensor_name -> {'fov':FOV, 'min_range':min_range, 'max_range':max_range,
+                                                'noises': {object_class: [alpha, beta]}}}
+    """
+    nk_agent = build_training_agent(env, sensor_configs)
     policy_model = random_policy_model(nk_agent)
-
     agent = nk_agent.instantiate(policy_model)
-
-    planner = RandomPlanner(robot_id, env.legal_motions)
+    planner = RandomPlanner(env.robot_id, env.legal_motions)
 
     # Visualize and run
-    viz = NKAgentViz(agent, env, {},
-                     res=30,
-                     controllable=True,
-                     img_path="../domain/imgs")
-    viz.on_init()
+    if visualize:
+        viz = NKAgentViz(agent, env, {},
+                         res=30,
+                         controllable=True,
+                         img_path="../domain/imgs")
+        viz.on_init()
 
     all_detections = []
     for i in range(nsteps):
         # Visualize
-        viz.on_loop()
-        viz.on_render()
+        if visualize:
+            viz.on_loop()
+            viz.on_render()
 
         action = planner.plan(agent)
 
@@ -89,24 +77,15 @@ def run_single(env, sensor_configs, nsteps=100):
         observation = agent.observation_model.sample(env.state, action)
 
         # Filter observation to get detections
-        detections = {}
-        for o in observation.observations:
-            for objid in o.object_observations:
-                objo = o.object_observations[objid]
-                if objo["label"] != "unknown"\
-                   and objo["label"] != "free":
-                    detections[objid] = objo
-        print(detections)
-        all_detections.append(detections)
+        detected_classes, detected_ids, detected_poses = compute_detections(observation, return_poses=True)
+        all_detections.append((detected_classes, detected_ids, detected_poses))
 
         # update belief (only need to do so for robot belief)
-        agent.belief.object_beliefs[robot_id] = pomdp_py.Histogram({
+        agent.belief.object_beliefs[env.robot_id] = pomdp_py.Histogram({
             env.robot_state.copy() : 1.0
         })
-        if isinstance(action, DeclareFound):
-            print("Done.")
-            break
-    viz.on_cleanup()
+    if visualize:
+        viz.on_cleanup()
     return all_detections
 
 
@@ -117,7 +96,7 @@ def main():
     parser.add_argument("path_to_envs",
                         type=str, help="Path to a .pickle file that contains a collection of environments")
     parser.add_argument("output_dir",
-                        type=str, help="Directory to output computed difficulty saved in a file")
+                        type=str, help="Directory to detections saved in a file")
     parser.add_argument("-n", "--nsteps", default=100,
                         type=int, help="Number of steps to run the agent in each training environment")
     parser.add_argument("-T", "--trials", default=100,
@@ -137,11 +116,11 @@ def main():
     detections = {}
     try:
         for envid in envs:
-            detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps)
+            detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps, visualize=False)
             if len(detections) >= args.trials:
                 break
     finally:
-        with open(os.path.join(args.output_dir, "detections-%d-%s-%s.pkl" % (args.nsteps, filename, timestr)), "wb") as f:
+        with open(os.path.join(args.output_dir, "detections-random-%d-%s-%s.pkl" % (args.nsteps, filename, timestr)), "wb") as f:
             pickle.dump(detections, f)
 
 
