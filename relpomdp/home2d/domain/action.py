@@ -36,7 +36,6 @@ MoveW = Move("W", Move.WEST)
 MoveN = Move("N", Move.NORTH)
 MoveS = Move("S", Move.SOUTH)
 
-
 def path_between(position1, position2, grid_map, get_neighbors_func,
                  return_actions=True):
     """Note that for the return_actions=True case to return reasonable

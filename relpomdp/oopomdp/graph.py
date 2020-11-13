@@ -269,7 +269,7 @@ class Graph(EdgeNodeSet):
                         q.append(neighbor_nid)
             # build component
             component_edges = {eid : copy_graph.edges[eid] for eid in component_edge_ids}
-            component = self.__class__(component_edges)
+            component = self.__class__(component_edges, directed=self.directed)
             components.append(component)
             to_cover -= set(component.nodes.keys())
         return components

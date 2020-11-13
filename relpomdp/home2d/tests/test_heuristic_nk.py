@@ -8,6 +8,8 @@ from relpomdp.home2d.agent.transition_model import DeclareFound
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.utils import euclidean_dist
 from relpomdp.home2d.tests.test_utils import add_target, random_policy_model, make_world, update_map
+from relpomdp.home2d.learning.generate_worlds import make_graph
+from collections import deque
 import copy
 import random
 import time
@@ -21,39 +23,58 @@ def build_heuristic_nk_agent(env, target_class,
                                                slam_sensor_config=slam_sensor_config)
     return nk_agent, fake_slam
 
-def heuristic_action_selection(nk_agent, robot_pose, visit_counts={}):
+def heuristic_action_selection(nk_agent, robot_pose, motion_queue, visit_counts={}):
     """Select a frontier location closest to the robot. Choose an
     action that brings the robot closer to that frontier location."""
+    if len(motion_queue) > 0:
+        # This chosen motion may not be legal motion (i.e. could bump into wall)
+        # because when it is planned, the frontier could be actually blocked
+        # by a wall but the robot didn't know that. If blocked, then the chosen
+        # motion won't be a legal motion and we will generate new motions.
+        chosen_motion = motion_queue.popleft()
+        if chosen_motion in nk_agent.legal_motions[robot_pose[:2]]:
+            return chosen_motion
+
+    # Generate new motions.
+    # If frontier is significantly large, find the shortest path to
+    # a random frontier location and plan to get there.
     partial_map = nk_agent.grid_map
     frontier = partial_map.frontier()
-    legal_motions = list(nk_agent.legal_motions[robot_pose[:2]])
-    random.shuffle(legal_motions)
-
-    # If frontier is significantly large
     if len(frontier) >= 5:
-        frontier_point = random.sample(frontier, 1)[0]
-        closest_dist = euclidean_dist(robot_pose[:2], frontier_point)
+        while len(motion_queue) == 0:
+            frontier_point = random.sample(frontier, 1)[0]
+            graph = make_graph(nk_agent.legal_motions,
+                               free_locations=partial_map.free_locations | {frontier_point})
+            try:
+                path = graph.dijkstra(robot_pose[:2], frontier_point)
+                for nid, eid in path:
+                    if eid not in graph.edges_from(nid):
+                        import pdb; pdb.set_trace()
+                    motion = graph.edges[eid].data
+                    motion_queue.append(motion)
+            except KeyError:
+                print("Failed to find path to frontier")
+        chosen_motion = motion_queue.popleft()
+    else:
+        # We don't have a good motion to explore the map. Then,
+        # among the neighbors, pick the one with lowest visit count
+        chosen_motion = None,
+        lowest = float('inf')
+        # Legal motions at the robot's current location
+        legal_motions = list(nk_agent.legal_motions[robot_pose[:2]])
         for motion in legal_motions:
             next_robot_pose = MoveEffect.move_by(robot_pose, motion)
-            if euclidean_dist(next_robot_pose[:2], frontier_point) < closest_dist:
-                return motion
-
-    # We don't have a good motion to explore the map. Then,
-    # among the neighbors, pick the one with lowest visit count
-    chosen_motion = None,
-    lowest = float('inf')
-    for motion in legal_motions:
-        next_robot_pose = MoveEffect.move_by(robot_pose, motion)
-        if next_robot_pose[:2] not in visit_counts:
-            visit_counts[next_robot_pose[:2]] = 0
-        count = visit_counts[next_robot_pose[:2]]
-        if count < lowest:
-            lowest = count
-            chosen_motion = motion
+            if next_robot_pose[:2] not in visit_counts:
+                visit_counts[next_robot_pose[:2]] = 0
+            count = visit_counts[next_robot_pose[:2]]
+            if count < lowest:
+                lowest = count
+                chosen_motion = motion
     return chosen_motion
 
 def step_heuristic_nk(env, nk_agent, fake_slam, target_id,
                       declare_next=False, visit_counts={},
+                      motion_queue=deque([]),
                       true_pos_rate=1.0):
     """Runs a step in the MDP simulation"""
     policy_model = random_policy_model(nk_agent)
@@ -68,7 +89,8 @@ def step_heuristic_nk(env, nk_agent, fake_slam, target_id,
     if declare_next:
         action = DeclareFound()
     else:
-        action = heuristic_action_selection(nk_agent, prev_robot_pose, visit_counts=visit_counts)
+        action = heuristic_action_selection(nk_agent, prev_robot_pose, motion_queue,
+                                            visit_counts=visit_counts)
     time.sleep(0.2)
 
     # environment transitions and obtains reward (note that we use agent's reward model for convenience)
@@ -110,6 +132,8 @@ def test_heuristic_nk(env, target_class,
     nk_agent, fake_slam = build_heuristic_nk_agent(env, target_class,
                                                    target_sensor_config=target_sensor_config,
                                                    slam_sensor_config=slam_sensor_config)
+    motion_queue = deque([])
+    visit_counts = {}
 
     # policy_model = heuristic_policy_model(nk_agent)
     # Visualize and run
@@ -143,8 +167,11 @@ def test_heuristic_nk(env, target_class,
             target_sensor_name = list(nk_agent.sensors_for(target_class))[0]
             noises = nk_agent.sensors[target_sensor_name][1]
             true_pos_rate, false_pos_rate = noises[target_class]
+
         action, next_state, observation, reward, declare_next = \
             step_heuristic_nk(env, nk_agent, fake_slam, target_id,
+                              motion_queue=motion_queue,
+                              visit_counts=visit_counts,
                               true_pos_rate=true_pos_rate,
                               declare_next=declare_next)
 

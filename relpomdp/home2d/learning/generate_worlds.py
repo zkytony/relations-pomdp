@@ -23,24 +23,36 @@ def add_room_states(env, starting_room_id=10000):
             room_id += 100
         room_id += 1000
 
+def make_graph(legal_motions, grid_map=None, free_locations=None):
+    """Given a grid map and legal_motions, return a Graph where nodes are the locations
+    and edges are the motion actions that connect neighbors
+
+    Args:
+        grid_map (GridMap): A grid map
+        legal_motions (dict): Mapping from location to a set of legal motions allowed there"""
+    nodes = {}
+    edges = set()
+    if free_locations is None:
+        free_locations = grid_map.free_locations
+    for x, y in free_locations:
+        nid = (x,y)  # use location as id
+        nodes[nid] = Node(nid)
+        # Get legal motions, compute neigbors
+        for motion in legal_motions[(x,y)]:
+            neighbor_nid = MoveEffect.move_by((x,y), motion)[:2]
+            if neighbor_nid not in nodes:
+                nodes[neighbor_nid] = Node(neighbor_nid)
+            edge = Edge("%d-%s" % (len(edges), motion.name),
+                        nodes[nid], nodes[neighbor_nid], data=motion)
+            edges.add(edge)
+    graph = Graph(edges, directed=True)
+    return graph
+
 def _coverable(env):
     """Returns true if all locations in the environment could be visited."""
     # We can actually make use of the Graph, just so we don't reimplement
     # the same code.
-    nodes = {}
-    edges = set()
-    for x in range(env.grid_map.width):
-        for y in range(env.grid_map.length):
-            nid = (x,y)  # use location as id
-            nodes[nid] = Node(nid)
-            # Get legal motions, compute neigbors
-            for motion in env.legal_motions[(x,y)]:
-                neighbor_nid = MoveEffect.move_by((x,y), motion)[:2]
-                if neighbor_nid not in nodes:
-                    nodes[neighbor_nid] = Node(neighbor_nid)
-                edge = Edge(len(edges), nodes[nid], nodes[neighbor_nid], data=motion)
-                edges.add(edge)
-    graph = Graph(edges)
+    graph = make_graph(env.legal_motions, grid_map=env.grid_map)
     components = graph.connected_components()
     return len(components) == 1
 
