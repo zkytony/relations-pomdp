@@ -116,6 +116,7 @@ def main():
     detections = {}
     try:
         for envid in envs:
+            print("Environment %d" % envid)
             detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps, visualize=False)
             if len(detections) >= args.trials:
                 break

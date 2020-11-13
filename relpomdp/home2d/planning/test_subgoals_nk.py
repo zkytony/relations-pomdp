@@ -243,7 +243,7 @@ def _run_search(nk_agent, target_class, target_id,
 
         if viz is not None:
             viz.on_loop()
-            img, img_world = viz.on_render(OOBelief(nk_agent.object_beliefs))
+            img_agent, img_world, img = viz.on_render(OOBelief(nk_agent.object_beliefs))
 
         # Plan action
         start_time = time.time()

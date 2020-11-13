@@ -64,7 +64,7 @@ def test_map_building(env):
     for i in range(100):
         # Visualize
         viz.on_loop()
-        img, img_world = viz.on_render(range_sensor=fake_slam.range_sensor)
+        img, img_world, _ = viz.on_render(range_sensor=fake_slam.range_sensor)
 
         action = wait_for_action(viz)
         prev_robot_pose = env.robot_state["pose"]

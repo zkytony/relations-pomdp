@@ -97,7 +97,7 @@ def test_random_nk(env, target_class,
         # Visualize
         if visualize:
             viz.on_loop()
-            img, img_world = viz.on_render()
+            img_agent, img_world, img = viz.on_render()
             game_states.append(img)
 
         # Take a step

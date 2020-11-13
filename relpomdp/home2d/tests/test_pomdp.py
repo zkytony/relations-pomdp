@@ -136,7 +136,7 @@ def test_pomdp(env, target_class,
         # Visualize
         if visualize:
             viz.on_loop()
-            img, img_world = viz.on_render(agent.belief)
+            img_agent, img_world, img = viz.on_render(agent.belief)
             game_imgs.append(img)
 
         # Take a step

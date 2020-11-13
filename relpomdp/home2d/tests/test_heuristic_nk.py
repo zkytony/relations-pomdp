@@ -133,12 +133,16 @@ def test_heuristic_nk(env, target_class,
         # Visualize
         if visualize:
             viz.on_loop()
-            img, img_world = viz.on_render()
+            img_agent, img_world, img = viz.on_render()
             game_states.append(img)
 
         # Take a step
         if len(target_sensor_config) > 0:
             true_pos_rate, false_pos_rate = target_sensor_config["noises"]
+        else:
+            target_sensor_name = list(nk_agent.sensors_for(target_class))[0]
+            noises = nk_agent.sensors[target_sensor_name][1]
+            true_pos_rate, false_pos_rate = noises[target_class]
         action, next_state, observation, reward, declare_next = \
             step_heuristic_nk(env, nk_agent, fake_slam, target_id,
                               true_pos_rate=true_pos_rate,

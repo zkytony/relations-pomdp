@@ -45,6 +45,7 @@ def run_single(env, sensor_configs, nsteps=100, visualize=True,
         noises = cfg["noises"]
         for target_class in noises:
             if len(env.ids_for(target_class)) > 0:
+                print("    %s" % target_class)
                 target_sensor_config = copy.deepcopy(cfg)
                 target_sensor_config["noises"] = cfg["noises"][target_class]
                 env_copy = copy.deepcopy(env)
@@ -92,6 +93,7 @@ def main():
     detections = {}
     try:
         for envid in envs:
+            print("Environment %d" % envid)
             detections[envid] = run_single(envs[envid], config["sensors"], nsteps=args.nsteps,
                                            num_sims=1000, visualize=False)
             if len(detections) >= args.trials:
