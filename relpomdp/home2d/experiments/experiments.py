@@ -96,7 +96,7 @@ def make_trials(env_file,
 
     random.shuffle(all_trials)
     output_dir = "./results"
-    exp = Experiment("Search2DExperiment_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
+    exp = Experiment("Search2DExperimentBB_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
                      all_trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=6, exist_ok=False)
     print("Find multiple computers to run these experiments.")
@@ -104,7 +104,7 @@ def make_trials(env_file,
 
 if __name__ == "__main__":
     # Experiment-level configurations
-    dims = (6, 6)
+    dims = (10, 10)
     if dims == (10, 10):
         env_file = "test-envs-10x10.pkl"
         domain_config_file = "10x10_10-20-2020.yaml"

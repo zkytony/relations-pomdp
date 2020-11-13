@@ -3,6 +3,7 @@ import pickle
 from relpomdp.home2d.utils import euclidean_dist
 import pandas as pd
 import os
+from datetime import datetime as dt
 
 def get_classes(envs):
     """Returns a set of object classes, including room
@@ -54,11 +55,6 @@ def compute_obj_obj_correlation(class1, class2, envs, dist_thresh=1):
                         if objid_c1 == objid_c2:
                             continue
                         correlation_score += 1
-
-                        pose_c1 = envs[envid].state.object_states[objid_c1]["pose"]
-                        pose_c2 = envs[envid].state.object_states[objid_c2]["pose"]
-                        if euclidean_dist(pose_c1, pose_c2) <= dist_thresh:
-                            correlation_score += 1
     return correlation_score
 
 def compute_obj_room_correlation(objclass, room_type, envs):
@@ -104,7 +100,9 @@ def main():
             print("Correlation score between %s and %s is: %d" % (class1, class2, score))
             rows.append((class1, class2, score))
     df = pd.DataFrame(rows, columns=["class1", "class2", "corr_score"])
-    df.to_csv(os.path.join(args.output_dir, "correlation-%s.csv" % filename))
+    start_time = dt.now()
+    timestr = start_time.strftime("%Y%m%d%H%M%S%f")[:-3]
+    df.to_csv(os.path.join(args.output_dir, "correlation_%s_%s.csv" % (filename, timestr)))
 
 
 if __name__ == "__main__":
