@@ -96,7 +96,7 @@ def make_trials(env_file,
 
     random.shuffle(all_trials)
     output_dir = "./results"
-    exp = Experiment("Search2DExperimentBB_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
+    exp = Experiment("Search2DExperimentCC_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
                      all_trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=6, exist_ok=False)
     print("Find multiple computers to run these experiments.")
@@ -104,7 +104,7 @@ def make_trials(env_file,
 
 if __name__ == "__main__":
     # Experiment-level configurations
-    dims = (10, 10)
+    dims = (6, 6)
     if dims == (10, 10):
         env_file = "test-envs-10x10.pkl"
         domain_config_file = "10x10_10-20-2020.yaml"
@@ -112,8 +112,8 @@ if __name__ == "__main__":
         env_file = "test-envs-6x6.pkl"
         domain_config_file = "6x6_10-31-2020.yaml"
 
-    dffc_score_file = "difficulty-try1-10-20-2020-20201026162744897.csv"
-    corr_score_file = "correlation-try1-10-20-2020.csv"
+    dffc_score_file = "difficulty-train-envs-6x6-pomdp-20201113134230180.csv"
+    corr_score_file = "correlation_train-envs-6x6_20201113135539885.csv"
     subgoal_score_file = "subgoal-scores=try1.csv"
 
     target_classes = {"Salt", # Hard to detect, 1 subgoal
