@@ -59,6 +59,13 @@ def make_trials(env_file,
 
     all_trials = []
     for target_class in target_classes:
+
+        # Get the room as difficult threshold
+        for room_name in domain_config["objects"]:
+            if target_class in domain_config["objects"][room_name]:
+                difficulty_threshold = room_name
+                break
+
         count = 0
         for env_id in envs:
             env = envs[env_id]

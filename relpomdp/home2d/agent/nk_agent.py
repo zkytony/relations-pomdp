@@ -131,7 +131,7 @@ class NKAgent:
         targets = set()
         for reward_model in self._reward_models:
             if hasattr(reward_model, "target_id"):
-                assert reward_model.target_id not in targets, "duplicated reward model for %d" % target_id
+                assert reward_model.target_id not in targets, "duplicated reward model for %d" % reward_model.target_id
                 targets.add(reward_model.target_id)
 
     def remove_reward_model(self, target_id):

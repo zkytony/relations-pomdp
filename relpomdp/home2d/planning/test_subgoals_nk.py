@@ -113,27 +113,40 @@ def search(target_class, target_id, nk_agent, fake_slam, env, viz,
     # Build subgaols
     task_difficulty = difficulty(df_difficulty, target_class)
     subgoals = [(target_class, target_id)]
-    excluded_classes = set()
+    excluded_classes = {target_class}
     while task_difficulty > difficulty_threshold:
         # Select subgoal
         subgoal_class = select_subgoal(df_subgoal, subgoals[-1][0],
                                        excluded_classes=excluded_classes)
-        subgoal_id = list(env.ids_for(subgoal_class))[0]
-        subgoals.append((subgoal_class, subgoal_id))
-        _info = "Selected subgoal class: %s" % subgoal_class
-        if logger is None:
-            print(_info)
-        else:
-            logger(_info)
-
-        # Add the subgoal to nk_agent; So the agent is aware of
-        # all of them in its reward model when planning.
-        init_belief = uniform_belief(subgoal_class, nk_agent)
-        add_reach_target(nk_agent, subgoal_id, init_belief)
+        if subgoal_class is None:
+            _info = "No more subgoal generatable. Proceed search."
+            if logger is None:
+                print(_info)
+            else:
+                logger(_info)
+            break
 
         # Recompute difficulty
-        task_difficulty = difficulty(df_difficulty, subgoal_class)
+        new_task_difficulty = difficulty(df_difficulty, subgoal_class)
         excluded_classes.add(subgoal_class)
+
+        # Check and accept subgoal
+        if new_task_difficulty < task_difficulty:
+            subgoal_id = list(env.ids_for(subgoal_class))[0]
+            subgoals.append((subgoal_class, subgoal_id))
+            _info = "Selected subgoal class: %s" % subgoal_class
+            if logger is None:
+                print(_info)
+            else:
+                logger(_info)
+
+            # Add the subgoal to nk_agent; So the agent is aware of
+            # all of them in its reward model when planning.
+            init_belief = uniform_belief(subgoal_class, nk_agent)
+            add_reach_target(nk_agent, subgoal_id, init_belief)
+
+        # Update task difficulty
+        task_difficulty = new_task_difficulty
 
     # Start with the last subgoal
     all_reaching_goals = subgoals[1:]
