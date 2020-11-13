@@ -104,7 +104,7 @@ def make_trials(env_file,
 
 if __name__ == "__main__":
     # Experiment-level configurations
-    dims = (6, 6)
+    dims = (10, 10)
     if dims == (10, 10):
         env_file = "test-envs-10x10.pkl"
         domain_config_file = "10x10_10-20-2020.yaml"
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     dffc_score_file = "difficulty-train-envs-6x6-pomdp-20201113134230180.csv"
     corr_score_file = "correlation_train-envs-6x6_20201113135539885.csv"
-    subgoal_score_file = "subgoal-scores=try1.csv"
+    subgoal_score_file = "scores_C#6x6_10-31-2020_D#train-envs-6x6-pomdp_20201113140449444.csv"
 
     target_classes = {"Salt", # Hard to detect, 1 subgoal
                       "Pepper", # Hard to detect, 2 subgoals
@@ -124,11 +124,21 @@ if __name__ == "__main__":
     num_envs = 15
     trials_per_env = 1
 
-    make_trials(env_file,
-                domain_config_file,
-                dffc_score_file,
-                corr_score_file,
-                subgoal_score_file,
-                num_envs=num_envs,
-                trials_per_env=trials_per_env,
-                target_classes=target_classes)
+    print("Are you sure you want to use")
+    print("    Difficulty file: %s" % dffc_score_file)
+    print("    Correlation file: %s" % corr_score_file)
+    print("    Subgoal score file: %s" % subgoal_score_file)
+    print("for %dx%d environments coming from '%s'" % (*dims, env_file))
+    print("    with config: %s" % domain_config_file)
+    answer = input("? [y] ")
+    if answer.lower().startswith("y"):
+        make_trials(env_file,
+                    domain_config_file,
+                    dffc_score_file,
+                    corr_score_file,
+                    subgoal_score_file,
+                    num_envs=num_envs,
+                    trials_per_env=trials_per_env,
+                    target_classes=target_classes)
+    else:
+        print("Nothing will be generated.")
