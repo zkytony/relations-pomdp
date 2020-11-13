@@ -31,20 +31,29 @@ class FakeSLAM:
         loc_to_room = {}
         for x in np.arange(-1, full_grid_map.width+1, 1):
             for y in np.arange(-1, full_grid_map.length+1, 1):
-                res, wall = self.range_sensor.within_range(
+                # Check if existing wall already blocks
+                visible, wall = self.range_sensor.within_range(
                     robot_pose, (x,y),
-                    grid_map=full_grid_map, cache=self.sensor_cache,
+                    walls_to_consider=partial_map.walls,
                     return_intersecting_wall=True)
 
-                if res:
-                    free_locs.add((x,y))
-                    loc_to_room[(x,y)] = full_grid_map.room_of((x,y))
-                else:
-                    if wall is not None:
-                        # The point is blocked by some wall that is in the FOV
-                        # TODO: REFACTOR: Getting wall id should not be necessary
-                        wall_id, wall_state = wall
-                        walls[wall_id] = wall_state
+                if visible:
+                    # If existing wall is not blocking, check if gridmap has
+                    # a wall that is blocking
+                    visible, wall = self.range_sensor.within_range(
+                        robot_pose, (x,y),
+                        grid_map=full_grid_map, cache=self.sensor_cache,
+                        return_intersecting_wall=True)
+                    if visible:
+                        free_locs.add((x,y))
+                        loc_to_room[(x,y)] = full_grid_map.room_of((x,y))
+                    else:
+                        if wall is not None:
+                            # The point is blocked by some wall that is in the FOV
+                            # TODO: REFACTOR: Getting wall id should not be necessary
+                            wall_id, wall_state = wall
+                            walls[wall_id] = wall_state
+
         # Get touching walls
         for wall_id in full_grid_map.walls:
             wall_state = full_grid_map.walls[wall_id]

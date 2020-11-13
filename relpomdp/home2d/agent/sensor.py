@@ -103,6 +103,7 @@ class Laser2DSensor:
 
     def within_range(self, robot_pose, point,
                      grid_map=None, cache=None,
+                     walls_to_consider=None,
                      return_intersecting_wall=False):
         """Returns true if the point is within range of the sensor (i.e. visible).
         To do this need to check if any wall is closer to the robot along the
@@ -142,16 +143,20 @@ class Laser2DSensor:
             if not point_in_range:
                 detectable = False
             else:
-                if grid_map is not None:
-                    # Check walls
-                    for objid in grid_map.walls:
-                        wall = grid_map.walls[objid]
-                        if wall.intersect(robot_pose[:2], point):
-                            detectable = False
-                            intersecting_wall = (objid, wall)
-                            break
-                else:
-                    print("Warning: within_range is not using map")
+                if walls_to_consider is None:
+                    if grid_map is not None:
+                        walls_to_consider = grid_map.walls
+                    else:
+                        print("Warning: within_range is not using wall intersection")
+                        walls_to_consider = set()
+
+                # Check walls
+                for objid in walls_to_consider:
+                    wall = walls_to_consider[objid]
+                    if wall.intersect(robot_pose[:2], point):
+                        detectable = False
+                        intersecting_wall = (objid, wall)
+                        break
 
         if cache is not None:
             assert cache.sensor_name == self.name
