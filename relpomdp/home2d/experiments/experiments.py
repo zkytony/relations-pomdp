@@ -67,8 +67,9 @@ def make_trials(env_file,
                 break
 
         count = 0
-        for env_id in envs:
-            env = envs[env_id]
+        items = list(envs.items())
+        random.shuffle(items)
+        for env_id, env in items:
             shared_config["env_id"] = env_id
             # We will do:
             agent_types = {
