@@ -59,29 +59,13 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
     def _spatially_correlated(self,
                               object_pose, object_class,
                               reference_pose, reference_class,
-                              grid_map, frontier):
+                              grid_map):
         """
         Returns True if the object (e.g. salt) and the reference (e.g. pepper, or Kitchen)
         are spatially correlated, on given grid_map. For now spatially correlated means
         object_pose and reference_pose are in the same room.
         """
-        if object_pose in frontier and grid_map.room_of(object_pose) is None:
-            # pose in frontier - will be treated as having the same
-            # room type as an adjacent room node. (Note: ad-hoc)
-            reference_room = grid_map.room_of(reference_pose)
-            if reference_room is None:
-                return False
-
-            x, y = object_pose
-            if grid_map.room_of((x+1,y)) == reference_room\
-               or grid_map.room_of((x-1,y)) == reference_room\
-               or grid_map.room_of((x,y+1)) == reference_room\
-               or grid_map.room_of((x,y-1)) == reference_room:
-                return True
-            return False
-
-        else:
-            return grid_map.same_room(object_pose, reference_pose)
+        return grid_map.same_room(object_pose, reference_pose)
 
 
     def probability(self, observation, next_state, action,
@@ -122,8 +106,7 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
                                                     given_object_state.objclass,
                                                     detected_class_pose,
                                                     detected_class,
-                                                    grid_map,
-                                                    frontier)
+                                                    grid_map)
             if given_object_state.objclass == detected_class:
                 score = 1.0
             else:
@@ -136,12 +119,18 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
                     val = 1.0
                 else:
                     # the poses of these classes are not spatially correlated
-                    val = 1e-9
+                    if given_class_pose in frontier:
+                        val = 0.5  # If it's at the frontier, don't kill its probability
+                    else:
+                        val = 1e-9
             else:
                 # the two classes are not correlated in the training environments
                 if correlated:
                     # the poses of these classes here are (spatially) correlated
-                    val = 1e-9
+                    if given_class_pose in frontier:
+                        val = 0.5  # If it's at the frontier, don't kill its probability
+                    else:
+                        val = 1e-9
                 else:
                     # the poses of these classes are still not spatially correlated
                     val = 1.0
