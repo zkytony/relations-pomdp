@@ -93,7 +93,7 @@ class PartialGridMap(GridMap):
                    and (cell[0] >= 0 and cell[1] >= 0):
                     # This is a frontier, because it is not blocked by
                     # any wall and is not in a free location, and it
-                    # does not have negative coordinates
+                    # does not have negative coordinate s
                     frontier.add(cell)
         return frontier
 

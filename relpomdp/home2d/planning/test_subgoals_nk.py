@@ -64,10 +64,11 @@ def uniform_belief(objclass, nk_agent):
     partial_map = nk_agent.grid_map
     robot_state = nk_agent.object_beliefs[nk_agent.robot_id].mpe()
     for x, y in partial_map.free_locations | partial_map.frontier():
-        if (x,y) == robot_state["pose"][:2]:
-            continue  # skip the robot's own pose because the obj won't be there
         obj_state = Objstate(objclass, pose=(x,y))
-        obj_hist[obj_state] = 1.
+        if (x,y) == robot_state["pose"][:2]:
+            obj_hist[obj_state] = 1e-12
+        else:
+            obj_hist[obj_state] = 1.
         total_prob += obj_hist[obj_state]
     for state in obj_hist:
         obj_hist[state] /= total_prob
@@ -283,6 +284,7 @@ def _run_search(nk_agent, target_class, target_id,
         robot_state = new_robot_belief.mpe()
 
         # update map (fake slam)
+        prev_partial_map = copy.deepcopy(nk_agent.grid_map)
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_state["pose"], env)
 
         partial_map = nk_agent.grid_map
@@ -295,7 +297,7 @@ def _run_search(nk_agent, target_class, target_id,
             # First, expand the belief space to cover the expanded map
             obj_belief = nk_agent.object_beliefs[objid]
             obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map,
-                                      env_grid_map=env.grid_map, get_dict=True)
+                                      prev_partial_map, get_dict=True)
 
             # Then, perform belief update
             next_obj_hist = {}

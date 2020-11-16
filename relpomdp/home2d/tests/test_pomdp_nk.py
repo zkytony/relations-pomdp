@@ -95,6 +95,7 @@ def step_pomdp_nk(env, nk_agent, fake_slam, planner, target_id,
     robot_pose = new_robot_belief.mpe()["pose"]
 
     ## update map (fake slam)
+    prev_partial_map = copy.deepcopy(nk_agent.grid_map)
     update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
 
     target_belief = nk_agent.object_belief(target_id)
@@ -102,7 +103,7 @@ def step_pomdp_nk(env, nk_agent, fake_slam, planner, target_id,
 
     ## Update belief based on map update/expansion
     target_hist = belief_fit_map(target_belief, nk_agent.grid_map,
-                                 env_grid_map=env.grid_map, get_dict=True)
+                                 prev_partial_map, get_dict=True)
 
     ## Now, do belief update based on observation
     next_target_hist = {}
@@ -215,5 +216,5 @@ if __name__ == "__main__":
     # To test an ordinary run: set seed to be 100. init robot pose (0,0,0)
     # To test the 'unable to see wall next to robot' issue, set seed to 1459,
     #    set init robot pose (0,1,0). Try a few times because doorway may open up differently
-    env = make_world(seed=1459, worldsize=(6,6))
+    env = make_world(seed=158, worldsize=(6,6))
     test_pomdp_nk(env, target_class="Salt", save=False, nsteps=100)
