@@ -94,7 +94,7 @@ class PartialGridMap(GridMap):
                     # This is a frontier, because it is not blocked by
                     # any wall and is not in a free location, and it
                     # does not have negative coordinate s
-                    frontier.add(cell)
+                    frontier.add((x,y))
         return frontier
 
     def compute_legal_motions(self, all_motion_actions):

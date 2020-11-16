@@ -65,14 +65,13 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
         are spatially correlated, on given grid_map. For now spatially correlated means
         object_pose and reference_pose are in the same room.
         """
-        if object_pose in frontier:
+        if object_pose in frontier and grid_map.room_of(object_pose) is None:
             # pose in frontier - will be treated as having the same
             # room type as an adjacent room node. (Note: ad-hoc)
             reference_room = grid_map.room_of(reference_pose)
             if reference_room is None:
                 return False
 
-            assert grid_map.room_of(object_pose) is None
             x, y = object_pose
             if grid_map.room_of((x+1,y)) == reference_room\
                or grid_map.room_of((x-1,y)) == reference_room\

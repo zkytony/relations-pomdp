@@ -18,6 +18,7 @@ import time
 import subprocess
 import argparse
 import yaml
+import math
 import pandas as pd
 
 
@@ -432,9 +433,6 @@ def test_subgoals_agent(env, target_class, config,
                                max_range=float(cfg["max_range"]),
                                angle_increment=float(cfg["angle_increment"]))
         nk_agent.add_sensor(sensor, noises)
-    # Tell the agent that your task is to pick up the target object class
-    init_belief = uniform_belief(target_class, nk_agent)
-    add_target(nk_agent, target_id, init_belief, env)
 
     # Create visualization
     with open(FILE_PATHS["colors"]) as f:
@@ -467,6 +465,19 @@ def test_subgoals_agent(env, target_class, config,
                                        min_range=slam_sensor_config.get("min_range", 1),
                                        max_range=slam_sensor_config.get("max_range", 4),
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
+
+    # We simulate that the robot first stays in place to map what's in front,
+    # and then rotates 90 degrees to map what's on top. This gives the robot
+    # a small initial map to work on instead of just its grid cell.
+    init_robot_pose = env.robot_state["pose"]
+    update_map(fake_slam, nk_agent, init_robot_pose, init_robot_pose, env)
+    rotated_robot_pose = (init_robot_pose[0], init_robot_pose[1], init_robot_pose[2] + math.pi/2)
+    update_map(fake_slam, nk_agent, init_robot_pose, rotated_robot_pose, env)
+
+    # Tell the agent that your task is to pick up the target object class
+    init_belief = uniform_belief(target_class, nk_agent)
+    add_target(nk_agent, target_id, init_belief, env)
+
     rewards = search(target_class, target_id, nk_agent, fake_slam, env, viz,
                      df_dffc, df_corr, df_subgoal,
                      difficulty_threshold=difficulty_threshold,

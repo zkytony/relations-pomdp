@@ -11,6 +11,7 @@ from relpomdp.oopomdp.framework import Objstate, OOState, OOBelief
 from relpomdp.home2d.tests.test_utils import add_target, random_policy_model, make_world, update_map,\
     preferred_policy_model, belief_fit_map
 import copy
+import math
 import time
 import subprocess
 
@@ -22,11 +23,18 @@ def build_pomdp_nk_agent(env, target_class,
     init_robot_pose = env.robot_state["pose"]
     nk_agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=slam_sensor_config.get("fov", 90),
+                                       fov=slam_sensor_config.get("fov", 360),
                                        min_range=slam_sensor_config.get("min_range", 1),
-                                       max_range=slam_sensor_config.get("max_range", 3),
+                                       max_range=slam_sensor_config.get("max_range", 4),
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
     target_id = list(env.ids_for(target_class))[0]
+
+    # We simulate that the robot first stays in place to map what's in front,
+    # and then rotates 90 degrees to map what's on top. This gives the robot
+    # a small initial map to work on instead of just its grid cell.
+    update_map(fake_slam, nk_agent, init_robot_pose, init_robot_pose, env)
+    rotated_robot_pose = (init_robot_pose[0], init_robot_pose[1], init_robot_pose[2] + math.pi/2)
+    update_map(fake_slam, nk_agent, init_robot_pose, rotated_robot_pose, env)
 
     # Uniform belief over free spaces and a layer of frontier
     frontier = nk_agent.grid_map.frontier()

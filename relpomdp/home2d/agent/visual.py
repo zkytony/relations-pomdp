@@ -161,12 +161,12 @@ class NKAgentViz(Home2DViz):
             for y in range(l):
                 # Draw free space; If this exists in robot's partial map,
                 # draw it with white; Otherwise, dark
-                if (x,y) in agent_map.free_locations:
-                    room_color = (255, 255, 255)
-                    boundary_color = (0, 0, 0)
-                elif (x,y) in frontier:
+                if (x,y) in frontier:
                     room_color = (250, 243, 55)
                     boundary_color = (245, 241, 142)
+                elif (x,y) in agent_map.free_locations:
+                    room_color = (255, 255, 255)
+                    boundary_color = (0, 0, 0)
                 else:
                     room_color = (66, 66, 66)
                     boundary_color = (66, 66, 66)
