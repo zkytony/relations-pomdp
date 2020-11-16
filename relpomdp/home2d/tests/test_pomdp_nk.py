@@ -95,7 +95,6 @@ def step_pomdp_nk(env, nk_agent, fake_slam, planner, target_id,
     robot_pose = new_robot_belief.mpe()["pose"]
 
     ## update map (fake slam)
-    prev_partial_map = copy.deepcopy(nk_agent.grid_map)
     update_map(fake_slam, nk_agent, prev_robot_pose, robot_pose, env)
 
     target_belief = nk_agent.object_belief(target_id)
@@ -103,7 +102,7 @@ def step_pomdp_nk(env, nk_agent, fake_slam, planner, target_id,
 
     ## Update belief based on map update/expansion
     target_hist = belief_fit_map(target_belief, nk_agent.grid_map,
-                                 prev_partial_map, get_dict=True)
+                                 get_dict=True)
 
     ## Now, do belief update based on observation
     next_target_hist = {}

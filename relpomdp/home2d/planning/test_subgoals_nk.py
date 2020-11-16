@@ -284,7 +284,6 @@ def _run_search(nk_agent, target_class, target_id,
         robot_state = new_robot_belief.mpe()
 
         # update map (fake slam)
-        prev_partial_map = copy.deepcopy(nk_agent.grid_map)
         update_map(fake_slam, nk_agent, prev_robot_pose, robot_state["pose"], env)
 
         partial_map = nk_agent.grid_map
@@ -297,7 +296,7 @@ def _run_search(nk_agent, target_class, target_id,
             # First, expand the belief space to cover the expanded map
             obj_belief = nk_agent.object_beliefs[objid]
             obj_hist = belief_fit_map(obj_belief, nk_agent.grid_map,
-                                      prev_partial_map, get_dict=True)
+                                      get_dict=True)
 
             # Then, perform belief update
             next_obj_hist = {}
