@@ -81,7 +81,7 @@ class NKAgentViz(Home2DViz):
         x, y = 0, 0
         radius = int(round(self._res / 2))
         for objclass in used_colors:
-            _legend_item_span = max(2,int(round(len(objclass)/2.5)))  # number of grid cells the legend item spans (cirlce+text)
+            _legend_item_span = max(2,int(round(len(objclass)/2.3)))  # number of grid cells the legend item spans (cirlce+text)
             if (x+_legend_item_span)*self._res+radius*2 > img_legend.shape[0]:
                 continue
             color = used_colors[objclass]
