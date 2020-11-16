@@ -52,8 +52,8 @@ def make_trials(env_file,
         "planning": {
             "discount_factor": 0.95,
             "nsteps": 100,
-            "max_depth": 30,
-            "num_sims": 2000
+            "max_depth": 25,
+            "num_sims": 1200
         }
     }
 
