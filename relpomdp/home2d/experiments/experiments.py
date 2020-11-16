@@ -52,8 +52,8 @@ def make_trials(env_file,
         "planning": {
             "discount_factor": 0.95,
             "nsteps": 100,
-            "max_depth": 20,
-            "num_sims": 1000
+            "max_depth": 30,
+            "num_sims": 2000
         }
     }
 
@@ -104,7 +104,7 @@ def make_trials(env_file,
 
     random.shuffle(all_trials)
     output_dir = "./results"
-    exp = Experiment("Search2DExperimentCC_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
+    exp = Experiment("Search2DExperimentDD_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
                      all_trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=6, exist_ok=False)
     print("Find multiple computers to run these experiments.")
