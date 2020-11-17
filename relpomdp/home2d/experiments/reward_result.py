@@ -120,8 +120,8 @@ class RewardsResult(YamlResult):
         if add_stat_annot:
             boxpairs = [
                 ("S+B", "Heur"),
-                ("S+B", "S"),
-                ("S+B", "NS")
+                # ("S+B", "S"),
+                # ("S+B", "NS")
             ]
             add_stat_annotation(ax, plot="barplot", data=df,
                                 x="agent_type", y="disc_reward",

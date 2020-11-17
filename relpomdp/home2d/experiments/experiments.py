@@ -52,8 +52,8 @@ def make_trials(env_file,
         "planning": {
             "discount_factor": 0.95,
             "nsteps": 100,
-            "max_depth": 25,
-            "num_sims": 1200
+            "max_depth": 20,
+            "num_sims": 1000
         }
     }
 
@@ -73,9 +73,11 @@ def make_trials(env_file,
             shared_config["env_id"] = env_id
             # We will do:
             agent_types = {
-                "pomdp-nk", "pomdp-subgoal-nk",
-                "pomdp-subgoal-nk-nocorr",
-                "random-nk", "heuristic-nk"
+                # "pomdp-nk",
+                "pomdp-subgoal-nk",
+                # "pomdp-subgoal-nk-nocorr",
+                # "random-nk",
+                "heuristic-nk"
             }
             shared_config["target_class"] = target_class
             if len(env.ids_for(target_class)) == 0:
@@ -104,7 +106,7 @@ def make_trials(env_file,
 
     random.shuffle(all_trials)
     output_dir = "./results"
-    exp = Experiment("Search2DExperimentDD_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
+    exp = Experiment("Search2DExperimentII_%d-%d-nrooms%d" % (domain_config["width"], domain_config["length"], domain_config["nrooms"]),
                      all_trials, output_dir, verbose=True, add_timestamp=True)
     exp.generate_trial_scripts(split=6, exist_ok=False)
     print("Find multiple computers to run these experiments.")
