@@ -112,21 +112,11 @@ class CorrelationObservationModel(pomdp_py.ObservationModel):
             else:
                 score = correlation_score(given_object_state.objclass,
                                           detected_class, self.df_corr)
-            if score > 0.5:
-                # the two classes are correlated in the training environments
-                if correlated:
-                    # the poses of these classes here are still (spatially) correlated
-                    val = score
-                else:
-                    # the poses of these classes are not spatially correlated
-                    val = 1 - score
+            if correlated:
+                # the poses of these classes here are still (spatially) correlated
+                val = score
             else:
-                # the two classes are not correlated in the training environments
-                if correlated:
-                    # the poses of these classes here are (spatially) correlated
-                    val = score  # small value
-                else:
-                    # the poses of these classes are still not spatially correlated
-                    val = 1 - score
+                # the poses of these classes are not spatially correlated
+                val = 1 - score
             prob *= val
         return prob
