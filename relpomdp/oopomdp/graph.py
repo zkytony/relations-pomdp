@@ -47,7 +47,7 @@ class Edge:
         elif nid == self.nodes[1].id:
             return self.nodes[0].id
         else:
-            raise ValueError("nid %d does not exist in this edge.")
+            raise ValueError("nid {} does not exist in this edge.".format(nid))
 
     @property
     def degenerate(self):
@@ -299,8 +299,8 @@ class Graph(EdgeNodeSet):
             if nid1 in comp.nodes and nid2 in comp.nodes:
                 graph = comp
         if graph is None:
-            print("Warning: Nodes %d and %d are not on the same connected component"\
-                  % (nid1, nid2))
+            print("Warning: Nodes {} and {} are not on the same connected component"\
+                  .format(nid1, nid2))
             return []
         if nid1 == nid2:
             return []
