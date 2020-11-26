@@ -1,5 +1,15 @@
 # Relations-POMDP
 
+[11-26-2020]
+
+We are now moving past 2D gridworld. We have done what we can given the assumptions in this domain and presented the preliminary results. The focus of the next stage is:
+
+* More realism as an object search problem. On the AI2Thor domains
+* Principled math to formulate problem and (derive) approach
+* Writing - How does this work situate in the literature comapred to other:
+   * Object search work (including robotics ones, and the semantic visual navigation in vision community)
+   * POMDP learning/planning work
+
 [11-07-2020]
 
 Currently, we are staying on the route towards object search with relations.
