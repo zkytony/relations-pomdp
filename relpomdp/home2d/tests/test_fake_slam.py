@@ -29,8 +29,8 @@ def wait_for_action(viz, timeout=10):
 def make_world():
     robot_id = 0
     init_robot_pose = (0, 0, 0)
-    init_state, grid_map = random_world(10, 10, 3,
-                                        ["Office", "Office", "Kitchen", "Bathroom",
+    init_state, grid_map = random_world(6, 6, 2,
+                                        ["Office", "Kitchen", "Bathroom",
                                          "Office", "Office", "Kitchen", "Bathroom"],
                                         objects={"Office": {"Computer": (1, (1,1))},
                                                  "Kitchen": {"Salt": (1, (1,1)),
@@ -50,7 +50,7 @@ def test_map_building(env):
     init_robot_pose = env.robot_state["pose"]
     agent = NKAgent(robot_id, init_robot_pose)
     fake_slam = FakeSLAM(Laser2DSensor(robot_id,
-                                       fov=130, min_range=1,
+                                       fov=90, min_range=1,
                                        max_range=3, angle_increment=0.1))
     viz = NKAgentViz(agent,
                      env,

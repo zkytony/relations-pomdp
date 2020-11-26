@@ -5,6 +5,7 @@ import pickle
 import yaml
 import copy
 import time
+import math
 import subprocess
 from relpomdp.home2d.constants import FILE_PATHS
 from relpomdp.home2d.tests.test_utils import update_map
@@ -53,7 +54,15 @@ def main():
                                        max_range=slam_sensor_config.get("max_range", 3),
                                        angle_increment=slam_sensor_config.get("angle_increment", 0.1)))
 
+    # We simulate that the robot first stays in place to map what's in front,
+    # and then rotates 90 degrees to map what's on top. This gives the robot
+    # a small initial map to work on instead of just its grid cell.
+    update_map(fake_slam, nk_agent, init_robot_pose, init_robot_pose, env)
+    rotated_robot_pose = (init_robot_pose[0], init_robot_pose[1], init_robot_pose[2] + math.pi/2)
+    update_map(fake_slam, nk_agent, init_robot_pose, rotated_robot_pose, env)
+
     # Create visualization
+    _game_states = []
     with open(FILE_PATHS["colors"]) as f:
         colors = yaml.load(f)
         for objclass in colors:
@@ -65,12 +74,12 @@ def main():
                      controllable=True,
                      img_path=FILE_PATHS["object_imgs"])
     viz.on_init()
-    viz.on_render()
+    _, _, img = viz.on_render()
+    _game_states.append(img)
 
     _gamma = 1.0
     _discount_factor = trial.config["planning"]["discount_factor"]
     _disc_reward = 0.0
-    _game_states = []
     target_id = list(env.ids_for(trial.config["target_class"]))[0]
     for i in range(len(history)):
         start_time = time.time()
