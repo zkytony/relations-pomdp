@@ -1,7 +1,10 @@
 # Start interactive scene in ai2thor
 import argparse
 from ai2thor.controller import Controller
+import ai2thor_utils as a2til
 from pynput import keyboard
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcl
 import cv2
 import numpy as np
 import time
@@ -14,7 +17,8 @@ KEY_TO_ACTION = {
     "f": ("RotateRight", {'degrees':15.0}),
     "a": ("RotateLeft", {'degrees':15.0}),
     "w": "LookUp",
-    "x": "LookDown"
+    "x": "LookDown",
+    "p": "GetReachablePositions"
 }
 
 class Simulator:
@@ -23,18 +27,23 @@ class Simulator:
         self.keyboard_listener = keyboard.Listener(on_press=self._on_press)
 
     def _on_press(self, key):
-        print("YOU PRESSED {}".format(key.char))
-        if key.char in KEY_TO_ACTION:
-            action = KEY_TO_ACTION[key.char]
-            params = {}
-            if type(action) == tuple:
-                action, params = action
-            event = self.controller.step(action=action, **params)
-            img = event.depth_frame
-            img /= np.max(img)
-            img *= 255
-            cv2.imshow('img', img.astype(np.uint8))
-            cv2.waitKey(0)
+        if hasattr(key, "char"):
+            print("YOU PRESSED {}".format(key.char))
+            if key.char in KEY_TO_ACTION:
+                action = KEY_TO_ACTION[key.char]
+                params = {}
+                if type(action) == tuple:
+                    action, params = action
+                event = self.controller.step(action=action, **params)
+                img = event.depth_frame
+                img /= np.max(img)
+                img *= 255
+                print("Visible objects:", a2til.visible_objects(event.metadata))
+                print("Action return:", event.metadata["actionReturn"])
+                if action == "GetReachablePositions":
+                    img = a2til.reachable_locations(event.metadata)
+                cv2.imshow('img-depth', img.astype(np.uint8))
+                cv2.waitKey(0)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -55,7 +64,9 @@ def main():
                             agentMode=args.agent_mode,
                             width=args.width,
                             height=args.height,
-                            renderDepthImage=True)
+                            renderDepthImage=True,
+                            renderClassImage=True,
+                            renderObjectImage=True)
 
     simulator = Simulator(controller)
     simulator.keyboard_listener.start()
