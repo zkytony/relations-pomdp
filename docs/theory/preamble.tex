@@ -1,0 +1,162 @@
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage[margin=1.75in]{geometry}
+
+
+\usepackage{multicol}
+\usepackage{graphicx}
+\graphicspath{{academic/figs/}}
+
+\usepackage{dblfloatfix}
+% \usepackage{algorithm}
+% \usepackage{algorithmic}
+\usepackage[ruled]{algorithm2e}
+\newcommand\mycommfont[1]{\footnotesize\sffamily{#1}}
+\newcommand\myprocname[1]{\rmfamily{#1}}
+\SetCommentSty{mycommfont}
+\SetFuncSty{myprocname}
+
+\usepackage{changepage}
+
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{amsmath, amsthm}
+\usepackage{bm}
+\usepackage{amssymb}
+
+% numbers option provides compact numerical references in the text. 
+\usepackage[numbers]{natbib}
+% \usepackage[sectionbib,round]{natbib}
+% \usepackage{chapterbib}  
+
+\usepackage{upgreek}
+\usepackage{multirow}
+\usepackage{amsfonts}
+\usepackage{here}
+\usepackage[normalem]{ulem}
+% \usepackage{fontspec}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{subcaption}
+\usepackage{minitoc}
+\usepackage[font=small, skip=5pt]{caption}
+\usepackage[shortlabels]{enumitem}
+\usepackage{listings}
+\lstset{
+  mathescape,
+  frame=tblr,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\ttfamily\small},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\usepackage{xurl}
+\usepackage{tikz}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{csquotes}
+\usepackage{xcolor} % Hyperlink color
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!80!black},
+    urlcolor={blue!80!black}
+}
+
+\pdfinfo{
+   /Author (Kaiyu Zheng)
+   /Title  (One Big Collection)
+}
+\usepackage{cleveref}
+\usepackage{pdfpages}
+
+
+
+
+
+% \makeatletter
+% \def\@IEEEsectpunct{.\ \,}
+% \def\paragraph{\@startsection{paragraph}{4}{\z@}{1.5ex plus 1.5ex minus 0.5ex}%
+% {0ex}{\normalfont\normalsize\bfseries}}
+% \makeatother
+
+
+
+% New commands
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+\newcommand{\etal}{\emph{et~al.}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\roll}{\theta_{\text{roll}}}
+\newcommand{\pitch}{\theta_{\text{pitch}}}
+\newcommand{\yaw}{\theta_{\text{yaw}}}
+\def\imp{\rightarrow}
+\newcommand\XOR{\mathbin{\char`\^}}
+\newcommand\IFF{\leftrightarrow}
+\newcommand\Equiv{\Longleftrightarrow}
+\newcommand\modt{\text{ mod }}
+\newcommand{\modp}[1]{(\text{mod }$#1$)}
+\newcommand{\MOD}[2]{\text{$#1$ (mod $#2$)}}
+\newcommand{\IMP}{\Rightarrow}
+\newcommand{\bksh}{\textbackslash}
+
+\newcommand{\tr}{\textnormal{tr}}
+\newcommand{\tl}{\tilde}
+%% \newcommand{\Pr}{\text{Pr}}
+\newcommand{\Var}{\text{Var}}
+\newcommand{\atan}{\text{atan}}
+\newcommand{\Alpha}{\text{A}}
+\newcommand{\Norm}[1]{\lVert #1 \rVert}
+\newcommand{\erf}{\text{erf}}
+\renewcommand{\Re}{\text{Re }}
+\renewcommand{\Im}{\text{Im }}
+\newcommand{\Ln}{\text{Ln }}
+\newcommand{\ul}[1]{\underline{#1}}
+
+\renewcommand{\d}{\partial}
+\newcommand{\D}{\Delta}
+\newcommand{\e}{\text{e}}
+
+
+
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+
+\newtheorem{problem}{Problem}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{lemma}{Lemma}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\eg}{\textit{e.g.}}
+\newcommand{\ie}{\textit{i.e.}}
+
+\newcommand{\Val}{\textsc{Val}}
+\newcommand{\Normz}{\textsc{Norm}}
+\newcommand{\Children}{\textsc{Ch}} 
+
+\newcommand{\todo}[1]{{\footnotesize\color{red}[{\bf TODO: } \textsf{#1}]}}
+% People's comments
+\definecolor{purple}{rgb}{0.858, 0.08, 0.85}
+\definecolor{darkgreen}{rgb}{0.08, 0.55, 0.08}
+\definecolor{blue1}{rgb}{0.2, 0.2, 0.6}
+\definecolor{green1}{rgb}{0.2, 0.6, 0.2}
+\definecolor{green2}{rgb}{0.1, 0.4, 0.1}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\makeatletter
+\newcommand*\bigcdot{\mathpalette\bigcdot@{.5}}
+\newcommand*\bigcdot@[2]{\mathbin{\vcenter{\hbox{\scalebox{#2}{$\m@th#1\bullet$}}}}}
+\makeatother
