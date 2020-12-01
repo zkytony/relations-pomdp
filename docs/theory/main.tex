@@ -80,6 +80,11 @@ where $\tau(b,a,o)$ is the belief state after Bayesian filtering on $b$ given $a
 
 \section{Problem Formulation}
 
+I attempted to formulate two concrete problems to express the broad and vague problem of ``expanding a POMDP to obtain better optimal policy for a given task''. Our hope is that the solution to either problem implies a principled planning algorithm, for our task, target search in unknown rich environment.
+
+% Broadly and vaguely, for a given ``task'', we are interested in how a POMDP $P_1$ that ``models'' the task can be expanded or modified into another POMDP $P_2$ that has an ``optimal policy'' that is ``better'' than the optimal policy for $P_1$.  I think there are two concrete problem formulations that express this broad problem, and imply principled planning algorithms. Our hope is that we can solve either one of them, and use the implied planning algorithm to do our task, target search in unknown rich environment, more effectively.
+
+
 \subsection{Problem 1: Expansion of observation space and observation model}
 % Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a
 % task of interest, where $s_{goal}\in S$ is the single goal state, such that
@@ -126,6 +131,12 @@ Suppose $\alpha^{*}_{M(\td{b}_{goal})}$ is the $\alpha$-vector for the optimal p
 \begin{align}
 N_{\td{P}}(\td{\alpha}^*, \td{b}_0) + N_{P}(\alpha^{*}_{M(\td{b}_{goal})}, M(\td{b}_{goal})) < N_P(\alpha^*, b_0)
 \end{align}
+\end{definition}
+
+\noindent \textbf{Remark.} This problem looks extremely hard. In practice, if we have a set of intermediate tasks to choose from, and the task rewards are sparse in the way defined above, then the goal is to learn or come up with a function $N_P(\alpha, b)$, which expresses ``difficulty'', and pick intermediate tasks so that the above inequality is satisfied. The idea of the mapping $M$ is to express ``correlation'' between $P$ and $\td{P}$. One concern is, if after solving $\td{P}$, the belief concentrates on $\td{s}_{goal}$, how can such a belief ever be useful to inform a belief state for the original task $P$? $s_{goal}$ probably means the ``success'' state, and knowing that ``finding kitchen'' is success doesn't inform ``finding salt''. You need to know the location of the kitchen, which cannot be captured by the single $s_{goal}$.
+
+The sparse reward formulation above is temporary because I think it likely helps solving the first problem (regarding expansion of observation space) when manipulating the equation of $\td{\alpha}^*(s) -\alpha^*(s)$.
+
 
 
 % Further, let
@@ -138,7 +149,6 @@ N_{\td{P}}(\td{\alpha}^*, \td{b}_0) + N_{P}(\alpha^{*}_{M(\td{b}_{goal})}, M(\td
 % b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
 % \end{align}
 % Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
-\end{definition}
 
 
 % %%%%%%%%%
