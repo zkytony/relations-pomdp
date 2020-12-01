@@ -79,14 +79,20 @@ where $\tau(b,a,o)$ is the belief state after Bayesian filtering on $b$ given $a
 
 
 \section{Problem Formulation}
-Broadly and vaguely, for a given ``task'', we are interested in how a POMDP $P_1$ that ``models'' the task can be expanded or modified into another POMDP $P_2$ that has an ``optimal policy'' that is ``better'' than the optimal policy for $P_1$.  I think there are two concrete problem formulations that express this broad problem, and imply principled planning algorithms. Our hope is that we can solve either one of them, and use the implied planning algorithm to do our task, target search in unknown rich environment, more effectively.
 
 \subsection{Problem 1: Expansion of observation space and observation model}
+% Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a
+% task of interest, where $s_{goal}\in S$ is the single goal state, such that
+% $R(s_{goal})=R_{max}=1$, and $R(s)=0, \forall s \neq \in s_{goal}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy for $P$ at the initial belief $b_0$.
 
-The motivating intuition is that, for the task of ``finding salt'' in an environment that contains not only salt, a POMDP that contains only the observation model for salt will lead to an optimal policy (despite being optimal) worse than a POMDP that also contains an observation model for, e.g. kitchen, because the observation of kitchen's location can inform the location of salt, and the observation of kitchen is likely less noisy. We are interested in characterizing the necessary conditions of the additional observation space and observation model so that the resulting expanded POMDP is guaranteed to have a better optimal policy.
+The motivating intuition is that, for the task of ``finding salt'' in an environment that contains not only salt, a POMDP that contains only the observation model for salt will lead to an optimal policy worse than that of a POMDP that also contains an observation model for, e.g. kitchen, because the observation of kitchen's location can inform the location of salt, and the observation of kitchen is likely less noisy. We are interested in characterizing the necessary conditions of the additional observation space and observation model so that the resulting expanded POMDP is guaranteed to have a better optimal policy.
 
 \begin{definition}(Problem 1)
-Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
+Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a
+task of interest, where $s_{goal}\in S$ is the single goal state, such that
+$R(s_{goal})=R_{max}=1$, and $R(s)=0, \forall s \neq s_{goal}$.
+%Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
 \begin{align}
 b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
 \end{align}
@@ -95,14 +101,66 @@ Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \a
 
 \noindent \textbf{Implications for planning.} Suppose we have a global observation space $\Omega_{all}$ such that subspace $\Omega \subseteq \Omega_{all}$ and subspace $\td{\Omega} \subseteq \Omega_{all}$, and a global observation model $O_{all}$ factored by individual observation variables. The solution to the above problem allows us to, at any time during planning, pick variables from $\Omega_{all}$ to form a new POMDP that will guarantee to have a better optimal policy, given that the belief state $b_t$ also satisfies the necessary conditions.
 
+
 \subsection{Problem 2: The Benefit of Intermediate Tasks}
 Here, we would like to express a problem whose solution will lead to the planning behavior of setting ``finding kitchen'' as an intermediate task for the task of ``finding salt''.
-%%%%%%%%%
-Suppose the state of the environment can be factored into $N_{all}$ variables: $S_{all}=S_1\times\cdots\times S_N$, and the full observation space can be factored into $M_{all}$ variables: $\Omega_{all}=\Omega_1\times\cdots\times \Omega_M$. In addition, the action space that the agent can perform is $A_{all}=\{a_1,\cdots,a_{L}\}$, which is a set of $L_{all}$ actions.
-%%%%%%%
-As above, let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$. Let $S\subseteq S_{all}$ be a state space that involves fewer variables than $S_{all}$. In addition, let $A\subseteq A_{all}$ and $\Omega\subseteq \Omega_{all}$ be action, observation spaces that involve fewer variables than $A_{all}$ and $\Omega_{all}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector for the optimal policy of $P$ at initial belief $b_0$.
 
-Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that represents an intermediate task, where $s_{goal}\in \td{S}$ is the single goal state, and $s_{fail}\in \td{S}$ is the single failure state, and $\td{R}_{max}=\td{R}(s_{goal})$, $\td{R}_{min}=\td{R}(s_{fail})$, and $\td{R}(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+\begin{definition}(Problem 2)
+Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a
+task of interest, where $s_{goal}\in S$ is the single goal state, such that
+$R(s_{goal})=R_{max}=1$, and $R(s)=0, \forall s \neq s_{goal}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$.
+
+Denote the expected number of actions to reach the goal state in $P$ given a policy corresponding to $\alpha$ and initial belief state $b$ as $N_P(\alpha, b)$. The definition of the sparse reward function $R$ suggests that the optimal policy $\alpha^*=\argmin_{\alpha\in\Gamma}N_P(\alpha, b_0)$, i.e., the optimal policy also minimizes the expected number of actions to reach the goal state.\footnote{Agree?}
+
+
+% Due to the definition of the reward function, the optimal policy also minimizes the expected number of actions (steps) to reach the goal state under belief $b_0$, denoted as $N_P(\alpha^*,b_0)$\footnote{Agree with this statement? $N_P(\alpha,b)$ means the expected number of actions to reach the goal state in $P$, where actions follow policy $\alpha$ and state and observation transitions follow the models in $P$.}.
+
+Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that represents an intermediate task, where $\td{s}_{goal}\in \td{S}$ is the single goal state, such that
+$\td{R}(\td{s}_{goal})=R_{max}=1$, and $\td{R}(s)=0, \forall \td{s} \neq \td{s}_{goal}$. Let $\td{P}$ be a POMDP $\langle \td{S}, \td{A}, \td{\Omega}, \td{T}, \td{O}, \td{R}, \gamma  \rangle$. Let $\td{\alpha}^*$ be the $\alpha$-vector for the optimal policy of $\td{P}$ at initial belief $\td{b}_0$. Then, $N_{\td{P}}(\td{\alpha}^*, \td{b}_0)$ represents the minimum expected number of actions towards the goal state in the intermediate task under $\td{b}_0$.
+
+Define a mapping $M:B_{\td{P}}\rightarrow B_{P}$ that maps a belief for the intermediate task POMDP to a belief for the task POMDP of interest.\footnote{The idea here is that I want to establish a way to say that solving $\td{P}$ changes the belief state in $P$.}
+% The final belief state when solving $\td{P}$ concentrates on $\td{s}_{goal}$ which doesn't seem to have enough information. Therefore I am using history here which contains all the observations accumulated when solving $\td{P}$, which may be useful to inform the belief state in $P$.}
+Upon completion of the intermediate task, the agent must be at $\td{s}_{goal}$, on which the belief concentrates entirely, denoted as $\td{b}_{goal}$.
+
+Suppose $\alpha^{*}_{M(\td{b}_{goal})}$ is the $\alpha$-vector for the optimal policy when solving $P$ under the initial belief $M(\td{b}_{goal})$. The problem is, what needs to hold for $b_0$, $P$ and $\td{P}$ so that %how to characterize properties of $\td{P}$ so that the following hold:
+\begin{align}
+N_{\td{P}}(\td{\alpha}^*, \td{b}_0) + N_{P}(\alpha^{*}_{M(\td{b}_{goal})}, M(\td{b}_{goal})) < N_P(\alpha^*, b_0)
+\end{align}
+
+
+% Further, let
+
+
+
+% %Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+% Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
+% \begin{align}
+% b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+% \end{align}
+% Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
+\end{definition}
+
+
+% %%%%%%%%%
+% \textbf{Environment variables.}
+% Suppose the state of the environment can be factored into $N_{all}$ variables: $S_{all}=S_1\times\cdots\times S_{N_{all}}$, and the full observation space can be factored into $M_{all}$ variables: $\Omega_{all}=\Omega_1\times\cdots\times \Omega_{M_{all}}$. In addition, the action space that the agent can perform is $A_{all}=\{a_1,\cdots,a_{L_{all}}\}$.
+
+% %%%%%%%
+% \textbf{Task POMDP.}
+% Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a
+% task of interest, where $s_{goal}\in S$ is the single goal state, such that
+% $R(s_{goal})=R_{max}=1$, and $R(s)=0, \forall s \neq s_{goal}$.
+%  Let $S\subseteq S_{all}$ be a state space that involves fewer variables than $S_{all}$. In addition, let $A\subseteq A_{all}$ and $\Omega\subseteq \Omega_{all}$ be action, observation spaces that involve fewer variables than $A_{all}$ and $\Omega_{all}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector for the optimal policy of $P$ at initial belief $b_0$.
+
+% \textbf{Intermediate task POMDP.}
+% Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that represents an intermediate task, where $s_{goal}\in \td{S}$ is the single goal state, such that
+% $\td{R}(s_{goal})=R_{max}=1$, and $\td{R}(s)=0, \forall s \neq s_{goal}$.
+%  Let $\td{S}\subseteq S_{all}$ be a state space that involves fewer variables than $S_{all}$. In addition, let $\td{A}\subseteq A_{all}$ and $\td{\Omega}\subseteq \Omega_{all}$ be action, observation spaces that involve fewer variables than $A_{all}$ and $\Omega_{all}$. Let $\td{P}$ be a POMDP $\langle \td{S}, \td{A}, \td{\Omega}, \td{T}, \td{O}, \td{R}, \gamma  \rangle$. Let $\td{\alpha}^*$ be the $\alpha$-vector for the optimal policy of $\td{P}$ at initial belief $\td{b}_0$.
+
+
+
+
+% Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that represents an intermediate task, where $s_{goal}\in \td{S}$ is the single goal state, and $s_{fail}\in \td{S}$ is the single failure state, and $\td{R}_{max}=\td{R}(s_{goal})$, $\td{R}_{min}=\td{R}(s_{fail})$, and $\td{R}(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
 
 % Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $b_0$ be the initial belief. The optimal policy with horizon $t$ for $P$ at $b_0$ corresponds to an $\alpha$-vector,
 % $\alpha^* = \argmax_{\alpha\in\Gamma_t} (\alpha\cdot b_0)$, where $\Gamma_t$ is the set of all $\alpha$-vectors under this horizon.
@@ -115,6 +173,18 @@ Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that repre
 % % \end{align}
 
 % $\td{\alpha}$
+
+
+
+% Due to the sparsity of the reward function, the optimal policy minimizes the \emph{expected number of actions to reach the goal state}.
+% % To represent this quantity, let $\1{1x}$
+% % which is exactly the value of this policy (
+
+% Broadly and vaguely, for a given ``task'', we are interested in how a POMDP $P_1$ that ``models'' the task can be expanded or modified into another POMDP $P_2$ that has an ``optimal policy'' that is ``better'' than the optimal policy for $P_1$.  I think there are two concrete problem formulations that express this broad problem, and imply principled planning algorithms. Our hope is that we can solve either one of them, and use the implied planning algorithm to do our task, target search in unknown rich environment, more effectively.
+
+% \subsection{Problem 1: Expansion of observation space and observation model}
+
+
 
 
 \bibliographystyle{plainnat}
