@@ -1,6 +1,8 @@
 \documentclass{article}
 \include{preamble}
 
+\newcommand{\td}[1]{\tilde{#1}}
+
 \title{Theory}
 \author{Kaiyu Zheng}
 \date{\today}
@@ -42,7 +44,7 @@ The value of the policy under a belief state $b$ is the expected value over stat
 \begin{align}
 V_p(b) = \E_{s\sim b} [V_p(s)] = \sum_{s\in S}b(s)V_p(s)
 \end{align}
-Define $\alpha=[ V_p(s_1)\ V_p(s_2)\ \cdots\ V_p(s_n)]$ where $s_1,\cdots,s_n\in S$, and regard the belief state $b$ a vector. We have
+Define $\alpha_p=[ V_p(s_1)\ V_p(s_2)\ \cdots\ V_p(s_n)]$ where $s_1,\cdots,s_n\in S$, and regard the belief state $b$ a vector. We have
 \begin{align}
 V_p(b) = b\cdot \alpha_p
 \end{align}
@@ -52,7 +54,7 @@ V_t(b) = \max_{p\in\mathcal{P}} b\cdot \alpha_p
 \end{align}
 It is important to understand the geometric interpretation of this value function\footnote{See Figure 5 and 6 in \citet{kaelbling1998planning}.}. The first insight is that $V_p(b)$ is a hyperplane under $S$.\footnote{A hyperplane under a $d$ dimensional space is a subspace with dimension $d-1$.} That means each $\alpha$-vector corresponds to a hyperplane. The second insight is that the belief space can be divided into regions, where the belief points in each region have an $\alpha$-vector which leads to the maximum value. In other words, the set of $\alpha$-vectors where each dominates (i.e. leads to maximum value at) a non-empty belief region forms the \emph{optimal policy}. The value function $V_t:B\rightarrow \mathbb{R}$, as a result, is a piecewise linear and convex function.
 
-An alternative interpretation leads to another, equivalent, form of $V_t(b)$. The value at a belief state $b$ can be thought of as the dot product between $b$ and the dominating $\alpha$-vector at this belief point. This dominating $\alpha$-vector should correspond to a policy tree optimal at $b$. This means selecting the best root action, and the best subtree for every child, which should lead to the highest value among all possible subtrees. Hence \cite{pineau2003point},
+An alternative interpretation leads to another, equivalent, form of $V_t(b)$ \cite{pineau2003point}. The value at a belief state $b$ can be thought of as the dot product between $b$ and the dominating $\alpha$-vector at this belief point. This dominating $\alpha$-vector should correspond to a policy tree optimal at $b$. This means selecting the best root action, and the best subtree for every child, which should lead to the highest value among all possible subtrees. Hence,
 \begin{align}
 \begin{split}
 V_t(b) &= \max_{a\in A} \Bigg[ \sum_{s\in S} R(s,a)b(s)\\
@@ -61,14 +63,50 @@ V_t(b) &= \max_{a\in A} \Bigg[ \sum_{s\in S} R(s,a)b(s)\\
 \end{align}
 where $\Gamma_{t-1}=\{\alpha_1,\alpha_2,\cdots,\alpha_n\}$ be a set of $\alpha$-vectors, each corresponding to a policy with horizon $t-1$ (note that this is not necessarily the optimal set).
 
+A shorter way to write the value function, which often appears in the preliminary section of papers, is \cite{lee2007makes}
+\begin{align}
+V_t(b) = \max_{a\in A}\left[ \sum_{s\in S} R(s,a)b(s) + \gamma \sum_{o\in\Omega} \Pr(o | b,a) V_{t-1}(\tau(b,a,o))   \right]
+\end{align}
+where $\tau(b,a,o)$ is the belief state after Bayesian filtering on $b$ given $a,o$, and
+\begin{align}
+\Pr(o | b,a) = \sum_{s\in S}b(s)\sum_{s'\in S}T(s,a,s')O(s',a,o)
+\end{align}
+
+
 
 
 % , which defines a mapping from belief space $B$ to value space $\mathbb{R}$.
 
 
+\section{Problem Formulation}
+Broadly and vaguely, for a given ``task'', we are interested in how a POMDP $P_1$ that ``models'' the task can be expanded or modified into another POMDP $P_2$ that has an ``optimal policy'' that is ``better'' than the optimal policy for $P_1$.  I think there are two concrete problem formulations that express this broad problem, and imply principled planning algorithms. Our hope is that we can solve either one of them, and use the implied planning algorithm to do our task, target search in unknown rich environment, more effectively.
 
-\section{Introduction}
-This is a citation \cite{diuk2008object}.
+\subsection{Problem 1: Expansion of observation space and observation model}
+
+The motivating intuition is that, for the task of ``finding salt'' in an environment that contains not only salt, a POMDP that contains only the observation model for salt will lead to an optimal policy (despite being optimal) worse than a POMDP that also contains an observation model for, e.g. kitchen, because the observation of kitchen's location can inform the location of salt, and the observation of kitchen is likely less noisy. We are interested in characterizing the necessary conditions of the additional observation space and observation model so that the resulting expanded POMDP is guaranteed to have a better optimal policy.
+
+\begin{definition}(Problem 1)
+Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{O}=O\cup\{\td{o}\}$ and $\td{O}(s',a,o)=O(s',a,o)\ \forall o\neq \td{o}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. What conditions of $b_0$, $\td{o}$ and $\td{O}(s',a,\td{o})$ need to be satisfied so that
+\begin{align}
+b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+\end{align}
+\end{definition}
+
+
+
+
+% Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $b_0$ be the initial belief. The optimal policy with horizon $t$ for $P$ at $b_0$ corresponds to an $\alpha$-vector,
+% $\alpha^* = \argmax_{\alpha\in\Gamma_t} (\alpha\cdot b_0)$, where $\Gamma_t$ is the set of all $\alpha$-vectors under this horizon.
+
+% Our intuition is that
+
+% Given an initial belief $b_0$, the optimal POMDP policy with horizon $t$ corresponds to an $\alpha$-vector, %$\alpha^*$, defined as
+% % \begin{align}
+
+% % \end{align}
+
+% $\td{\alpha}$
+
 
 \bibliographystyle{plainnat}
 \bibliography{references}
