@@ -93,11 +93,16 @@ b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
 Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
 \end{definition}
 
-\noindent \textbf{Implications for planning.} Suppose we have a global observation space $\Omega^*$ such that $\Omega \subset \Omega^*$ and $\td{\Omega} \subset \Omega^*$, and a global observation model $O^*$. The solution to the above problem allows us to, at any time during planning, pick variables from $\Omega^*$ to form a new POMDP that will guarantee to have a better optimal policy, given that the belief state $b_t$ also satisfies the necessary conditions.
+\noindent \textbf{Implications for planning.} Suppose we have a global observation space $\Omega_{all}$ such that subspace $\Omega \subseteq \Omega_{all}$ and subspace $\td{\Omega} \subseteq \Omega_{all}$, and a global observation model $O_{all}$ factored by individual observation variables. The solution to the above problem allows us to, at any time during planning, pick variables from $\Omega_{all}$ to form a new POMDP that will guarantee to have a better optimal policy, given that the belief state $b_t$ also satisfies the necessary conditions.
 
 \subsection{Problem 2: The Benefit of Intermediate Tasks}
+Here, we would like to express a problem whose solution will lead to the planning behavior of setting ``finding kitchen'' as an intermediate task for the task of ``finding salt''.
+%%%%%%%%%
+Suppose the state of the environment can be factored into $N_{all}$ variables: $S_{all}=S_1\times\cdots\times S_N$, and the full observation space can be factored into $M_{all}$ variables: $\Omega_{all}=\Omega_1\times\cdots\times \Omega_M$. In addition, the action space that the agent can perform is $A_{all}=\{a_1,\cdots,a_{L}\}$, which is a set of $L_{all}$ actions.
+%%%%%%%
+As above, let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$. Let $S\subseteq S_{all}$ be a state space that involves fewer variables than $S_{all}$. In addition, let $A\subseteq A_{all}$ and $\Omega\subseteq \Omega_{all}$ be action, observation spaces that involve fewer variables than $A_{all}$ and $\Omega_{all}$. Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector for the optimal policy of $P$ at initial belief $b_0$.
 
-
+Let $\td{R}:\td{S}\rightarrow \mathbb{R}$ be a sparse reward function that represents an intermediate task, where $s_{goal}\in \td{S}$ is the single goal state, and $s_{fail}\in \td{S}$ is the single failure state, and $\td{R}_{max}=\td{R}(s_{goal})$, $\td{R}_{min}=\td{R}(s_{fail})$, and $\td{R}(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
 
 % Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $b_0$ be the initial belief. The optimal policy with horizon $t$ for $P$ at $b_0$ corresponds to an $\alpha$-vector,
 % $\alpha^* = \argmax_{\alpha\in\Gamma_t} (\alpha\cdot b_0)$, where $\Gamma_t$ is the set of all $\alpha$-vectors under this horizon.
