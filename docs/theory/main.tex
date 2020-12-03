@@ -78,8 +78,9 @@ where $\tau(b,a,o)$ is the belief state after Bayesian filtering on $b$ given $a
 % , which defines a mapping from belief space $B$ to value space $\mathbb{R}$.
 
 
-\section{Problem Formulation}
+\section{Problem Formulation 1}
 
+\textbf{Adding New Factor to Both $S$ and $Z$.}
 The motivating intuition is that for the task of ``finding salt'' in an environment that contains not only salt, a POMDP that models the task in terms of the robot state and salt state in its state and observation spaces will lead to a worse optimal policy than that of a POMDP that also models the kitchen, because (1) the belief state changed to be the joint space of salt and kitchen, and (2) the observation of kitchen is likely less noisy.  The question is under what conditions would an expansion of a POMDP lead to a better optimal policy than if no expansion is performed?
 
 \subsection{Definitions}
@@ -99,9 +100,9 @@ Define a desired task and a POMDP corresponding to this task:
 \noindent Define an \emph{expanded} POMDP for the same task:
 \begin{itemize}
 \item $\td{S} = S\times S_X$, where $S_X$ is the additional factor
-\item $\td{Z} = Z\times Z_X$, where $Z_X$ is the additional factor
+\item $\td{Z} = Z\times Z_X$, where $Z_X$ is the additional factor, $Z_X=S_X\cup\{\none\}$.
 \item $\td{T}: \td{S}\times A\times\td{S}$, a new transition model
-\item $\td{O}: \td{S}\times A\times\td{O}$, a new observation model
+\item $\td{O}: \td{S}\times A\times\td{Z}$, a new observation model
 \item $\td{R}: \td{S}\times A$, a reward function where, $\forall \td{s}=s\cup\{s_X\}$, $\td{R}(\td{s},a)=R(s,a)$. That is, the rewards are evaluated without $S_X$.
 \item $\td{b}_0:\td{S}\rightarrow [0,1]$, where $\sum_{s_X\in S_X}\td{b}_0(\td{s})=b_0(s)$
 %\sum_{s_X\in S_X} \Pr(s_1,\cdots,s_N,s_X)=\Pr(s_1,\cdots,s_N,s_X)=b_0(s)$
@@ -114,6 +115,44 @@ Define a desired task and a POMDP corresponding to this task:
 Under what conditions will the following be satisfied?
 \begin{align}
 \td{b}_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+\end{align}
+This inequality means that the optimal value when solving $\td{P}$ is greater than that of $P$, which means it achieves higher expected return on the desired task.
+
+
+
+
+\section{Problem Formulation 2}
+
+\textbf{Adding New Factor to only $Z$.}
+% The motivating intuition is that for the task of ``finding salt'' in an environment that contains not only salt, a POMDP that models the task in terms of the robot state and salt state in its state and observation spaces will lead to a worse optimal policy than that of a POMDP that also models the kitchen, because (1) the belief state changed to be the joint space of salt and kitchen, and (2) the observation of kitchen is likely less noisy.  The question is under what conditions would an expansion of a POMDP lead to a better optimal policy than if no expansion is performed?
+
+\subsection{Definitions}
+Define a desired task and a POMDP corresponding to this task:
+\begin{itemize}
+\item $R:S\times A\rightarrow[0,1]$: The desired task's reward function
+\item $S=S_1\times S_2\times\cdots\times S_N$: The factored state space
+\item $Z=Z_1\times Z_2\times\cdots\times Z_N$: The factored observation space, where $Z_i=S_i\cup\{\none\}$
+\item $T:S\times A\times S$: The transition model
+\item $O:S\times A\times Z$: The observation model
+\item $P=\langle S,A,Z,T,O,R,\gamma  \rangle$: A POMDP for the desired task
+\item $b_0: S\rightarrow [0,1]$: Initial belief state of $P$
+\item $\alpha^*$: The $\alpha$-vector for the optimal policy for $P$
+\item $p^*$: The optimal policy tree corresponding to $\alpha^*$
+\end{itemize}
+
+\noindent Define an \emph{expanded} POMDP for the same task:
+\begin{itemize}
+\item $\td{Z} = Z\times Z_X$, where $Z_X$ is the additional factor
+\item $\td{O}: S\times A\times\td{Z}$, a new observation model
+\item $\td{P}=\langle S,A,\td{Z},T,\td{O},R,\gamma  \rangle$: An expanded POMDP for the desired task
+\item $\td{\alpha}^*$: The $\alpha$-vector for the optimal policy for $\td{P}$
+\item $\td{p}^*$: The optimal policy tree corresponding to $\td{\alpha}^*$
+\end{itemize}
+
+\subsection{Question}
+Under what conditions will the following be satisfied?
+\begin{align}
+b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
 \end{align}
 This inequality means that the optimal value when solving $\td{P}$ is greater than that of $P$, which means it achieves higher expected return on the desired task.
 
