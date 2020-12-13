@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import time
 import re
+from pprint import pprint
 
 
 KEY_TO_ACTION = {
@@ -35,9 +36,9 @@ class Simulator:
                 if type(action) == tuple:
                     action, params = action
                 event = self.controller.step(action=action, **params)
-                img = event.depth_frame
-                img /= np.max(img)
-                img *= 255
+                img = event.class_segmentation_frame #depth_frame
+                # img /= np.max(img)
+                # img *= 255
                 print("Visible objects:", a2til.visible_objects(event.metadata))
                 print("Action return:", event.metadata["actionReturn"])
                 if action == "GetReachablePositions":
@@ -67,6 +68,8 @@ def main():
                             renderDepthImage=True,
                             renderClassImage=True,
                             renderObjectImage=True)
+    event = controller.step(action="Pass")
+    pprint(a2til.scene_info(event.metadata))
 
     simulator = Simulator(controller)
     simulator.keyboard_listener.start()

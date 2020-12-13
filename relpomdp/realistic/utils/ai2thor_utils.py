@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcl
 import cv2
+import os
 import numpy as np
 from moos3d.util_viz import plot_voxels, CMAPS
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -14,6 +15,14 @@ def visible_objects(metadata):
         if obj["visible"]:
             result.append(obj["name"])
     return result
+
+def scene_info(metadata):
+    typecount = {}
+    for obj in metadata["objects"]:
+        if obj["objectType"] not in typecount:
+            typecount[obj["objectType"]] = 0
+        typecount[obj["objectType"]] += 1
+    return {"TypeCount": typecount}
 
 def reachable_locations(metadata):
     # Plot this in 3du
@@ -45,3 +54,34 @@ def reachable_locations(metadata):
     width, height = (fig.get_size_inches() * fig.get_dpi()).astype('int')
     image = np.fromstring(canvas.tostring_rgb(), dtype='uint8').reshape(height, width, 3)
     return image
+
+def save_frames(controller, actions, savepath,
+                prefix="frame", frame_type="rgb", step_cb=None, step_cb_args={}):
+
+    """Pass in a controller, and a sequence of actions.
+    Execute these actions, save the frames as images.
+
+    Args:
+        actions (iterable): sequence of tuples, (action_name, params)
+
+    Note that this alters the world state, so cannot be reset."""
+    i = 0
+    os.makedirs(savepath, exist_ok=True)
+    for action_name, params in actions:
+        event = controller.step(action=action_name, **params)
+        if step_cb is not None:
+            step_cb(event, **step_cb_args)
+
+        if frame_type == "rgb":
+            img = event.frame
+        elif frame_type == "depth":
+            img = even.depth_frame
+        elif frame_type == "class":
+            img = even.class_segmentation_frame
+        elif frame_type == "object":
+            img = even.instance_segmentation_frame
+        else:
+            raise ValueError("Unknown frame_type:", frame_type)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(savepath, "%s-%d.png" % (prefix, i)), img)
+        i += 1
