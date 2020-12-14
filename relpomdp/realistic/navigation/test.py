@@ -65,14 +65,14 @@ def test_motion_sequence():
     print("Pass.")
 
 
-def test_transition_model(grid_size=0.25):
+def test_transition_model(grid_size=0.25, degrees=45):
     config = {
         "scene_name": "FloorPlan_Train1_3",
         "agent_mode": "default",
         "width": 400,
         "height": 400
     }
-    motions = build_motion_actions(grid_size=grid_size)
+    motions = build_motion_actions(grid_size=grid_size, degrees=degrees)
     motions = {m.name:m for m in motions}
 
     env = ThorEnv(config)
