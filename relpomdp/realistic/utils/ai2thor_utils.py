@@ -70,7 +70,7 @@ def save_frames(controller, actions, savepath,
     for action_name, params in actions:
         event = controller.step(action=action_name, **params)
         if step_cb is not None:
-            step_cb(event, **step_cb_args)
+            step_cb(i, event, **step_cb_args)
 
         if frame_type == "rgb":
             img = event.frame
@@ -85,3 +85,35 @@ def save_frames(controller, actions, savepath,
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         cv2.imwrite(os.path.join(savepath, "%s-%d.png" % (prefix, i)), img)
         i += 1
+
+
+def plot_reachable_grid(controller, ax, agent_pose=None):
+    """Creates a scatter plot of the reachable positions
+    and plots the agent position on top if given."""
+    event = env.controller.step(action="GetReachablePositions")
+    positions = event.metadata["actionReturn"]
+
+    ax.clear()
+    x = np.array([p['x'] for p in positions])
+    y = np.array([p['y'] for p in positions])
+    z = np.array([p['z'] for p in positions])
+    # Plots the boundaries floor
+    ax.scatter(x, z, c='r')
+    ax.scatter([min(x)]*len(positions), z, c='y')
+
+    if agent_pose is not None:
+        pos, rot = agent_pose
+        ax.scatter([pos[0]], [pos[2]], c='b')
+        print(pos, rot)
+
+
+def get_reachable_pos_set(controller, use_2d=False):
+    event = controller.step(action="GetReachablePositions")
+    positions = event.metadata["actionReturn"]
+    x = np.array([p['x'] for p in positions])
+    y = np.array([p['y'] for p in positions])
+    z = np.array([p['z'] for p in positions])
+    if use_2d:
+        return set(zip(x, z))
+    else:
+        return set(zip(x, y, z))

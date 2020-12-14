@@ -44,7 +44,7 @@ class ThorEnv:
         else:
             return event.metadata
 
-    def agent_pose(self):
+    def agent_pose(self, use_2d=False):
         """Returns a tuple (pos, rot),
         where
         pos = (x, y, z) are the agent position (3D), and
@@ -52,8 +52,12 @@ class ThorEnv:
         """
         position = self.get("agent", "position")
         rotation = self.get("agent", "rotation")
-        pos = (position["x"], position["y"], position["z"])
-        rot = (rotation["x"], rotation["y"], rotation["z"])
+        if use_2d:
+            pos = (position["x"], position["z"])
+            rot = rotation["y"]
+        else:
+            pos = (position["x"], position["y"], position["z"])
+            rot = (rotation["x"], rotation["y"], rotation["z"])
         return pos, rot
 
 

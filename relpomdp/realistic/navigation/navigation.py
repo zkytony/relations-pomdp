@@ -9,15 +9,22 @@ class NavState(pdp.State):
     def __init__(self, pos, rot):
         """
         pos: 2d position of robot, (x,z) in Unity coordinate system
-        rot: a float for the rotation around y axis (vertical axis)
+        rot: a float for the rotation around y axis (vertical axis), in degrees
         """
         self.pos = pos
         self.rot = rot
+
+    def __str__(self):
+        return '%s::(%s,%s)' % (str(self.__class__.__name__),
+                                str(self.pos),
+                                str(self.rot))
+
     def __eq__(self, other):
         if isinstance(other, NavState):
             return other.pos == self.pos\
                 and other.rot == self.rot
         return False
+
     def __hash__(self):
         return hash(self.pos, self.rot)
 
@@ -42,6 +49,7 @@ class MotionAction(Action):
     def __init__(self, motion_name, motion):
         """
         motion (tuple): a (vt, vw) tuple for translationa, rotational velocities
+            vt is in meters, vw is in degrees.
         """
         self.motion = motion
         super().__init__(motion_name)
@@ -63,5 +71,50 @@ def build_motion_actions(grid_size=0.25, degrees=45):
     # Ai2Thor motion actions
     return {MotionAction("MoveAhead", (grid_size, 0)),
             MotionAction("MoveBack", (-grid_size, 0)),
-            MotionAction("RotateLeft", (0, -math.radians(degrees))),
-            MotionAction("RotateRight", (0, math.radians(degrees)))}
+            MotionAction("RotateLeft", (0, -degrees)),
+            MotionAction("RotateRight", (0, degrees))}
+
+# Observation
+class NavObservation(pdp.Observation):
+    def __repr__(self, pos, rot):
+        self.pos = pos
+        self.rot = rot
+
+    def __str__(self):
+        return '%s::(%s,%s)' % (str(self.__class__.__name__),
+                                str(self.pos),
+                                str(self.rot))
+
+    def __hash__(self):
+        return hash(self.pos, self.rot)
+
+    def __eq__(self, other):
+        if isinstance(other, NavObservation):
+            return other.pos == self.pos\
+                and other.rot == self.rot
+        return False
+
+
+SIGN = lambda x: -1.0 if x < 0.0 else 1.0
+
+# Transition model
+class TransitionModel(pdp.TransitionModel):
+
+    def __init__(self, grid_size=0.25):
+        self.grid_size = grid_size
+
+    def sample(self, state, action):
+        forward, angle = action.motion
+        x, z = state.pos
+        rot = state.rot
+
+        # Because the underlying world is discretized into grids
+        # we need to "normalize" the change to x or z to be a
+        # scalar of the grid size.
+        rot += angle
+        dx = forward*math.sin(math.radians(rot))
+        dz = forward*math.cos(math.radians(rot))
+        x = self.grid_size * round((x + dx) / self.grid_size)
+        z = self.grid_size * round((z + dz) / self.grid_size)
+        rot = rot % 360
+        return NavState((x,z), rot)
