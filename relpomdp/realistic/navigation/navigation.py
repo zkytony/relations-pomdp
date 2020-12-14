@@ -3,6 +3,7 @@
 
 import pomdp_py as pdp
 import math
+import random
 
 # State
 class NavState(pdp.State):
@@ -132,3 +133,66 @@ class TransitionModel(pdp.TransitionModel):
         z = self.grid_size * round((z + dz) / self.grid_size)
         rot = rot % 360
         return NavState((x,z), rot)
+
+
+# Observation
+class NavObservation(pdp.Observation):
+    def __init__(self, pos, rot):
+        """
+        pos: 2d position of robot, (x,z) in Unity coordinate system
+        rot: a float for the rotation around y axis (vertical axis), in degrees
+        """
+        self.pos = pos
+        self.rot = rot
+
+    def __str__(self):
+        return '%s::(%s, %s)' % (str(self.__class__.__name__),
+                                str(self.pos),
+                                str(self.rot))
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, NavObservation):
+            return other.pos == self.pos\
+                and other.rot == self.rot
+        return False
+
+    def __hash__(self):
+        return hash(self.pos, self.rot)
+
+# Observation model: A noiseless observation model
+class ObservationModel(pdp.ObservationModel):
+    def __init__(self):
+        pass
+
+    def sample(self, next_state, action):
+        return NavObservation(next_state.pos, next_state.rot)
+
+# Policy model
+class RandomPolicyModel(pdp.RolloutPolicy):
+    def __init__(self, actions):
+        self.actions = actions
+
+    def sample(self, state, **kwargs):
+        return random.sample(self.actions, 1)[0]
+
+    def rollout(self, state, history=None):
+        return self.sample(state)
+
+# Reward model
+class NavRewardModel(pdp.RewardModel):
+    def __init__(self, goal_pose):
+        pos, rot = goal_pose
+        self.goal_pose = (pos, round(rot, 2) % 360.0)
+
+    def sample(self, state, action, next_state, **kwargs):
+        return self.argmax(state, action, next_state)
+
+    def argmax(self, state, action, next_state, **kwargs):
+        next_pose = (next_state.pos, round(next_state.rot, 2) % 360.0)
+        if predicted_pose == expected_pose:
+            return 100
+        else:
+            return -1
