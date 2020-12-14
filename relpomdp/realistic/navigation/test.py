@@ -16,7 +16,9 @@ def test_motion_sequence():
     manually control a robot to move inside.
     Modify `seq` below for different motions.
 
-    Top-down view and reachable pos + robot pos are saved."""
+    Top-down view and reachable pos + robot pos are saved.
+
+    This is a demo, not a unit test."""
 
     savepath = "test_output/motion_sequence2"
 
@@ -65,9 +67,10 @@ def test_motion_sequence():
     print("Pass.")
 
 
-def test_transition_model(grid_size=0.25, degrees=45):
+def test_transition_model(grid_size=0.25, degrees=30, scene_name="FloorPlan_Train1_1"):
+    """Tests whether the transition model predicts THOR's motion model"""
     config = {
-        "scene_name": "FloorPlan_Train1_3",
+        "scene_name": scene_name,
         "agent_mode": "default",
         "width": 400,
         "height": 400
@@ -77,14 +80,10 @@ def test_transition_model(grid_size=0.25, degrees=45):
 
     env = ThorEnv(config)
     env.launch()
-    env.controller.step(action="ToggleMapView")
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
 
-    # n,p = motions["RotateRight"].to_thor_action()
-    # event = env.controller.step(action=n, **p)
-
     state = NavState(*env.agent_pose(use_2d=True))
-    T = TransitionModel(grid_size=0.25)
+    T = TransitionModel(grid_size=grid_size)
 
     nrounds = 100
     for i in range(nrounds):
@@ -112,6 +111,58 @@ def test_transition_model(grid_size=0.25, degrees=45):
     print("\nPass.")
 
 
+def test_transition_model_forced(grid_size=0.25, degrees=30, scene_name="FloorPlan_Train1_1"):
+    """Tests whether we can force THOR to use the transition model's output"""
+    config = {
+        "scene_name": scene_name,
+        "agent_mode": "default",
+        "width": 400,
+        "height": 400
+    }
+    motions = build_motion_actions(grid_size=grid_size, degrees=degrees)
+    motions = {m.name:m for m in motions}
+
+    env = ThorEnv(config)
+    env.launch()
+    reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
+
+    init_x, init_y, init_z = env.agent_pose()[0]
+    state = NavState(*env.agent_pose(use_2d=True))
+    T = TransitionModel(grid_size=grid_size)
+
+    nrounds = 100
+    for i in range(nrounds):
+        # Randomly choose a motion action. Execute it
+        # in THOR, and then sample the next state.
+        # assert that both get the same pose, if both are reachable.
+        sys.stdout.write("[%d/%d]\r" % (i+1, nrounds))
+        sys.stdout.flush()
+
+        motion_action = motions[random.sample(list(motions), 1)[0]]
+        next_state = T.sample(state, motion_action)
+        predicted_pose = (next_state.pos, round(next_state.rot, 2) % 360.0)
+        if next_state.pos not in reachable_positions:
+            continue
+        else:
+            # Force THOR to be at sampled pose
+            # NOTE: because of ai2thor's BUG, you must specify y to be initial y.
+            env.controller.step('TeleportFull',
+                                x=next_state.pos[0], y=init_y, z=next_state.pos[1],
+                                rotation=dict(y=next_state.rot))
+
+            pos, rot = env.agent_pose(use_2d=True)
+            expected_pose = (pos, round(rot, 2) % 360.0)
+            assert predicted_pose == expected_pose,\
+                "Expecting pose at {}, predicted {}. Previous pose {}, action {}."\
+                .format(expected_pose, predicted_pose, (state.pos, state.rot), motion_action)
+            state = next_state
+    print("\nPass.")
+
+
 if __name__ == "__main__":
     # test_motion_sequence()
-    test_transition_model(grid_size=0.25)
+    test_transition_model(grid_size=0.25, degrees=90, scene_name="FloorPlan_Train1_1")
+    test_transition_model_forced(grid_size=0.25, degrees=90, scene_name="FloorPlan_Train1_3")
+    test_transition_model_forced(grid_size=0.25, degrees=90, scene_name="FloorPlan_Train1_5")
+    test_transition_model_forced(grid_size=0.25, degrees=30, scene_name="FloorPlan_Train1_2")
+    test_transition_model_forced(grid_size=0.25, degrees=45, scene_name="FloorPlan_Train1_4")

@@ -15,9 +15,12 @@ class NavState(pdp.State):
         self.rot = rot
 
     def __str__(self):
-        return '%s::(%s,%s)' % (str(self.__class__.__name__),
+        return '%s::(%s, %s)' % (str(self.__class__.__name__),
                                 str(self.pos),
                                 str(self.rot))
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         if isinstance(other, NavState):
@@ -104,6 +107,17 @@ class TransitionModel(pdp.TransitionModel):
         self.grid_size = grid_size
 
     def sample(self, state, action):
+        """
+        A simple 2D transition model.
+
+        Known issues:
+        * When the action's rotation is something other than 90 degrees,
+          this model doesn't always predict the correct next agent pose
+          in THOR. 45 degrees has fewer errors than 30 degrees. The error
+          is usually off-by-one grid cell. For this reason, if you set
+          the action to be non-90 rotation, you may want to force THOR
+          to teleoperate the agent to the sampled pose.
+        """
         forward, angle = action.motion
         x, z = state.pos
         rot = state.rot

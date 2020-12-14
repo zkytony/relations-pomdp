@@ -4,6 +4,7 @@ import matplotlib.colors as mcl
 import cv2
 import os
 import numpy as np
+import math
 from moos3d.util_viz import plot_voxels, CMAPS
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -90,7 +91,7 @@ def save_frames(controller, actions, savepath,
 def plot_reachable_grid(controller, ax, agent_pose=None):
     """Creates a scatter plot of the reachable positions
     and plots the agent position on top if given."""
-    event = env.controller.step(action="GetReachablePositions")
+    event = controller.step(action="GetReachablePositions")
     positions = event.metadata["actionReturn"]
 
     ax.clear()
@@ -104,6 +105,9 @@ def plot_reachable_grid(controller, ax, agent_pose=None):
     if agent_pose is not None:
         pos, rot = agent_pose
         ax.scatter([pos[0]], [pos[2]], c='b')
+        # head = (pos[0] + math.sin(rot[1])*0.25,
+        #         pos[2] + math.cos(rot[1])*0.25)
+        # ax.plot([pos[0], head[0]], [pos[2], head[1]], 'bo-')
         print(pos, rot)
 
 
