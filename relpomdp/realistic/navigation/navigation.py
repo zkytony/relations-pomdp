@@ -273,9 +273,8 @@ def test(scene_name, nparticles=1000, grid_size=0.25, degrees=90):
             if degrees != 90:
                 print("Warning: rotation degree isn't 90, Ai2thor motion model"\
                       "doesn't exactly match my transition model.")
-            env.controller.step('TeleportFull',
-                                x=next_state.pos[0], y=init_y, z=next_state.pos[1],
-                                rotation=dict(y=next_state.rot))
+            thor_action_name, params = action.to_thor_action()
+            event = env.controller.step(action=thor_action_name, **params)
 
         observation = observation_model.sample(next_state, action)
         reward = reward_model.sample(state, action, next_state)
