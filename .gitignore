@@ -149,3 +149,6 @@ relpomdp/home2d/experiments/data/*.pkl
 relpomdp/home2d/experiments/testing/results
 relpomdp/home2d/experiments/tmp
 relpomdp/home2d/experiments/worlds/*.pkl
+
+
+relpomdp/realistic/*/*.png
