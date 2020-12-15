@@ -157,6 +157,42 @@ b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
 This inequality means that the optimal value when solving $\td{P}$ is greater than that of $P$, which means it achieves higher expected return on the desired task.
 
 
+\begin{definition}(Problem 1)
+Let $R:S\times A\rightarrow [0,1]$ be a reward function that represents a
+task of interest.
+%Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
+\begin{align}
+b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+\end{align}
+Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
+\end{definition}
+
+
+
+% \begin{definition}(Problem 2)
+% Let $R:S\times A\rightarrow [0,1]$ be a reward function that represents a
+% task of interest.
+% %Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+% Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
+% \begin{align}
+% b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+% \end{align}
+% Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
+% \end{definition}
+
+
+\begin{definition}(Problem 2)
+Let $R:S\times A\rightarrow [0,1]$ be a reward function that represents a
+task of interest.
+%Let $R:S\rightarrow \mathbb{R}$ be a sparse reward function that represents a task of interest, where $s_{goal}\in S$ is the single goal state, and $s_{fail}\in S$ is the single failure state, and $R_{max}=R(s_{goal})$, $R_{min}=R(s_{fail})$, and $R(s)=0, \forall s \not\in\{s_{goal},s_{fail}\}$.
+Let $P$ be a POMDP $\langle S, A, \Omega, T, O, R, \gamma  \rangle$. Let $\alpha^*$ be the $\alpha$-vector of the optimal policy at the initial belief $b_0$. Let $\td{P}$ be a POMDP $\langle S, A, \td{\Omega}, T, \td{O}, R, \gamma  \rangle$ where $\td{\Omega}=\Omega\times\td{Z}$ for a new observation variable $\td{Z}$, and $\td{O}$ is the observation model over $\td{\Omega}$. Let $\td{\alpha}^*$ be the $\alpha$-vector of the optimal policy for $\td{P}$ at initial belief $b_0$. Derive the necessary conditions of $P$, $b_0$, $\td{Z}$ and $\td{O}$ so that
+\begin{align}
+b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* > 0
+\end{align}
+Also, what about conditions that result in $b_0\cdot \td{\alpha}^* - b_0\cdot \alpha^* < 0$?
+\end{definition}
+
 
 
 
