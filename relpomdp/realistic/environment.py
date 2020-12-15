@@ -23,6 +23,7 @@ class ThorEnv:
                                 agentMode=self.config.get("agent_mode", "default"),
                                 width=self.config.get("width", 300),
                                 height=self.config.get("height", 300),
+                                gridSize=self.config.get("grid_size", 0.25),
                                 renderDepthImage=self.config.get("render_depth", True),
                                 renderClassImage=self.config.get("render_class", True),
                                 renderObjectImage=self.config.get("render_object", True))

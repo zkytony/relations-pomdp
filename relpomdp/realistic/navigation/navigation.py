@@ -224,7 +224,8 @@ def test(scene_name, nparticles=1000, grid_size=0.25, degrees=90):
         "scene_name": scene_name,
         "agent_mode": "default",
         "width": 400,
-        "height": 400
+        "height": 400,
+        "grid_size": grid_size
     }
     motions = build_motion_actions(grid_size=grid_size, degrees=degrees)
 
@@ -301,4 +302,4 @@ def test(scene_name, nparticles=1000, grid_size=0.25, degrees=90):
 
 
 if __name__ == "__main__":
-    test("FloorPlan18", nparticles=1000)
+    test("FloorPlan_Train1_1", nparticles=1000, grid_size=0.75)
