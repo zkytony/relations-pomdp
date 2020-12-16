@@ -2,6 +2,7 @@
 
 from object_search import *
 import sys
+import time
 
 
 # Test policy model
@@ -44,7 +45,77 @@ def test_policy_model(scene_name, grid_size=0.25, degrees=90):
     print("\nPassed.")
 
 
+def test_sensor_model(scene_name, grid_size=0.25, degrees=90):
+    # Test the field of view
+    world_size = 20
+    sensor = FanSensor(fov=90, min_range=0.0, max_range=grid_size*2)
+    sensor_model = SensorObservationModel(sensor, "Box", 0.9)
+
+    plt.ion()
+    fig = plt.figure(figsize=(5,5))
+    ax = fig.add_subplot(1, 1, 1)#, projection="3d")
+    ax.set_aspect("equal")
+    plt.show(block=False)
+
+    x_coords = [i*grid_size for i in range(world_size)]
+    z_coords = [i*grid_size for i in range(world_size)]
+    z, x = np.meshgrid(z_coords, x_coords)
+    ax.scatter(x.flatten(), z.flatten(), s=10.0, c='r')
+    positions = list(zip(x.flatten(),z.flatten()))
+
+    # robot_pose = ((0.0, 0.0), 0.0)
+    # plot_robot(ax, robot_pose)
+    # sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((10.0*grid_size, 10.0*grid_size), 0.0)
+    plot_robot(ax, robot_pose)
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((12.0*grid_size, 5.0*grid_size), 45.0)
+    plot_robot(ax, robot_pose)
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((1.0*grid_size, 10.0*grid_size), 30.0)
+    plot_robot(ax, robot_pose)
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((7.0*grid_size, 7.0*grid_size), 180.0)
+    plot_robot(ax, robot_pose, color='g')
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((15.0*grid_size, 15.0*grid_size), 270.0)
+    plot_robot(ax, robot_pose, color='g')
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    robot_pose = ((11.0*grid_size, 2.0*grid_size), 130.0)
+    plot_robot(ax, robot_pose)
+    sensor_model.visualize(ax, robot_pose, positions)
+
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    time.sleep(5)
+    print("Pass.")
+
+
+def test():
+    # Case 1
+    fov = 90
+    min_range = 0.0
+    max_range = 1.0
+    robot_pose = ((0.0, 0.0), 0.0)
+    sensor = FanSensor(fov=fov, min_range=min_range, max_range=max_range)
+
+    assert sensor.within_range(robot_pose, (1,0)) == True
+    assert sensor.within_range(robot_pose, (0,1)) == False
+    assert sensor.within_range(robot_pose, (0.5, 0)) == True
+    assert sensor.within_range(robot_pose, (0, 0.5)) == False
+    assert sensor.within_range(robot_pose, (0,-0.5)) == False
+    assert sensor.within_range(robot_pose, (0.6, -0.3)) == True
+
+
 
 if __name__ == "__main__":
     # test_system("FloorPlan_Train1_1", grid_size=0.5)
-    test_policy_model("FloorPlan_Train1_1", grid_size=0.5)
+    # test_policy_model("FloorPlan_Train1_1", grid_size=0.5)
+    test_sensor_model("FloorPlan30", grid_size=0.25, degrees=90)
+    test()

@@ -10,8 +10,7 @@ import math
 from relpomdp.realistic.environment import ThorEnv
 from relpomdp.realistic.utils.ai2thor_utils import save_frames,\
     plot_reachable_grid, get_reachable_pos_set, scene_info, visible_objects
-from relpomdp.realistic.utils.util import euclidean_dist
-from relpomdp.realistic.object_search.sensor import FanSensor
+from relpomdp.realistic.utils.util import euclidean_dist, in_range_inclusive
 from relpomdp.home2d.domain.visual import lighter
 from pprint import pprint
 import numpy as np
@@ -237,6 +236,36 @@ class Observation(pdp.Observation):
 
 
 # Observation Model
+class FanSensor:
+    """2D fanshape sensor"""
+    def __init__(self, fov=90, min_range=0.01, max_range=0.50):
+        self.fov = math.radians(fov % 360)  # store fov in radians
+        self.min_range = min_range
+        self.max_range = max_range
+
+    def within_range(self, robot_pose, point):
+        if robot_pose[0] == point:
+            return True
+
+        # if point == (2.25, 2.75):
+        #     import pdb; pdb.set_trace()
+
+        (x, z), th = robot_pose
+        dist = euclidean_dist((x,z), point)
+        if self.min_range <= dist <= self.max_range:
+            th_point = math.atan2(point[0] - x, point[1] - z)
+            bearing = (th_point - math.radians(th))  % (2*math.pi)
+
+            # because we defined bearing to be within 0 to 360, the fov
+            # angles should also be defined within the same range.
+            fov_ranges = (0, self.fov/2), (2*math.pi - self.fov/2, 2*math.pi)
+            if in_range_inclusive(bearing, fov_ranges[0])\
+               or in_range_inclusive(bearing, fov_ranges[1]):
+                return True
+            else:
+                return False
+        return False
+
 class SensorObservationModel(pdp.ObservationModel):
     def __init__(self, sensor, objclass, detection_prob):
         self.sensor = sensor
@@ -278,7 +307,7 @@ class SensorObservationModel(pdp.ObservationModel):
             if self.sensor.within_range(robot_pose, pos):
                 x.append(pos[0])
                 z.append(pos[1])
-        ax.scatter(x, z, s=60.0, c="#fff957", alpha=0.7)
+        ax.scatter(x, z, s=120.0, c="#fff957", alpha=0.7)
 
 # Reward Model
 class RewardModel(pdp.RewardModel):
@@ -404,15 +433,18 @@ class Belief(pdp.Histogram):
         ax.scatter(x, z, c=np.array(colors)/255.0, s=30.0)
 
         robot_pose = self.mpe().robot_pose
-        pos, rot = robot_pose
-        ax.scatter([pos[0]], [pos[1]], c="b")
-        ax.arrow(pos[0], pos[1],
-                 0.2*math.sin(math.radians(rot)),  # dx
-                 0.2*math.cos(math.radians(rot)),  # dz
-                 width=0.005, head_width=0.05, color='b')
-        # ax.plot([pos[0], head[0]], [pos[1], head[1]], 'b^-')
+        plot_robot(ax, robot_pose)
         ax.set_xlabel("X axis")
         ax.set_ylabel("Z axis")
+
+
+def plot_robot(ax, robot_pose, color='b'):
+    pos, rot = robot_pose
+    ax.scatter([pos[0]], [pos[1]], c=color)
+    ax.arrow(pos[0], pos[1],
+             0.2*math.sin(math.radians(rot)),  # dx
+             0.2*math.cos(math.radians(rot)),  # dz
+             width=0.005, head_width=0.05, color=color)
 
 
 # Test System.
@@ -452,7 +484,7 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
 
     # plotting
-    plt.ion
+    plt.ion()
     fig = plt.figure(figsize=(6,3))
     ax = fig.add_subplot(1, 1, 1)#, projection="3d")
     plt.show(block=False)
@@ -560,4 +592,4 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
 
 
 if __name__ == "__main__":
-    test_system("FloorPlan_Train1_1", grid_size=0.5)
+    test_system("FloorPlan30", grid_size=0.25)
