@@ -14,7 +14,7 @@ def visible_objects(metadata):
     result = []
     for obj in metadata["objects"]:
         if obj["visible"]:
-            result.append(obj["name"])
+            result.append(obj)
     return result
 
 def scene_info(metadata):
