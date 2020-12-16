@@ -143,6 +143,14 @@ def motion_model(pose, motion, grid_size=0.25):
     """
     Returns the next pose by applying the motion.
 
+    Known issues:
+    * When the action's rotation is something other than 90 degrees,
+      this model doesn't always predict the correct next agent pose
+      in THOR. 45 degrees has fewer errors than 30 degrees. The error
+      is usually off-by-one grid cell. For this reason, if you set
+      the action to be non-90 rotation, you may want to force THOR
+      to teleoperate the agent to the sampled pose.
+
     Args:
         pose (tuple): a tuple ((x,z), th)
         motion (tuple): a tuple (vt, vw)
@@ -388,10 +396,18 @@ class Belief(pdp.Histogram):
         ax.scatter(x, z, c=np.array(colors)/255.0)
 
         robot_pose = self.mpe().robot_pose
-        ax.scatter([robot_pose[0][0]], [robot_pose[0][1]], c="b")
+        pos, rot = robot_pose
+        ax.scatter([pos[0]], [pos[1]], c="b")
+        ax.arrow(pos[0], pos[1],
+                 0.2*math.sin(math.radians(rot)),  # dx
+                 0.2*math.cos(math.radians(rot)),  # dz
+                 width=0.005, head_width=0.05, color='b')
+        # ax.plot([pos[0], head[0]], [pos[1], head[1]], 'b^-')
+        ax.set_xlabel("X axis")
+        ax.set_ylabel("Z axis")
 
 
-# Test
+# Test System.
 def find_closest(q, points):
     """Given a 2d point and a list of 2d points,
     return the point in `points` that's closest to `q`
@@ -399,8 +415,7 @@ def find_closest(q, points):
     return min(points,
                key=lambda p: euclidean_dist(p, q))
 
-
-def test(scene_name, grid_size=0.25, degrees=90):
+def test_system(scene_name, grid_size=0.25, degrees=90):
     config = {
         "scene_name": scene_name,
         "agent_mode": "default",
@@ -412,6 +427,7 @@ def test(scene_name, grid_size=0.25, degrees=90):
 
     env = ThorEnv(config)
     env.launch()
+    env.controller.step(action="ToggleMapView")
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
 
     # plotting
@@ -441,7 +457,9 @@ def test(scene_name, grid_size=0.25, degrees=90):
     reward_model = RewardModel(declare_range=grid_size*2)
     policy_model = PolicyModel(motions | {DeclareFound()},
                                reachable_positions, grid_size=grid_size)
+
     ax.clear()
+    ax.set_aspect("equal")
     init_belief.visualize(ax)
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -470,6 +488,8 @@ def test(scene_name, grid_size=0.25, degrees=90):
 
         # Execute move action, receive THOR event
         next_state = transition_model.sample(state, action)
+        if next_state.robot_pose[0] not in reachable_positions:
+            import pdb; pdb.set_trace()
         assert next_state.robot_pose[0] in reachable_positions
         if degrees != 90:
             print("Warning: rotation degree isn't 90, Ai2thor motion model"\
@@ -512,9 +532,12 @@ def test(scene_name, grid_size=0.25, degrees=90):
         planner.update(agent, action, observation)
 
         ax.clear()
+        ax.set_aspect("equal")
         agent.belief.visualize(ax)
         fig.canvas.draw()
         fig.canvas.flush_events()
 
+
+
 if __name__ == "__main__":
-    test("FloorPlan_Train1_1", grid_size=0.5)
+    test_system("FloorPlan_Train1_1", grid_size=0.5)

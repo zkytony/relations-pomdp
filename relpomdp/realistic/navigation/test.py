@@ -83,7 +83,7 @@ def test_transition_model(grid_size=0.25, degrees=30, scene_name="FloorPlan_Trai
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
 
     state = NavState(*env.agent_pose(use_2d=True))
-    T = TransitionModel(grid_size=grid_size)
+    T = TransitionModel(reachable_positions, grid_size=grid_size)
 
     nrounds = 100
     for i in range(nrounds):

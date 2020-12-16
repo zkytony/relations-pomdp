@@ -7,6 +7,7 @@ import random
 from relpomdp.realistic.environment import ThorEnv
 from relpomdp.realistic.utils.ai2thor_utils import save_frames,\
     plot_reachable_grid, get_reachable_pos_set
+from relpomdp.realistic.object_search.object_search import motion_model
 import matplotlib.pyplot as plt
 
 # State
@@ -124,19 +125,21 @@ class TransitionModel(pdp.TransitionModel):
           the action to be non-90 rotation, you may want to force THOR
           to teleoperate the agent to the sampled pose.
         """
-        forward, angle = action.motion
-        x, z = state.pos
-        rot = state.rot
+        next_pose = motion_model((state.pos, state.rot), action.motion)
+        # forward, angle = action.motion
+        # x, z = state.pos
+        # rot = state.rot
 
-        # Because the underlying world is discretized into grids
-        # we need to "normalize" the change to x or z to be a
-        # scalar of the grid size.
-        rot += angle
-        dx = forward*math.sin(math.radians(rot))
-        dz = forward*math.cos(math.radians(rot))
-        x = self.grid_size * round((x + dx) / self.grid_size)
-        z = self.grid_size * round((z + dz) / self.grid_size)
-        rot = rot % 360
+        # # Because the underlying world is discretized into grids
+        # # we need to "normalize" the change to x or z to be a
+        # # scalar of the grid size.
+        # rot += angle
+        # dx = forward*math.sin(math.radians(rot))
+        # dz = forward*math.cos(math.radians(rot))
+        # x = self.grid_size * round((x + dx) / self.grid_size)
+        # z = self.grid_size * round((z + dz) / self.grid_size)
+        # rot = rot % 360
+        (x,z), rot = next_pose
         if (x,z) in self.reachable_positions:
             return NavState((x,z), rot)
         else:
