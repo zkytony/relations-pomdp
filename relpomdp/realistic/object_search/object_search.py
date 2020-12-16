@@ -310,31 +310,21 @@ class SensorObservationModel(pdp.ObservationModel):
 
 # Reward Model
 class RewardModel(pdp.RewardModel):
-    def __init__(self, declare_range=1.0):
-        self.declare_range = declare_range
+    def __init__(self, sensor):
+        self.sensor = sensor
 
     def sample(self, state, action, next_state):
         # Check if the robot is facing the target
         if isinstance(action, DeclareFound):
             assert next_state.robot_state.found == True
-            # (robot_x, robot_z), robot_rot = next_state.robot_pose
-            # target_pos = next_state.target_state.pose
 
-            # # dot product between the robot's forward direction
-            # # and the vector to the target
-            # forward_vector = (robot_x + math.sin(robot_rot),
-            #                   robot_z + math.cos(robot_rot))
-            # target_vector = (target_pos[0] - robot_x,
-            #                  target_pos[1] - robot_z)
-            # if forward_vector[0]*target_vector[0]\
-            #    + forward_vector[1]*target_vector[1] > 0:
-            #     # same direction
-            #     if euclidean_dist(target_pos, (robot_x, robot_z)) <= self.declare_range:
-            #         return 100
-            if next_state.robot_state.pose[0] == next_state.target_state.pose:
+            robot_pos, robot_rot = next_state.robot_pose
+            target_pos = next_state.target_state.pose
+
+            if self.sensor.within_range(next_state.robot_pose,
+                                        target_pos):
                 return 100.0
-            else:
-                return -100.0
+            return -100.0
         else:
             return -1.0
 
@@ -446,6 +436,20 @@ def plot_robot(ax, robot_pose, color='b'):
              width=0.005, head_width=0.05, color=color)
 
 
+def possible_positions(reachable_positions, grid_size=0.25):
+    """Obtain the possible possitions where an object
+    can be located given the environment and reachable positions."""
+    positions = set(reachable_positions)
+    for x, z in reachable_positions:
+        positions.add((x+grid_size, z))
+        positions.add((x-grid_size, z))
+        positions.add((x, z+grid_size))
+        positions.add((x, z-grid_size))
+        positions.add((x+grid_size, z+grid_size))
+        positions.add((x-grid_size, z-grid_size))
+    return positions
+
+
 # Test System.
 def find_closest(q, points):
     """Given a 2d point and a list of 2d points,
@@ -500,11 +504,12 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
             print("{} is invalid. Try again.".format(target_class))
     # target_class = "Box"
 
-    init_belief = Belief.uniform(init_pose, target_class, reachable_positions)
+    init_belief = Belief.uniform(init_pose, target_class,
+                                 possible_positions(reachable_positions, grid_size=grid_size))
     transition_model = TransitionModel(grid_size=grid_size)
     sensor = FanSensor(fov=90, min_range=0.0, max_range=grid_size*2)
     sensor_model = SensorObservationModel(sensor, target_class, 0.9)
-    reward_model = RewardModel(declare_range=grid_size*2)
+    reward_model = RewardModel(sensor)
     policy_model = PolicyModel(motions | {DeclareFound()},
                                reachable_positions, grid_size=grid_size)
 
@@ -571,11 +576,14 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
         for obj in objects:
             if obj['objectType'] == target_class:
                 obj_pos = (obj['position']['x'], obj['position']['z'])
-                detected_pos = find_closest(obj_pos,
-                                            reachable_positions)
-                if isinstance(action, DeclareFound):
-                    target_found = True
-                break
+                if sensor.within_range(robot_pose, obj_pos):
+                    # The THOR's frame may show more stuff than what the sensor
+                    # can really detect.
+                    detected_pos = find_closest(obj_pos,
+                                                reachable_positions)
+                    if isinstance(action, DeclareFound):
+                        target_found = True
+                    break
         target_observation = TargetObservation(target_class, detected_pos)
         observation = Observation(RobotObservation(robot_pose, next_state.robot_state.found),
                                   target_observation)
@@ -603,4 +611,4 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
         save_frame(os.path.join(savepath, "frame-%d.png" % (step+1)), event.frame)
 
 if __name__ == "__main__":
-    test_system("FloorPlan_Train1_1", grid_size=0.50)
+    test_system("FloorPlan28", grid_size=0.50)
