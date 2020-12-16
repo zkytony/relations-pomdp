@@ -265,8 +265,6 @@ class SensorObservationModel(pdp.ObservationModel):
             else:
                 return 1e-9
 
-
-
 # Reward Model
 class RewardModel(pdp.RewardModel):
     def __init__(self, declare_range=1.0):
@@ -276,23 +274,26 @@ class RewardModel(pdp.RewardModel):
         # Check if the robot is facing the target
         if isinstance(action, DeclareFound):
             assert next_state.robot_state.found == True
-            (robot_x, robot_z), robot_rot = next_state.robot_pose
-            target_pos = next_state.target_state.pose
+            # (robot_x, robot_z), robot_rot = next_state.robot_pose
+            # target_pos = next_state.target_state.pose
 
-            # dot product between the robot's forward direction
-            # and the vector to the target
-            forward_vector = (robot_x + math.sin(robot_rot),
-                              robot_z + math.cos(robot_rot))
-            target_vector = (target_pos[0] - robot_x,
-                             target_pos[1] - robot_z)
-            if forward_vector[0]*target_vector[0]\
-               + forward_vector[1]*target_vector[1] > 0:
-                # same direction
-                if euclidean_dist(target_pos, (robot_x, robot_z)) <= self.declare_range:
-                    return 100
-            return -100
+            # # dot product between the robot's forward direction
+            # # and the vector to the target
+            # forward_vector = (robot_x + math.sin(robot_rot),
+            #                   robot_z + math.cos(robot_rot))
+            # target_vector = (target_pos[0] - robot_x,
+            #                  target_pos[1] - robot_z)
+            # if forward_vector[0]*target_vector[0]\
+            #    + forward_vector[1]*target_vector[1] > 0:
+            #     # same direction
+            #     if euclidean_dist(target_pos, (robot_x, robot_z)) <= self.declare_range:
+            #         return 100
+            if next_state.robot_state.pose[0] == next_state.target_state.pose:
+                return 100.0
+            else:
+                return -100.0
         else:
-            return -1
+            return -1.0
 
 # rollout Policy Model
 class PolicyModel(pdp.RolloutPolicy):
@@ -395,15 +396,14 @@ def test(scene_name, grid_size=0.25, degrees=90):
     init_pose = env.agent_pose(use_2d=True)
 
     sinfo = scene_info(env.controller.step(action="Pass").metadata)
-    # target_options = set(sinfo["TypeCount"].keys())
-    # pprint(sinfo)
-    # while True:
-    #     target_class = input("Enter a target class from the list above: ")
-    #     if target_class in target_options:
-    #         break
-    #     else:
-    #         print("{} is invalid. Try again.".format(target_class))
-    target_class = "TVStand"
+    target_options = set(sinfo["TypeCount"].keys())
+    pprint(sinfo)
+    while True:
+        target_class = input("Enter a target class from the list above: ")
+        if target_class in target_options:
+            break
+        else:
+            print("{} is invalid. Try again.".format(target_class))
 
     init_belief = Belief.uniform(init_pose, target_class, reachable_positions)
     transition_model = TransitionModel(grid_size=grid_size)
@@ -451,11 +451,13 @@ def test(scene_name, grid_size=0.25, degrees=90):
         # closest to the target pose, as the observation.
         # NOTE: This observation comes directly from the THOR environment.
         # Its object poses are therefore groundtruth. So it's not realistic.
+        # Also, receiving such observation ignores the sensor's range!
         objects = visible_objects(event.metadata)
         detected_pos = None
         for obj in objects:
             if obj['objectType'] == target_class:
-                detected_pos = find_closest(obj['position'],
+                obj_pos = (obj['position']['x'], obj['position']['z'])
+                detected_pos = find_closest(obj_pos,
                                             reachable_positions)
                 if isinstance(action, DeclareFound):
                     target_found = True
