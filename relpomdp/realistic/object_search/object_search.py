@@ -12,7 +12,10 @@ from relpomdp.realistic.utils.ai2thor_utils import save_frames,\
     plot_reachable_grid, get_reachable_pos_set, scene_info, visible_objects
 from relpomdp.realistic.utils.util import euclidean_dist
 from relpomdp.realistic.object_search.sensor import FanSensor
+from relpomdp.home2d.domain.visual import lighter
 from pprint import pprint
+import numpy as np
+import matplotlib.pyplot as plt
 
 class State(pdp.State):
     """A state is factored into robot state and the target object state"""
@@ -215,10 +218,6 @@ class Observation(pdp.Observation):
         self.target_observation = target_observation
         self._hash_code = hash((self.robot_observation, self.target_observation))
 
-    def __str__(self):
-        return "{}({})".format(self.__class__.__name__,
-                               self.pose)
-
     def __hash__(self):
         return self._hash_code
 
@@ -325,7 +324,7 @@ class PolicyModel(pdp.RolloutPolicy):
             for action in self._translation_actions:
                 next_pose = motion_model(state.robot_pose, action.motion,
                                          grid_size=self.grid_size)
-                if next_pose in self.reachable_positions:
+                if next_pose[0] in self.reachable_positions:
                     all_actions.add(action)
             return all_actions
 
@@ -369,6 +368,29 @@ class Belief(pdp.Histogram):
                                                           next_state, action)
         return Belief(self.target_class, hist)
 
+    def visualize(self, ax, color=(128, 128, 128)):
+        hist = self.get_histogram()
+        colors = []
+        x = []
+        z = []
+        last_val = -1
+        for state in reversed(sorted(hist, key=hist.get)):
+            if last_val != -1:
+                color = lighter(color, 1-hist[state]/last_val)
+            if np.mean(np.array(color) / np.array([255, 255, 255])) < 0.999:
+                tx, tz = state.target_state.pose
+                x.append(tx)
+                z.append(tz)
+                colors.append(color)
+                last_val = hist[state]
+                if last_val <= 0:
+                    break
+        ax.scatter(x, z, c=np.array(colors)/255.0)
+
+        robot_pose = self.mpe().robot_pose
+        ax.scatter([robot_pose[0][0]], [robot_pose[0][1]], c="b")
+
+
 # Test
 def find_closest(q, points):
     """Given a 2d point and a list of 2d points,
@@ -392,18 +414,25 @@ def test(scene_name, grid_size=0.25, degrees=90):
     env.launch()
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
 
+    # plotting
+    plt.ion
+    fig = plt.figure(figsize=(6,3))
+    ax = fig.add_subplot(1, 1, 1)#, projection="3d")
+    plt.show(block=False)
+
     # problem instance
     init_pose = env.agent_pose(use_2d=True)
 
     sinfo = scene_info(env.controller.step(action="Pass").metadata)
     target_options = set(sinfo["TypeCount"].keys())
     pprint(sinfo)
-    while True:
-        target_class = input("Enter a target class from the list above: ")
-        if target_class in target_options:
-            break
-        else:
-            print("{} is invalid. Try again.".format(target_class))
+    # while True:
+    #     target_class = input("Enter a target class from the list above: ")
+    #     if target_class in target_options:
+    #         break
+    #     else:
+    #         print("{} is invalid. Try again.".format(target_class))
+    target_class = "Box"
 
     init_belief = Belief.uniform(init_pose, target_class, reachable_positions)
     transition_model = TransitionModel(grid_size=grid_size)
@@ -412,6 +441,10 @@ def test(scene_name, grid_size=0.25, degrees=90):
     reward_model = RewardModel(declare_range=grid_size*2)
     policy_model = PolicyModel(motions | {DeclareFound()},
                                reachable_positions, grid_size=grid_size)
+    ax.clear()
+    init_belief.visualize(ax)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
     # environment state: It's not necessary to query THOR to obtain the true
     # target location for POMDP planning or belief update, because targets are
@@ -433,6 +466,7 @@ def test(scene_name, grid_size=0.25, degrees=90):
     target_found = False
     for step in range(100):
         action = planner.plan(agent)
+        agent.tree.print_children_value()
 
         # Execute move action, receive THOR event
         next_state = transition_model.sample(state, action)
@@ -462,16 +496,25 @@ def test(scene_name, grid_size=0.25, degrees=90):
                 if isinstance(action, DeclareFound):
                     target_found = True
                 break
+        target_observation = TargetObservation(target_class, detected_pos)
+        observation = Observation(RobotObservation(robot_pose, next_state.robot_state.found),
+                                  target_observation)
+
+        print("Step {} | Action: {} | Detection: {} | Belief MPE: {}"\
+              .format(step, action, target_observation, agent.belief.mpe()))
 
         if isinstance(action, DeclareFound):
             print("Done. Target actually found? ", target_found)
             break
 
-        observation = Observation(RobotObservation(robot_pose, next_state.robot_state.found),
-                                  TargetObservation(target_class, detected_pos))
         new_belief = agent.belief.update(action, observation, sensor_model)
         agent.set_belief(new_belief)
         planner.update(agent, action, observation)
+
+        ax.clear()
+        agent.belief.visualize(ax)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
 
 if __name__ == "__main__":
     test("FloorPlan_Train1_1", grid_size=0.5)
