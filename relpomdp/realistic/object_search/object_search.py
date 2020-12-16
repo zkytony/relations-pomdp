@@ -9,11 +9,13 @@ import random
 import math
 from relpomdp.realistic.environment import ThorEnv
 from relpomdp.realistic.utils.ai2thor_utils import save_frames,\
-    plot_reachable_grid, get_reachable_pos_set, scene_info, visible_objects
+    plot_reachable_grid, get_reachable_pos_set, scene_info, visible_objects, save_frames
 from relpomdp.realistic.utils.util import euclidean_dist, in_range_inclusive
 from relpomdp.home2d.domain.visual import lighter
 from pprint import pprint
 import numpy as np
+import cv2
+import os
 import matplotlib.pyplot as plt
 
 class State(pdp.State):
@@ -127,7 +129,7 @@ class MotionAction(Action):
 def build_motion_actions(grid_size=0.25, degrees=45):
     # Ai2Thor motion actions
     return {MotionAction("MoveAhead", (grid_size, 0)),
-            MotionAction("MoveBack", (-grid_size, 0)),
+            # MotionAction("MoveBack", (-grid_size, 0)),
             MotionAction("RotateLeft", (0, -degrees)),
             MotionAction("RotateRight", (0, degrees))}
 
@@ -464,6 +466,9 @@ def plot_step(ax, fig, env, belief,
     fig.canvas.draw()
     fig.canvas.flush_events()
 
+def save_frame(savepath, img):
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(savepath, img)
 
 def test_system(scene_name, grid_size=0.25, degrees=90):
     config = {
@@ -477,14 +482,9 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
 
     env = ThorEnv(config)
     env.launch()
-    env.controller.step(action="ToggleMapView")
+    # env.controller.step(action="ToggleMapView")
+    event = env.controller.step(action="Pass")
     reachable_positions = get_reachable_pos_set(env.controller, use_2d=True)
-
-    # plotting
-    plt.ion()
-    fig = plt.figure(figsize=(6,3))
-    ax = fig.add_subplot(1, 1, 1)#, projection="3d")
-    plt.show(block=False)
 
     # problem instance
     init_pose = env.agent_pose(use_2d=True)
@@ -492,13 +492,13 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
     sinfo = scene_info(env.controller.step(action="Pass").metadata)
     target_options = set(sinfo["TypeCount"].keys())
     pprint(sinfo)
-    # while True:
-    #     target_class = input("Enter a target class from the list above: ")
-    #     if target_class in target_options:
-    #         break
-    #     else:
-    #         print("{} is invalid. Try again.".format(target_class))
-    target_class = "Box"
+    while True:
+        target_class = input("Enter a target class from the list above: ")
+        if target_class in target_options:
+            break
+        else:
+            print("{} is invalid. Try again.".format(target_class))
+    # target_class = "Box"
 
     init_belief = Belief.uniform(init_pose, target_class, reachable_positions)
     transition_model = TransitionModel(grid_size=grid_size)
@@ -507,9 +507,6 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
     reward_model = RewardModel(declare_range=grid_size*2)
     policy_model = PolicyModel(motions | {DeclareFound()},
                                reachable_positions, grid_size=grid_size)
-
-    plot_step(ax, fig, env, init_belief,
-              init_pose, reachable_positions, sensor_model)
 
     # environment state: It's not necessary to query THOR to obtain the true
     # target location for POMDP planning or belief update, because targets are
@@ -528,6 +525,21 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
                         exploration_const=100,
                         rollout_policy=agent.policy_model)
 
+    # frame saving
+    savepath = "frames/%s-%s" % (scene_name, target_class)
+    os.makedirs(savepath, exist_ok=True)
+    save_frame(os.path.join(savepath, "frame-0.png"), event.frame)
+
+    # plotting
+    plt.ion()
+    fig = plt.figure(figsize=(6,3))
+    ax = fig.add_subplot(1, 1, 1)#, projection="3d")
+    plt.show(block=False)
+    plot_step(ax, fig, env, init_belief,
+              init_pose, reachable_positions, sensor_model)
+    plt.savefig(os.path.join(savepath, "belief-0.png"))
+
+    # Start search
     target_found = False
     for step in range(100):
         action = planner.plan(agent)
@@ -586,7 +598,9 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
         plot_step(ax, fig, env, agent.belief,
                   robot_pose, reachable_positions, sensor_model)
 
-
+        # saving frames
+        plt.savefig(os.path.join(savepath, "belief-%d.png" % (step+1)))
+        save_frame(os.path.join(savepath, "frame-%d.png" % (step+1)), event.frame)
 
 if __name__ == "__main__":
-    test_system("FloorPlan30", grid_size=0.25)
+    test_system("FloorPlan_Train1_1", grid_size=0.50)
