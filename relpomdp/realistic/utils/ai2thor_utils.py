@@ -88,23 +88,23 @@ def save_frames(controller, actions, savepath,
         i += 1
 
 
-def plot_reachable_grid(controller, ax, agent_pose=None):
+def plot_reachable_grid(controller, ax, agent_pose=None, s=1.0):
     """Creates a scatter plot of the reachable positions
     and plots the agent position on top if given."""
     event = controller.step(action="GetReachablePositions")
     positions = event.metadata["actionReturn"]
 
-    ax.clear()
     x = np.array([p['x'] for p in positions])
     y = np.array([p['y'] for p in positions])
     z = np.array([p['z'] for p in positions])
     # Plots the boundaries floor
-    ax.scatter(x, z, c='r')
-    ax.scatter([min(x)]*len(positions), z, c='y')
+    ax.scatter(x, z, c='r', s=s)
+    if ax.name == "3d":
+        ax.scatter([min(x)]*len(positions), z, c='y')
 
     if agent_pose is not None:
         pos, rot = agent_pose
-        ax.scatter([pos[0]], [pos[2]], c='b')
+        ax.scatter([pos[0]], [pos[2]], s=s, c='b')
         # head = (pos[0] + math.sin(rot[1])*0.25,
         #         pos[2] + math.cos(rot[1])*0.25)
         # ax.plot([pos[0], head[0]], [pos[2], head[1]], 'bo-')

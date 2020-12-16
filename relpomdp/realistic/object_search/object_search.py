@@ -249,7 +249,7 @@ class SensorObservationModel(pdp.ObservationModel):
         in_fov = self.sensor.within_range(next_state.robot_pose,
                                           next_state.target_state.pose)
         if in_fov:
-            if random.uniform(0, self.detection_prob):
+            if random.uniform(0, self.detection_prob) < 1.0:
                 target_observation = TargetObservation(self.objclass, next_state.target_state.pose)
             else:
                 target_observation = TargetObservation(self.objclass, None)
@@ -259,18 +259,26 @@ class SensorObservationModel(pdp.ObservationModel):
 
     def probability(self, target_observation, next_state, action):
         in_fov = self.sensor.within_range(next_state.robot_pose,
-                                          next_state.target_state.pose)
+                                              next_state.target_state.pose)
         if in_fov:
-            if target_observation.pose is None:
-                return 1 - self.detection_prob
-            else:
-                assert target_observation.pose == next_state.target_state.pose
+            if target_observation.pose == next_state.target_state.pose:
                 return self.detection_prob
+            else:
+                return 1. - self.detection_prob
         else:
-            if target_observation.pose is None:
+            if target_observation.pose == None:
                 return 1.0 - 1e-9
             else:
                 return 1e-9
+
+    def visualize(self, ax, robot_pose, reachable_positions):
+        """Plot the field of view"""
+        x, z = [], []
+        for pos in reachable_positions:
+            if self.sensor.within_range(robot_pose, pos):
+                x.append(pos[0])
+                z.append(pos[1])
+        ax.scatter(x, z, s=60.0, c="#fff957", alpha=0.7)
 
 # Reward Model
 class RewardModel(pdp.RewardModel):
@@ -393,7 +401,7 @@ class Belief(pdp.Histogram):
                 last_val = hist[state]
                 if last_val <= 0:
                     break
-        ax.scatter(x, z, c=np.array(colors)/255.0)
+        ax.scatter(x, z, c=np.array(colors)/255.0, s=30.0)
 
         robot_pose = self.mpe().robot_pose
         pos, rot = robot_pose
@@ -414,6 +422,19 @@ def find_closest(q, points):
     by euclidean_dist"""
     return min(points,
                key=lambda p: euclidean_dist(p, q))
+
+def plot_step(ax, fig, env, belief,
+              robot_pose, reachable_positions, sensor_model):
+    robot_pose = belief.mpe().robot_pose
+
+    ax.clear()
+    plot_reachable_grid(env.controller, ax,
+                        agent_pose=env.agent_pose(), s=80.0)
+    belief.visualize(ax)
+    sensor_model.visualize(ax, robot_pose, reachable_positions)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
 
 def test_system(scene_name, grid_size=0.25, degrees=90):
     config = {
@@ -458,11 +479,8 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
     policy_model = PolicyModel(motions | {DeclareFound()},
                                reachable_positions, grid_size=grid_size)
 
-    ax.clear()
-    ax.set_aspect("equal")
-    init_belief.visualize(ax)
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    plot_step(ax, fig, env, init_belief,
+              init_pose, reachable_positions, sensor_model)
 
     # environment state: It's not necessary to query THOR to obtain the true
     # target location for POMDP planning or belief update, because targets are
@@ -488,14 +506,15 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
 
         # Execute move action, receive THOR event
         next_state = transition_model.sample(state, action)
-        if next_state.robot_pose[0] not in reachable_positions:
-            import pdb; pdb.set_trace()
         assert next_state.robot_pose[0] in reachable_positions
         if degrees != 90:
             print("Warning: rotation degree isn't 90, Ai2thor motion model"\
                   "doesn't exactly match my transition model.")
-        thor_action_name, params = action.to_thor_action()
-        event = env.controller.step(action=thor_action_name, **params)
+        if isinstance(action, MotionAction):
+            thor_action_name, params = action.to_thor_action()
+            event = env.controller.step(action=thor_action_name, **params)
+        else:
+            event = env.controller.step(action="Pass")
 
         # Process event to get observation
         robot_pose = env.agent_pose(use_2d=True)
@@ -527,15 +546,16 @@ def test_system(scene_name, grid_size=0.25, degrees=90):
             print("Done. Target actually found? ", target_found)
             break
 
+        # Update belief
         new_belief = agent.belief.update(action, observation, sensor_model)
         agent.set_belief(new_belief)
         planner.update(agent, action, observation)
 
-        ax.clear()
-        ax.set_aspect("equal")
-        agent.belief.visualize(ax)
-        fig.canvas.draw()
-        fig.canvas.flush_events()
+        # Apply state transition
+        state = next_state
+
+        plot_step(ax, fig, env, agent.belief,
+                  robot_pose, reachable_positions, sensor_model)
 
 
 
