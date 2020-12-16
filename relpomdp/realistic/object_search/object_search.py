@@ -247,9 +247,6 @@ class FanSensor:
         if robot_pose[0] == point:
             return True
 
-        # if point == (2.25, 2.75):
-        #     import pdb; pdb.set_trace()
-
         (x, z), th = robot_pose
         dist = euclidean_dist((x,z), point)
         if self.min_range <= dist <= self.max_range:

@@ -63,9 +63,9 @@ def test_sensor_model(scene_name, grid_size=0.25, degrees=90):
     ax.scatter(x.flatten(), z.flatten(), s=10.0, c='r')
     positions = list(zip(x.flatten(),z.flatten()))
 
-    # robot_pose = ((0.0, 0.0), 0.0)
-    # plot_robot(ax, robot_pose)
-    # sensor_model.visualize(ax, robot_pose, positions)
+    robot_pose = ((0.0, 0.0), 0.0)
+    plot_robot(ax, robot_pose)
+    sensor_model.visualize(ax, robot_pose, positions)
 
     robot_pose = ((10.0*grid_size, 10.0*grid_size), 0.0)
     plot_robot(ax, robot_pose)
@@ -87,9 +87,16 @@ def test_sensor_model(scene_name, grid_size=0.25, degrees=90):
     plot_robot(ax, robot_pose, color='g')
     sensor_model.visualize(ax, robot_pose, positions)
 
+    robot_pose = ((18.0*grid_size, 5.0*grid_size), 225.0)
+    plot_robot(ax, robot_pose, color='g')
+    sensor_model.visualize(ax, robot_pose, positions)
+
     robot_pose = ((11.0*grid_size, 2.0*grid_size), 130.0)
     plot_robot(ax, robot_pose)
     sensor_model.visualize(ax, robot_pose, positions)
+
+    ax.set_xlabel("X")
+    ax.set_ylabel("Z")
 
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -97,25 +104,7 @@ def test_sensor_model(scene_name, grid_size=0.25, degrees=90):
     print("Pass.")
 
 
-def test():
-    # Case 1
-    fov = 90
-    min_range = 0.0
-    max_range = 1.0
-    robot_pose = ((0.0, 0.0), 0.0)
-    sensor = FanSensor(fov=fov, min_range=min_range, max_range=max_range)
-
-    assert sensor.within_range(robot_pose, (1,0)) == True
-    assert sensor.within_range(robot_pose, (0,1)) == False
-    assert sensor.within_range(robot_pose, (0.5, 0)) == True
-    assert sensor.within_range(robot_pose, (0, 0.5)) == False
-    assert sensor.within_range(robot_pose, (0,-0.5)) == False
-    assert sensor.within_range(robot_pose, (0.6, -0.3)) == True
-
-
-
 if __name__ == "__main__":
     # test_system("FloorPlan_Train1_1", grid_size=0.5)
     # test_policy_model("FloorPlan_Train1_1", grid_size=0.5)
     test_sensor_model("FloorPlan30", grid_size=0.25, degrees=90)
-    test()
