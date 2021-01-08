@@ -66,7 +66,7 @@ python test_heuristic_nk.py
 
 4. To run a subgoal agent with correlation belief update, go to `relpomdp/home2d/planning`. Then,
 ```
-python test_subgoals_nk.py ../experiments/configs/10x10_11-17-2020.yaml ../experiments/data/difficulty-train-envs-6x6-pomdp-20201113134230180.csv ../experiments/data/correlation-try1-10-20-2020.csv ../experiments/data/scores_C#6x6_10-31-2020_D#train-envs-6x6-pomdp_20201113140449444.csv -T Salt --seed 100
+python test_subgoals_nk.py ../experiments/configs/10x10_10-20-2020.yaml ../experiments/data/difficulty-train-envs-6x6-pomdp-20201113134230180.csv ../experiments/data/correlation-try1-10-20-2020.csv ../experiments/data/scores_C#6x6_10-31-2020_D#train-envs-6x6-pomdp_20201113140449444.csv -T Salt --seed 100
 ```
 Another command to try
 ```
