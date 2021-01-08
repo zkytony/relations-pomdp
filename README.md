@@ -13,7 +13,7 @@ We assume in our problem setting that the robot has access to a number of traini
 
 ![results_6by6](https://i.imgur.com/5Oxe4c8.png)
 
-![results_10by10](blob:https://imgur.com/f8339603-4976-4239-831f-9eadf2a98231)
+![results_10by10](https://i.imgur.com/pBHTXoa.png)
 
 
 ### Example 1
@@ -32,7 +32,7 @@ Task goal: Salt.
 
 
 **Subgoal agent WITHOUT correlation belief update**
-![subgoal-nk-nocorr_2](https://i.imgur.com/A1JUTva.mp4)
+![subgoal-nk-nocorr_2](https://i.imgur.com/A1JUTva.gif)
 
 
 ## Progress Log
