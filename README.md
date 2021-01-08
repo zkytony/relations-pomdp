@@ -34,6 +34,42 @@ Task goal: Salt.
 **Subgoal agent WITHOUT correlation belief update**
 ![subgoal-nk-nocorr_2](https://i.imgur.com/A1JUTva.gif)
 
+## Usage
+
+1. Before running anything, switch to the [for_relpomdp](https://github.com/zkytony/pomdp-py/tree/for_relpomdp) branch in pomdp_py.
+
+2. Do `make build` to build pomdp_py again.
+
+3. Then, go to `relpomdp/home2d/tests`. You should be able to run the following. The agent will search for salt.
+
+MDP agent
+```
+python test_mdp.py
+```
+POMDP agent
+```
+python test_pomdp.py
+```
+POMDP agent with no knowledge of the map in the beginning
+```
+python test_pomdp_nk.py
+```
+Heuristic agent with no knowledge of the map in the beginning
+```
+python test_heuristic_nk.py
+```
+
+Random agent with no knowledge of the map in the beginning
+```
+python test_heuristic_nk.py
+```
+
+4. To run a subgoal agent with correlation belief update, go to `relpomdp/home2d/planning`. Then,
+```
+python test_subgoals_nk.py ../experiments/configs/10x10_11-17-2020.yaml ../experiments/data/difficulty-train-envs-6x6-pomdp-20201113134230180.csv ../experiments/data/correlation-try1-10-20-2020.csv ../experiments/data/scores_C#6x6_10-31-2020_D#train-envs-6x6-pomdp_20201113140449444.csv -T Salt --seed 100
+```
+
+
 
 ## Progress Log
 
