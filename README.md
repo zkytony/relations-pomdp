@@ -1,5 +1,42 @@
 # Relations-POMDP
 
+
+## Overview
+
+**Problem** A robot must search for a target object in an environment that contains a number of other objects and the locations of these objects follow a (known or learnable) joint probability distribution.
+
+**This package** contains an attempt at building a grid-world environment and developing a POMDP-based method with heuristic-based planning to solve this problem. Each grid world instance consists of a number of objects. Some objects are of type containers (right now the only container is Room), and others are items that exist in containers.
+
+We simulated a 2D mobile robot with a pose specified by (x,y,θ) and that moves with a discrete action space. The robot projects a fan-shaped sensor capable of detecting objects. The geometry and noise level of the sensors vary dependent on the type of object class they are for. For example, room detectors are more robust to false negatives and have larger range compared to a detector for e.g. salt. We do not consider modeling false positives for now, because additional assumptions have to be made about what physical or non-physical entity causes the false positive detection and the right way to do this may involve tracking an unknown number of such entities and this becomes hard to manage in a POMDP framework.
+
+We assume in our problem setting that the robot has access to a number of training environments with the same distribution of object locations as the test environment. We learn a correlation scoring function `Corr(A,B)` that gives a score for how spatially correlated the instances of classes `A` and `B`, and a difficulty function `Dffc(A|B)` that gives a score for how difficult it is to find `A` after `B` has been found. Based on the correlation scoring function, we designed an observation model for belief update, and then based on both of these functions, we designed a heuristic for setting "subgoals", classes that should be found prior to finding the target class. The criticism of this method is it is all very ad-hoc and not principled (the scores are just heuristics without units), and we have not considered realistic assumptions of the object physical properties (e.g. what if you detected a part of the object). Despite these concerns, we have some preliminary results in the grid world domain:
+
+![results_6by6](https://i.imgur.com/5Oxe4c8.png)
+
+![results_10by10](blob:https://imgur.com/f8339603-4976-4239-831f-9eadf2a98231)
+
+
+### Example 1
+**Subgoal agent with correlation belief update**
+
+Subgoal: Kitchen.
+Task goal: Salt.
+![subgoal-nk_3](https://i.imgur.com/9y5c0Kk.gif)
+
+### Example 2
+**Subgoal agent with correlation belief update**
+
+Subgoal: Kitchen.
+Task goal: Salt.
+![subgoal-nk_1](https://i.imgur.com/IEuhJQj.gif)
+
+
+**Subgoal agent WITHOUT correlation belief update**
+![subgoal-nk-nocorr_2](https://i.imgur.com/A1JUTva.mp4)
+
+
+## Progress Log
+
 [11-26-2020]
 
 We are now moving past 2D gridworld. We have done what we can given the assumptions in this domain and presented the preliminary results. The focus of the next stage is:
