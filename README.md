@@ -68,7 +68,10 @@ python test_heuristic_nk.py
 ```
 python test_subgoals_nk.py ../experiments/configs/10x10_11-17-2020.yaml ../experiments/data/difficulty-train-envs-6x6-pomdp-20201113134230180.csv ../experiments/data/correlation-try1-10-20-2020.csv ../experiments/data/scores_C#6x6_10-31-2020_D#train-envs-6x6-pomdp_20201113140449444.csv -T Salt --seed 100
 ```
-
+Another command to try
+```
+python test_subgoals_nk.py ../experiments/configs/10x10_10-20-2020.yaml ../experiments/data/difficulty-try1-10-20-2020-20201026162744897.csv ../experiments/data/correlation-try1-10-20-2020.csv ../experiments/data/subgoal-scores\=try1.csv -T Salt
+```
 
 
 ## Progress Log
