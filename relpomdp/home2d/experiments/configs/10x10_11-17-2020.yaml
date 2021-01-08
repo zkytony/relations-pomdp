@@ -1,0 +1,102 @@
+# 10x10 worlds
+
+width: 10
+length: 10
+
+nrooms: 3
+ndoors: 2
+
+min_room_size: 2
+max_room_size: 6
+
+robot_id: 0
+init_robot_pose: [0, 0, 0]
+
+room_types:
+  - Kitchen
+  - Office
+  - Bedroom
+  - Bathroom
+
+objects:
+  Office:
+    Computer:
+      counts: 2
+    Shelf:
+      counts: 1
+    Chair:
+      counts: 1
+  Kitchen:
+    Salt:
+      counts: 1
+    Pepper:
+      counts: 1
+    Oven:
+      counts: 1
+    Countertop-wood:
+      counts: 1
+  Bedroom:
+    Single-bed:
+      counts: 1
+    Closet:
+      counts: 1
+    Clothes-folded:
+      counts: 1
+  Bathroom:
+    Bathroom-sink:
+      counts: 1
+    Toilet:
+      counts: 1
+    Laundry-basket:
+      counts: 1
+
+num_worlds: 100
+shuffle_rooms: True
+
+# Specifies the sensors, their configurations, and noises
+sensors:
+  room_sensor:
+    fov: 360
+    min_range: 1
+    max_range: 5
+    angle_increment: 0.1
+    noises:
+      Office: [0.99, 0.01]
+      Kitchen: [0.99, 0.01]
+      Bedroom: [0.99, 0.01]
+      Bathroom: [0.99, 0.01]
+      Corridor: [0.99, 0.01]
+
+  easy_object_sensor:
+    fov: 90
+    min_range: 1
+    max_range: 3
+    angle_increment: 0.1
+    noises:
+      Computer: [0.9, 0.02]
+      Shelf: [0.9, 0.02]
+      Chair: [0.9, 0.02]
+      Oven: [0.9, 0.02]
+      Closet: [0.9, 0.02]
+      Single-bed: [0.9, 0.02]
+      Countertop-wood: [0.9, 0.02]
+
+  medium_object_sensor:
+    fov: 90
+    min_range: 1
+    max_range: 2
+    angle_increment: 0.1
+    noises:
+      Clothes-folded: [0.8, 0.03]
+      Toilet: [0.8, 0.03]
+
+  hard_object_sensor:
+    fov: 90
+    min_range: 1
+    max_range: 2
+    angle_increment: 0.1
+    noises:
+      Salt: [0.7, 0.05]
+      Pepper: [0.7, 0.05]
+      Bathroom-sink: [0.7, 0.05]
+      Laundry-basket: [0.7, 0.05]
