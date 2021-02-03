@@ -8,6 +8,7 @@ of the variables.
 from pomdp_py import Histogram
 import pandas as pd
 from dist import JointDist
+import random
 
 class Event:
     """An event is not mutable."""
@@ -200,6 +201,10 @@ class TabularDistribution(Histogram, JointDist):
         """
         event = self._convert_to_event(values)
         return self._prob_event(event)
+
+    def sample(self):
+        """This is already implemented by the Histogram"""
+        return self.random()
 
     def condition(self, observation):
         """

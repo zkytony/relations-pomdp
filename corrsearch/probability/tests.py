@@ -40,5 +40,18 @@ class TestTabularDistribution(unittest.TestCase):
     def test_to_df(self):
         self.pxy.to_df()
 
+    def test_sample(self):
+        counts = {}
+        for i in range(50000):
+            ev = self.pxy.sample()
+            counts[ev] = counts.get(ev, 0) + 1
+        total_counts = sum(counts.values())
+        counts = {ev:counts[ev]/total_counts
+                  for ev in counts}
+        for ev in counts:
+            self.assertAlmostEqual(counts[ev],
+                                   self.pxy.prob(ev),
+                                   places=2)
+
 if __name__ == "__main__":
     unittest.main()
