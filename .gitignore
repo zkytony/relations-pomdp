@@ -151,4 +151,18 @@ relpomdp/home2d/experiments/tmp
 relpomdp/home2d/experiments/worlds/*.pkl
 
 
-relpomdp/realistic/*/*.png
+# relpomdp/realistic/navigation/test_output
+# relpomdp/realistic/object_search/frames
+relpomdp/realistic/**/*.png
+relpomdp/realistic/**/*.png
+relpomdp2/hallway/analysis/*.png
+relpomdp2/hallway_xy/examples/**/*.png
+relpomdp2/ipynb/*.slides.html
+# Generated pomdp solving related files
+*.alpha
+*.policy
+*.pomdp
+*.pg
+results*.csv
+plot*.png
+*.pkl
