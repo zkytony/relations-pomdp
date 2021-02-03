@@ -63,5 +63,8 @@ class TestTabularDistribution(unittest.TestCase):
         pxy = TabularDistribution(variables, weights)
         self.assertEqual(pxy.prob({"X":"x2", "Y":"y1"}), 0.0)
 
+        py = pxy.sum_out(["X"])
+        self.assertEqual(py.prob(("y1",)), pxy.prob(("x1", "y1")))
+
 if __name__ == "__main__":
     unittest.main()
