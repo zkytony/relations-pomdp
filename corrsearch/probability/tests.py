@@ -53,5 +53,15 @@ class TestTabularDistribution(unittest.TestCase):
                                    self.pxy.prob(ev),
                                    places=2)
 
+    def test_missing_value(self):
+        variables = ["X", "Y"]
+        weights = [
+            (('x1', 'y1'), 0.8),
+            (('x1', 'y2'), 0.2),
+            (('x2', 'y2'), 0.1),
+        ]
+        pxy = TabularDistribution(variables, weights)
+        self.assertEqual(pxy.prob({"X":"x2", "Y":"y1"}), 0.0)
+
 if __name__ == "__main__":
     unittest.main()
