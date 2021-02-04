@@ -1,6 +1,7 @@
 from corrsearch.objects import ObjectState, JointState, ObjectObz, JointObz
 import pomdp_py
 import unittest
+import copy
 
 class TestObjectState(unittest.TestCase):
     def setUp(self):
@@ -91,6 +92,7 @@ class TestObjectObz(unittest.TestCase):
         self.assertEqual(self.zo1, self.zo1.copy())
         self.assertEqual(self.zo2, self.zo2.copy())
         self.assertEqual(self.z, self.z.copy())
+        self.assertEqual(self.z, copy.deepcopy(self.z))
 
     def test_immutable(self):
         with self.assertRaises(NotImplementedError):
