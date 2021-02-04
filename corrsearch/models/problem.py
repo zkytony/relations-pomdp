@@ -1,5 +1,6 @@
 import pomdp_py
 import corrsearch.objects
+from corrsearch.robot_model import Declare
 
 class SearchProblem:
     """
@@ -37,4 +38,28 @@ class SearchProblem:
 
     def visualizer(self, *args, **kwargs):
         """Returns a visualizer of the problem"""
+        raise NotImplementedError
+
+
+class SearchRewardModel(pomdp_py.RewardModel):
+    def __init__(self, robot_id, target_id, rmax=100, rmin=-100):
+        self.rmax = rmax
+        self.rmin = rmin
+        self.robot_id = robot_id
+        self.target_id = target_id
+
+    def sample(self, state, action, next_state):
+        if isinstance(action, Declare):
+            if action.loc is None:
+                decloc = state[self.robot_id].loc
+            else:
+                decloc = action.loc
+            if decloc == state[self.target_id].loc:
+                return self.rmax
+            else:
+                return self.rmin
+        else:
+            return self.step_reward_func(state, action, next_state)
+
+    def step_reward_func(self, state, action, next_state):
         raise NotImplementedError
