@@ -266,3 +266,10 @@ class TabularDistribution(Histogram, JointDist):
         new_weights = {ev:sum(new_event_to_probs[ev])
                        for ev in new_event_to_probs}
         return TabularDistribution(remain_vars, new_weights, normalize=True)
+
+    def marginal(self, outvars, observation=None):
+        if observation is not None:
+            dist = self.condition(observation)
+        elim_vars = [var for var in self.variables
+                     if var not in outvars]
+        return self.sum_out(elim_vars)

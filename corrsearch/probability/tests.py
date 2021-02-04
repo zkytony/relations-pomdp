@@ -66,5 +66,23 @@ class TestTabularDistribution(unittest.TestCase):
         py = pxy.sum_out(["X"])
         self.assertEqual(py.prob(("y1",)), pxy.prob(("x1", "y1")))
 
+    def test_marignal(self):
+        variables = ["X", "Y", "Z"]
+        weights = [
+            (('x1', 'y1', 'z1'), 0.8),
+            (('x1', 'y2', 'z1'), 0.2),
+            (('x2', 'y1', 'z2'), 0.3),
+            (('x2', 'y2', 'z2'), 0.1),
+            (('x3', 'y1', 'z1'), 0.2),
+            (('x3', 'y2', 'z1'), 0.6)
+        ]
+        pxyz = TabularDistribution(variables, weights)
+        self.assertEqual(pxyz.marginal(["X"]), pxyz.sum_out(["Y", "Z"]))
+        self.assertEqual(pxyz.marginal(["Y"]), pxyz.sum_out(["X", "Z"]))
+        self.assertEqual(pxyz.marginal(["Z"]), pxyz.sum_out(["X", "Y"]))
+        pz = pxyz.marginal(["Z"], observation={"Y":"y2"})
+        self.assertTrue(pz.prob({"Z":"z2"}) < pz.prob({"Z":"z1"}))
+
+
 if __name__ == "__main__":
     unittest.main()

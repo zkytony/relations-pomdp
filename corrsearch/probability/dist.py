@@ -39,3 +39,9 @@ class JointDist:
 
     def sample(self):
         raise NotImplementedError
+
+    def marginal(self, variables, observation=None):
+        """Performs marignal inference,
+        produce a joint distribution over `variables`,
+        given evidence (if supplied)"""
+        raise NotImplementedError
