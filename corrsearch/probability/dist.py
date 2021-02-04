@@ -45,3 +45,8 @@ class JointDist:
         produce a joint distribution over `variables`,
         given evidence (if supplied)"""
         raise NotImplementedError
+
+    def valrange(self, var):
+        """Returns an enumerable that contains the possible values
+        of the given variable var"""
+        raise NotImplementedError

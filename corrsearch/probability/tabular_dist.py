@@ -247,6 +247,9 @@ class TabularDistribution(Histogram, JointDist):
             rows.append(row)
         return pd.DataFrame(rows, columns=self.variables + ["prob"])
 
+    def valrange(self, var):
+        return self.ranges[var]
+
     def sum_out(self, variables):
         """Returns a JointDistribution after summing
         out the given variables."""

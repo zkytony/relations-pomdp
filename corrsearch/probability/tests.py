@@ -83,6 +83,9 @@ class TestTabularDistribution(unittest.TestCase):
         pz = pxyz.marginal(["Z"], observation={"Y":"y2"})
         self.assertTrue(pz.prob({"Z":"z2"}) < pz.prob({"Z":"z1"}))
 
+    def test_valrange(self):
+        self.assertEqual(self.pxy.valrange("X"), {"x1", "x2", "x3"})
+
 
 if __name__ == "__main__":
     unittest.main()
