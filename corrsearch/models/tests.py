@@ -1,4 +1,5 @@
 import unittest
+import random
 from corrsearch.models import *
 from corrsearch.objects import *
 from corrsearch.utils import *
@@ -20,7 +21,8 @@ class EvenObjDetector(DetectorModel):
         assert action.detector_id == self.id
         if objobz.objid % 2 == 0:
             if euclidean_dist(objstate.loc, robot_state.loc) <= self.radius:
-                return indicator(objobz["loc"] == objstate.loc)
+                return indicator(not isinstance(objobz, NullObz)\
+                                 and objobz["loc"] == objstate.loc)
             else:
                 return indicator(isinstance(objobz, NullObz))
         return 0.0
@@ -100,11 +102,12 @@ class TestCorrModel(unittest.TestCase):
         self.robot_id = 0
         self.detector = EvenObjDetector(100, self.robot_id, radius=2)
         self.target_id = 2
+        self.LEN = 5
         variables = ["s2", "s4", "s6"]
         weights = []
-        for l2 in range(5):
-            for l4 in range(5):
-                for l6 in range(5):
+        for l2 in range(self.LEN):
+            for l4 in range(self.LEN):
+                for l6 in range(self.LEN):
                     s2 = LocObjState(2, "obj2", {"loc": (l2,)})
                     s4 = LocObjState(4, "obj4", {"loc": (l4,)})
                     s6 = LocObjState(6, "obj6", {"loc": (l6,)})
@@ -139,7 +142,48 @@ class TestCorrModel(unittest.TestCase):
 
 
     def test_prob(self):
-        pass
+        target_state = LocObjState(self.target_id, "obj2", {"loc": (1,)})
+        robot_state = RobotState(self.robot_id, {"loc": (0,)})
+        action = UseDetector(self.detector.id)
+        joint_state = JointState({target_state.id: target_state,
+                                  robot_state.id: robot_state})
+
+        z1 = JointObz({
+            2: ObjectObz(2, "obj2", {"loc": (3,)}),
+            4: ObjectObz(4, "obj4", {"loc": (3,)}),
+            6: ObjectObz(6, "obj6", {"loc": (3,)})
+        })
+        # Should be 0.0 because observation about target (obj2) mismatch the state
+        self.assertEqual(self.corr_detector.probability(z1, joint_state, action),
+                         0.0)
+
+        z2 = JointObz({
+            2: ObjectObz(2, "obj2", {"loc": (1,)}),
+            4: ObjectObz(4, "obj4", {"loc": (0,)}),
+            6: ObjectObz(6, "obj6", {"loc": (3,)})
+        })
+        # Should be 1.0 because, object 6 is outside of the robot's range
+        self.assertEqual(self.corr_detector.probability(z2, joint_state, action),
+                         0.0)
+
+        z3 = JointObz({
+            2: ObjectObz(2, "obj2", {"loc": (1,)}),
+            4: ObjectObz(4, "obj4", {"loc": (0,)}),
+            6: ObjectObz(6, "obj6", {"loc": (2,)})
+        })
+        # Should be 1.0 because it checks out
+        self.assertEqual(self.corr_detector.probability(z3, joint_state, action),
+                         1.0)
+
+        z4 = JointObz({
+            2: ObjectObz(2, "obj2", {"loc": (1,)}),
+            4: NullObz(4),
+            6: ObjectObz(6, "obj6", {"loc": (2,)})
+        })
+        # Should be probable, and greater than the probability for the case before, because we
+        # do not know 4 and 4 can take more than one possible values
+        self.assertGreater(self.corr_detector.probability(z4, joint_state, action),
+                           self.corr_detector.probability(z3, joint_state, action))
 
 
 
