@@ -12,7 +12,7 @@ class Visualizer:
         """
         self.problem = problem
 
-    def visualizer(self, state, belief=None):
+    def visualize(self, state, belief=None):
         """Visualizes the given state,
         which should come from an instantiated
         version (i.e. an environment) of
