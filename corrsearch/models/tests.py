@@ -162,7 +162,7 @@ class TestCorrModel(unittest.TestCase):
             4: ObjectObz(4, "obj4", {"loc": (0,)}),
             6: ObjectObz(6, "obj6", {"loc": (3,)})
         })
-        # Should be 1.0 because, object 6 is outside of the robot's range
+        # Should be 0.0 because, object 6 is outside of the robot's range
         self.assertEqual(self.corr_detector.probability(z2, joint_state, action),
                          0.0)
 
