@@ -70,18 +70,18 @@ class TestTabularDistribution(unittest.TestCase):
         variables = ["X", "Y", "Z"]
         weights = [
             (('x1', 'y1', 'z1'), 0.8),
-            (('x1', 'y2', 'z1'), 0.2),
             (('x2', 'y1', 'z2'), 0.3),
-            (('x2', 'y2', 'z2'), 0.1),
             (('x3', 'y1', 'z1'), 0.2),
-            (('x3', 'y2', 'z1'), 0.6)
+            (('x3', 'y2', 'z1'), 0.6),
+            (('x1', 'y2', 'z1'), 0.2),
+            (('x2', 'y2', 'z2'), 0.1),
         ]
         pxyz = TabularDistribution(variables, weights)
         self.assertEqual(pxyz.marginal(["X"]), pxyz.sum_out(["Y", "Z"]))
         self.assertEqual(pxyz.marginal(["Y"]), pxyz.sum_out(["X", "Z"]))
         self.assertEqual(pxyz.marginal(["Z"]), pxyz.sum_out(["X", "Y"]))
         pz = pxyz.marginal(["Z"], observation={"Y":"y2"})
-        self.assertTrue(pz.prob({"Z":"z2"}) < pz.prob({"Z":"z1"}))
+        self.assertEqual(pz.prob(("z1",)), 8*pz.prob(("z2",)))
 
     def test_valrange(self):
         self.assertEqual(self.pxy.valrange("X"), {"x1", "x2", "x3"})

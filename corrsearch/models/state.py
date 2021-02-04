@@ -7,6 +7,11 @@ class LocObjState(ObjectState):
     def loc(self):
         return self.attributes["loc"]
 
+    def copy(self):
+        return LocObjectState(self.objid,
+                              self.objclass,
+                              copy.deepcopy(self.attributes))
+
 class RobotState(LocObjState):
     """
     Robot state is special
@@ -15,3 +20,8 @@ class RobotState(LocObjState):
         super().__init__(objid,
                          objclass,
                          attributes)
+
+    def copy(self):
+        return RobotState(self.objid,
+                          copy.deepcopy(self.attributes),
+                          objclass=self.objclass)

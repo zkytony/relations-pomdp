@@ -2,9 +2,10 @@ import unittest
 from corrsearch.models import *
 from corrsearch.objects import *
 from corrsearch.utils import *
+from corrsearch.probability import *
 
 # A toy detector model
-class ToyDetector(DetectorModel):
+class EvenObjDetector(DetectorModel):
     """This detector is only able to detect object with even id,
     and it detects them if robot is within a radius of them."""
     def __init__(self, detector_id, robot_id, radius=2):
@@ -15,6 +16,8 @@ class ToyDetector(DetectorModel):
         """
         Returns the probability of Pr(zi | si, sr', a)
         """
+        assert isinstance(action, UseDetector)
+        assert action.detector_id == self.id
         if objobz.objid % 2 == 0:
             if euclidean_dist(objstate.loc, robot_state.loc) <= self.radius:
                 return indicator(objobz["loc"] == objstate.loc)
@@ -26,6 +29,8 @@ class ToyDetector(DetectorModel):
         """
         Returns a sample zi according to Pr(zi | si, sr', a)
         """
+        assert isinstance(action, UseDetector)
+        assert action.detector_id == self.id
         if objstate.objid % 2 == 0:
             if euclidean_dist(objstate.loc, robot_state.loc) <= self.radius:
                 return ObjectObz(objstate.id,
@@ -34,11 +39,10 @@ class ToyDetector(DetectorModel):
         return NullObz(objstate.id)
 
 
-
 class TestDetector(unittest.TestCase):
     def setUp(self):
         self.robot_id = 0
-        self.detector = ToyDetector(1, self.robot_id, radius=2)
+        self.detector = EvenObjDetector(100, self.robot_id, radius=2)
 
     def test_sample_normal(self):
         objstate = LocObjState(10, "box", {"loc": (5,)})
@@ -82,6 +86,60 @@ class TestDetector(unittest.TestCase):
                          expected_obz)
         self.assertEqual(self.detector.probability(expected_obz,
                                                    joint_state, action), 1.0)
+
+
+def tt(s2, s4, s6):
+    """For convenience"""
+    return {"s2": LocObjState(2, "obj2", {"loc": (s2,)}),
+            "s4": LocObjState(4, "obj4", {"loc": (s4,)}),
+            "s6": LocObjState(6, "obj6", {"loc": (s6,)})}
+
+class TestCorrModel(unittest.TestCase):
+
+    def setUp(self):
+        self.robot_id = 0
+        self.detector = EvenObjDetector(100, self.robot_id, radius=2)
+        self.target_id = 2
+        variables = ["s2", "s4", "s6"]
+        weights = []
+        for l2 in range(5):
+            for l4 in range(5):
+                for l6 in range(5):
+                    s2 = LocObjState(2, "obj2", {"loc": (l2,)})
+                    s4 = LocObjState(4, "obj4", {"loc": (l4,)})
+                    s6 = LocObjState(6, "obj6", {"loc": (l6,)})
+                    # object 2 and 4 are close, but 2 and 6 are far
+                    if abs(l4 - l2) <= 1 and abs(l6 - l2) >= 1:
+                        weights.append(((s2, s4, s6), 1.0))
+                    else:
+                        weights.append(((s2, s4, s6), 0.0))
+        self.dist = TabularDistribution(variables, weights)
+        self.corr_detector = CorrDetectorModel(self.target_id,
+                                               {2, 4, 6},
+                                               self.detector,
+                                               self.dist)
+
+    def test_sample(self):
+        target_state = LocObjState(self.target_id, "obj2", {"loc": (1,)})
+        robot_state = RobotState(self.robot_id, {"loc": (0,)})
+        action = UseDetector(self.detector.id)
+        joint_state = JointState({target_state.id: target_state,
+                                  robot_state.id: robot_state})
+        for i in range(100):
+            z = self.corr_detector.sample(joint_state, action)
+            self.assertEqual(z[self.target_id]["loc"], target_state["loc"])
+            # The sampled observation contain null or, if not should
+            # follow the distribution
+            if not isinstance(z[4], NullObz):
+                d = euclidean_dist(z[4]["loc"], z[self.target_id]["loc"])
+                self.assertLessEqual(d, 1)
+            if not isinstance(z[6], NullObz):
+                d = euclidean_dist(z[6]["loc"], z[self.target_id]["loc"])
+                self.assertGreaterEqual(d, 1)
+
+
+    def test_prob(self):
+        pass
 
 
 
