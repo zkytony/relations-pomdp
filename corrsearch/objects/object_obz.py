@@ -8,7 +8,7 @@ Defines ObjectObz and JointObz. They are very much the same
 interface as ObjState and JointState.
 """
 from pomdp_py.framework.basics import Observation
-from template import ObjectSetting, JointSetting
+from corrsearch.objects.template import ObjectSetting, JointSetting
 import copy
 
 class ObjectObz(ObjectSetting, Observation):

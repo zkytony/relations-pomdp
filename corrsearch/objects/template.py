@@ -1,5 +1,25 @@
 import copy
 
+class Object:
+    """
+    An object is just an id. So, it is EQUIVALENT to
+    the id, that is, an integer
+    """
+    def __init__(self, objid):
+        self.id = objid
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.id == other
+        elif isinstance(other, Object):
+            return self.id == other.id
+        else:
+            return False
+
+
 class ObjectSetting:
     def __init__(self, objid, objclass, attributes):
         """
@@ -36,8 +56,11 @@ class ObjectSetting:
         return self._hashcode
 
     def __eq__(self, other):
-        return self.objclass == other.objclass\
-            and self.attributes == other.attributes
+        if isinstance(other, ObjectSetting):
+            return self.objclass == other.objclass\
+                and self.attributes == other.attributes
+        else:
+            return False
 
     @property
     def objid(self):
@@ -140,3 +163,7 @@ class JointSetting:
 
     def __len__(self):
         return len(self.object_settings)
+
+    def __iter__(self):
+        """Iterate over object ids"""
+        return iter(self.object_settings)

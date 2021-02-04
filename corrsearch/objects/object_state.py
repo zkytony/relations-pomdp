@@ -11,7 +11,7 @@ It is, perhaps, the same framework as OOPOMDP. So, probably I
 should reuse the code there. That is the right thing to do.
 """
 from pomdp_py.framework.basics import State
-from template import ObjectSetting, JointSetting
+from corrsearch.objects.template import ObjectSetting, JointSetting
 import pprint
 import copy
 
