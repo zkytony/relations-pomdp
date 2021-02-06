@@ -1,6 +1,6 @@
 import pomdp_py
 import corrsearch.objects
-from corrsearch.robot_model import Declare
+from corrsearch.models.robot_model import Declare
 
 class SearchProblem:
     """
