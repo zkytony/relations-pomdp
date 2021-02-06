@@ -338,12 +338,12 @@ def overlay(img1, img2, opacity=1.0, pos=(0,0)):
 
     if img2.shape[2] == 4:
         # Get the alpha channel of img2
-        alpha = opacity * (img2[xs2:xf2, ys2:yf2, 3] / 255.0)
+        alpha = opacity * (img2[ys2:yf2, xs2:xf2, 3] / 255.0)
     else:
         alpha = opacity
 
     for c in range(3):
         img1[ys1:yf1, xs1:xf1, c] =\
-            (alpha * img2[xs2:xf2, ys2:yf2, c]\
+            (alpha * img2[ys2:yf2, xs2:xf2, c]\
              + (1.0-alpha) * img1[ys1:yf1, xs1:xf1, c])
     return img1
