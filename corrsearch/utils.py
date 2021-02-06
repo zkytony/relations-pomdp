@@ -331,10 +331,10 @@ def overlay(img1, img2, opacity=1.0, pos=(0,0)):
         "Invalid x offset (%d). Acceptable range [0,%d)" % (y_offset, img1.shape[0])
     # img1 region
     xs1, xf1 = x_offset, min(x_offset + img2.shape[1], img1.shape[1])
-    ys1, yf1 = y_offset, min(y_offset + img2.shape[0], img2.shape[1])
-    # img2 region
-    xs2, xf2 = 0, img2.shape[1] - x_offset
-    ys2, yf2 = 0, img2.shape[0] - y_offset
+    ys1, yf1 = y_offset, min(y_offset + img2.shape[0], img1.shape[0])
+
+    xs2, xf2 = 0, min(img2.shape[1], img1.shape[1] - x_offset)
+    ys2, yf2 = 0, min(img2.shape[0], img1.shape[0] - y_offset)
 
     if img2.shape[2] == 4:
         # Get the alpha channel of img2
