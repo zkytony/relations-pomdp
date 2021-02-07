@@ -30,31 +30,8 @@ class Field2DViz(Visualizer):
         self.problem = problem
         self._bg_path = bg_path
         self._res = config.get("res", 30)   # resolution
-        self._linewidth = config.get("linewidth", 8)
+        self._linewidth = config.get("linewidth", 1)
         super().__init__(problem)
-
-    def draw_object(self, img, x, y, dim,
-                    color=(128, 128, 128, 255),
-                    obj_img_path=None, add_bg=False):
-        """
-        Draws an object at location (x,y) that takes up a footprint of rectangle
-        of dimensions `dim` (w,l). The object image will be overlayed. The
-        `res` is the resolution. The width w refers to the number of columns (horizontal),
-        and the length l is vertical.
-        """
-        # First, color the footprint
-        startx = max(0, x*self._res)
-        starty = max(0, y*self._res)
-        endx = min(img.shape[1], (x+dim[0])*self._res)
-        endy = min(img.shape[0], (y+dim[1])*self._res)
-        if add_bg:
-            cv2.rectangle(img, (startx, starty), (endx, endy), color, thickness=-1)
-        # Then, overlay the image
-        if obj_img_path is not None:
-            objimg = cv2.imread(obj_img_path, cv2.IMREAD_UNCHANGED)
-            objimg = cv2.resize(objimg, (dim[0]*self._res, dim[1]*self._res))
-            overlay(img, objimg, opacity=1.0, pos=(startx, starty))
-        return img
 
     def visualize(self, state, belief=None):
         """
@@ -92,14 +69,39 @@ class Field2DViz(Visualizer):
             for y in range(l):
                 # Draw boundary
                 cv2.rectangle(img, (x*r, y*r), (x*r+r, y*r+r),
-                              (0, 0, 0), 1, self._linewidth)
+                              (0, 0, 0), self._linewidth)
 
         return img
+
+    def draw_object(self, img, x, y, dim,
+                    color=(128, 128, 128, 255),
+                    obj_img_path=None, add_bg=False):
+        """
+        Draws an object at location (x,y) that takes up a footprint of rectangle
+        of dimensions `dim` (w,l). The object image will be overlayed. The
+        `res` is the resolution. The width w refers to the number of columns (horizontal),
+        and the length l is vertical.
+        """
+        # First, color the footprint
+        startx = max(0, x*self._res)
+        starty = max(0, y*self._res)
+        endx = min(img.shape[1], (x+dim[0])*self._res)
+        endy = min(img.shape[0], (y+dim[1])*self._res)
+        if add_bg:
+            cv2.rectangle(img, (startx, starty), (endx, endy), color, thickness=-1)
+        # Then, overlay the image
+        if obj_img_path is not None:
+            objimg = cv2.imread(obj_img_path, cv2.IMREAD_UNCHANGED)
+            objimg = cv2.resize(objimg, (dim[0]*self._res, dim[1]*self._res))
+            overlay(img, objimg, opacity=1.0, pos=(startx, starty))
+        return img
+
+
 
 
 if __name__ == "__main__":
     problem = Field2D((20, 10))
-    viz = Field2DViz(problem, "./imgs/whitefloor.jpeg", res=30)
+    viz = Field2DViz(problem, "./imgs/whitefloor.jpeg", res=80)
 
     objstate = ObjectState(1, "cup", {"loc": (5,5),
                                       "dim": (1,1),
