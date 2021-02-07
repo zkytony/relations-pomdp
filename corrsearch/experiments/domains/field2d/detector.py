@@ -1,17 +1,18 @@
 import pomdp_py
 import random
-from corrsearch.models.detector import DetectorModel
+import numpy as np
 from corrsearch.objects.object_obz import ObjectObz
 from corrsearch.utils import euclidean_dist
+from corrsearch.models import *
 
 class LocObz(ObjectObz):
     def __init__(self, objid, objclass, loc):
-        super().__init__(self, objid, objclass, {"loc": loc})
+        super().__init__(objid, objclass, {"loc": loc})
 
 class LabelObz(ObjectObz):
     """This means a positive label detection"""
     def __init__(self, objid, objclass):
-        super().__init__(self, objid, objclass, {"label": objid})
+        super().__init__(objid, objclass, {"label": objid})
 
 class RangeDetector(DetectorModel):
     def __init__(self, detector_id, robot_id,
@@ -62,7 +63,7 @@ class RangeDetector(DetectorModel):
                 return NullObz(objstate.id)
 
 
-    def _iprob_loc(self, objobz, objstate, in_range):
+    def _iprob_loc(self, objobz, objstate, robot_state, in_range):
         # """This is a similar observation model as in the OOPOMDP paper"""
         assert isinstance(objobz, LocObz) or isinstance(objobz, NullObz)
         if in_range:
@@ -71,7 +72,7 @@ class RangeDetector(DetectorModel):
                 return 1.0 - self.params["true_positive"]
             else:
                 # True positive, gaussian centered at robot pose
-                gaussian = pomdp_py.Gaussian(objstate["loc"],
+                gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
                                              [[self.params["sigma"]**2, 0],
                                               [0, self.params["sigma"]**2]])
                 return self.params["true_positive"] * gaussian[objobz["loc"]]
@@ -80,13 +81,13 @@ class RangeDetector(DetectorModel):
                 # True negative
                 return 1.0 - self.params["false_positive"]
             else:
-                return self.params["false_positive"]
+                return self.params["false_positive"] * (1 / len(self.sensor_region(objstate.id, robot_state)))
 
     def _isample_loc(self, objstate, robot_state, in_range):
         if in_range:
             if random.uniform(0,1) <= self.params["true_positive"]:
                 # sample according to gaussian
-                gaussian = pomdp_py.Gaussian(objstate["loc"],
+                gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
                                              [[self.params["sigma"]**2, 0],
                                               [0, self.params["sigma"]**2]])
                 loc = tuple(map(int, map(round, gaussian.random())))
@@ -97,8 +98,9 @@ class RangeDetector(DetectorModel):
             if random.uniform(0,1) <= self.params["false_positive"]:
                 # False positive. Can come from anywhere within the sensor
                 # Requires to know the detection locations.
+                region = self.sensor_region(objstate.id, robot_state)
                 return LocObz(objstate.id, objstate.objclass,
-                              random.sample(self.sensor_region(objstate.id, robot_state), 1)[0])
+                              random.sample(region, 1)[0])
             else:
                 # True negative
                 return NullObz(objstate.id)
@@ -110,7 +112,7 @@ class RangeDetector(DetectorModel):
         if self.detection_type == "label":
             return self._iprob_label(objobz, in_range)
         elif self.detection_type == "loc":
-            return self._iprob_loc(objobz, objstate, in_range)
+            return self._iprob_loc(objobz, objstate, robot_state, in_range)
         else:
             raise ValueError("Cannot handle detection type %s" % self.detection_type)
 
