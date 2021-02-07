@@ -204,14 +204,6 @@ class FanSensor(Sensor):
                 return False
         return False
 
-
-    def valid_beam(self, dist, bearing):
-        """Returns true beam length (i.e. `dist`) is within range and its angle
-        `bearing` is valid, that is, it is within the fov range and in
-        accordance with the angle increment."""
-        return dist >= self.min_range and dist <= self.max_range\
-            and round(bearing, 2) in self._beams
-
     def shoot_beam(self, robot_pose, point):
         """Shoots a beam from robot_pose at point. Returns the distance and bearing
         of the beame (i.e. the length and orientation of the beame)"""
