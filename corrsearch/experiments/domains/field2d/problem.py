@@ -7,6 +7,7 @@ import yaml
 import pomdp_py
 from corrsearch.models.problem import *
 from corrsearch.objects.template import Object
+from corrsearch.experiments.domains.field2d.detector import *
 
 class Field2D(SearchProblem):
     """
@@ -19,19 +20,14 @@ class Field2D(SearchProblem):
       - noise
     - the reward depends on success and also robot's energy level
     """
-    def __init__(self, dim, **kwargs):
+    def __init__(self, dim, robot_id, objects, detectors,
+                 locations=None, **kwargs):
         self.dim = dim
         self.name = kwargs.get("name", "field2d")
+        if locations is None:
+            locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
 
-def problem_parser(domain_file, dist_file):
-    objects = []
-    with open(domain_file) as f:
-        spec = yaml.load(f, Loader=yaml.Loader)
-        for i in range(len(spec["objects"])):
-            objspec = spec["objects"][i]
-            obj = Object(objspec["id"], objspec)
-            objects.append(obj)
 
 
 if __name__ == "__main__":
-    problem_parser("./example_config.yaml", None)
+    problem_parser("./simple_config.yaml", None)
