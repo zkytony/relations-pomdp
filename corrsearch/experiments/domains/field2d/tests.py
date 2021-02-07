@@ -42,8 +42,8 @@ class TestRangeDetector(unittest.TestCase):
                                  self.label_detector.params["true_positive"][objstate_1.id])
             if isinstance(obz2, LabelObz):
                 fps.append(obz2)
-                self.assertEquals(self.label_detector.iprob(obz2, objstate_2, robot_state, action),
-                                  self.label_detector.params["false_positive"][objstate_2.id])
+                self.assertEqual(self.label_detector.iprob(obz2, objstate_2, robot_state, action),
+                                 self.label_detector.params["false_positive"][objstate_2.id])
             total_count += 1
 
         self.assertAlmostEqual(len(tps)/total_count,
@@ -51,7 +51,7 @@ class TestRangeDetector(unittest.TestCase):
                                1)
         self.assertAlmostEqual(len(fps)/total_count,
                                self.label_detector.params["false_positive"][objstate_2.id],
-                               2)
+                               1)
 
     def test_loc_detector(self):
         objstate_1 = LocObjState(10, "box", {"loc": (5,4)})
@@ -101,7 +101,7 @@ class TestRangeDetector(unittest.TestCase):
             point = sensor.uniform_sample_sensor_region(robot_pose)
             self.assertTrue(point in accepted)
             counts[point] = counts.get(point, 0) + 1
-        print(counts)
+        self.assertEqual(len(counts), sensor.sensor_region_size)
 
     def test_laser_sensor_geometry(self):
         w = 10
@@ -109,7 +109,7 @@ class TestRangeDetector(unittest.TestCase):
         locations = [(x,y) for x in range(w) for y in range(l)]
         robot_pose = (5, 5, to_rad(0))
         accepted = set()
-        sensor = FanSensor(fov=30, min_range=0, max_range=4)
+        sensor = FanSensor(fov=50, min_range=0, max_range=4)
         for point in locations:
             if sensor.in_range(point, robot_pose):
                 accepted.add(point)
@@ -118,7 +118,8 @@ class TestRangeDetector(unittest.TestCase):
             point = sensor.uniform_sample_sensor_region(robot_pose)
             self.assertTrue(point in accepted)
             counts[point] = counts.get(point, 0) + 1
-        print(counts)
+        self.assertEqual(len(counts), sensor.sensor_region_size)
+
 
 
 

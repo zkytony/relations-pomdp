@@ -160,7 +160,9 @@ class FanSensor(Sensor):
         self.min_range = min_range
         self.max_range = max_range
         # The size of the sensing region here is the area covered by the fan
-        self._sensing_region_size = self.fov / (2*math.pi) * math.pi * (max_range - min_range)**2
+        # This is a float, but rounding it up should equal to the number of discrete locations
+        # in the field of view.
+        self._sensing_region_size = int(math.ceil(self.fov / (2*math.pi) * math.pi * (max_range - min_range)**2))
 
     def uniform_sample_sensor_region(self, robot_pose):
         """Returns a location in the field of view
