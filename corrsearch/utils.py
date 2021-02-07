@@ -28,6 +28,9 @@ def diff(rang):
 def in_range(x, rang):
     return x >= rang[0] and x < rang[1]
 
+def in_range_inclusive(x, rang):
+    return x >= rang[0] and x <= rang[1]
+
 def in_region(p, ranges):
     return in_range(p[0], ranges[0]) and in_range(p[1], ranges[1]) and in_range(p[2], ranges[2])
 
@@ -48,6 +51,28 @@ def json_safe(obj):
 
 
 # Math
+def to_radians(th):
+    return th*np.pi / 180
+
+def to_rad(th):
+    return th*np.pi / 180
+
+def to_degrees(th):
+    return th*180 / np.pi
+
+def to_deg(th):
+    return th*180 / np.pi
+
+def cart2pol(x, y):
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return(rho, phi)
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return(x, y)
+
 def vec(p1, p2):
     """ vector from p1 to p2 """
     if type(p1) != np.ndarray:
@@ -95,12 +120,6 @@ def T(dx, dy, dz):
         0, 0, 1, dz,
         0, 0, 0, 1
     ]).reshape(4,4)
-
-def to_radians(th):
-    return th*np.pi / 180
-
-def to_degrees(th):
-    return th*180 / np.pi
 
 def R_between(v1, v2):
     if len(v1) != 3 or len(v2) != 3:
@@ -170,6 +189,11 @@ def approx_equal(v1, v2, epsilon=1e-6):
             return False
     return True
 
+def R2d(th):
+    return np.array([
+        np.cos(th), -np.sin(th),
+        np.sin(th), np.cos(th)
+    ]).reshape(2,2)
 
 # Others
 def safe_slice(arr, start, end):
@@ -347,3 +371,16 @@ def overlay(img1, img2, opacity=1.0, pos=(0,0)):
             (alpha * img2[ys2:yf2, xs2:xf2, c]\
              + (1.0-alpha) * img1[ys1:yf1, xs1:xf1, c])
     return img1
+
+# Plotting
+def plot_pose(ax, pos, rot, color='b', radians=True):
+    """
+    pos: (x,y),
+    rot: angle"""
+    if not radians:
+        rot = to_rad(rot)
+    ax.scatter([pos[0]], [pos[1]], c=color)
+    ax.arrow(pos[0], pos[1],
+             0.2*math.cos(rot),  # dx
+             0.2*math.sin(rot),  # dy
+             width=0.005, head_width=0.05, color=color)

@@ -25,3 +25,10 @@ class RobotState(LocObjState):
         return RobotState(self.objid,
                           copy.deepcopy(self.attributes),
                           objclass=self.objclass)
+
+    @property
+    def pose(self):
+        if "pose" in self.attributes:
+            return self.attributes["pose"]
+        else:
+            return self.attributes["loc"]
