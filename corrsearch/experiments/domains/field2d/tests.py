@@ -22,12 +22,12 @@ class TestRangeDetector(unittest.TestCase):
         self.robot_id = 0
         self.label_detector = ToyRangeDetector(100, self.robot_id,
                                                detection_type="label",
-                                               true_positive=0.8,
-                                               false_positive=0.1)
+                                               true_positive={10:0.8, 14:0.8},
+                                               false_positive={10:0.1, 14:0.1})
         self.loc_detector = ToyRangeDetector(200, self.robot_id,
                                              detection_type="loc",
-                                             true_positive=0.7,
-                                             false_positive=0.1,
+                                             true_positive={10:0.7, 14:0.7},
+                                             false_positive={10:0.1, 14:0.1},
                                              sigma=0.9)
 
     def test_label_detector(self):
@@ -45,18 +45,18 @@ class TestRangeDetector(unittest.TestCase):
             if isinstance(obz1, LabelObz):
                 tps.append(obz1)
                 self.assertEquals(self.label_detector.iprob(obz1, objstate_1, robot_state, action),
-                                  self.label_detector.params["true_positive"])
+                                  self.label_detector.params["true_positive"][objstate_1.id])
             if isinstance(obz2, LabelObz):
                 fps.append(obz2)
                 self.assertEquals(self.label_detector.iprob(obz2, objstate_2, robot_state, action),
-                                  self.label_detector.params["false_positive"])
+                                  self.label_detector.params["false_positive"][objstate_2.id])
             total_count += 1
 
         self.assertAlmostEqual(len(tps)/total_count,
-                               self.label_detector.params["true_positive"],
+                               self.label_detector.params["true_positive"][objstate_1.id],
                                1)
         self.assertAlmostEqual(len(fps)/total_count,
-                               self.label_detector.params["false_positive"],
+                               self.label_detector.params["false_positive"][objstate_2.id],
                                2)
 
     def test_loc_detector(self):
@@ -77,7 +77,7 @@ class TestRangeDetector(unittest.TestCase):
             if isinstance(obz2, LocObz):
                 fps.append(obz2["loc"])
                 region = self.loc_detector.sensor_region(objstate_2.id, robot_state)
-                expected_pr = self.loc_detector.params["false_positive"] * (1/len(region))
+                expected_pr = self.loc_detector.params["false_positive"][objstate_2.id] * (1/len(region))
                 self.assertEquals(self.loc_detector.iprob(obz2, objstate_2,
                                                           robot_state, action),
                                   expected_pr)
@@ -86,12 +86,11 @@ class TestRangeDetector(unittest.TestCase):
         # True positive should follow a gaussian
         self.assertEqual(tuple(stats.mode(tps).mode.tolist()[0]), objstate_1["loc"])
         self.assertAlmostEqual(len(tps)/total_count,
-                               self.loc_detector.params["true_positive"],
+                               self.loc_detector.params["true_positive"][objstate_1.id],
                                1)
         self.assertAlmostEqual(len(fps)/total_count,
-                               self.loc_detector.params["false_positive"],
+                               self.loc_detector.params["false_positive"][objstate_1.id],
                                1)
-
 
 
 if __name__ == "__main__":

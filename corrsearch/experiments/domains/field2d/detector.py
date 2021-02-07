@@ -2,7 +2,7 @@ import pomdp_py
 import random
 import numpy as np
 from corrsearch.objects.object_obz import ObjectObz
-from corrsearch.utils import euclidean_dist
+from corrsearch.utils import euclidean_dist, to_rad
 from corrsearch.models import *
 
 class LocObz(ObjectObz):
@@ -41,23 +41,23 @@ class RangeDetector(DetectorModel):
         assert isinstance(objobz, LabelObz) or isinstance(objobz, NullObz)
         if in_range:
             if isinstance(objobz, LabelObz):
-                return self.params["true_positive"]
+                return self.params["true_positive"][objobz.objid]
             else:
-                return 1.0 - self.params["true_positive"]
+                return 1.0 - self.params["true_positive"][objobz.objid]
         else:
             if isinstance(objobz, LabelObz):
-                return self.params["false_positive"]
+                return self.params["false_positive"][objobz.objid]
             else:
-                return 1.0 - self.params["false_positive"]
+                return 1.0 - self.params["false_positive"][objobz.objid]
 
     def _isample_label(self, objstate, in_range):
         if in_range:
-            if random.uniform(0,1) <= self.params["true_positive"]:
+            if random.uniform(0,1) <= self.params["true_positive"][objstate.objid]:
                 return LabelObz(objstate.id, objstate.objclass)
             else:
                 return NullObz(objstate.id)
         else:
-            if random.uniform(0,1) <= self.params["false_positive"]:
+            if random.uniform(0,1) <= self.params["false_positive"][objstate.objid]:
                 return LabelObz(objstate.id, objstate.objclass)
             else:
                 return NullObz(objstate.id)
@@ -69,23 +69,23 @@ class RangeDetector(DetectorModel):
         if in_range:
             if isinstance(objobz, NullObz):
                 # False negative
-                return 1.0 - self.params["true_positive"]
+                return 1.0 - self.params["true_positive"][objobz.objid]
             else:
                 # True positive, gaussian centered at robot pose
                 gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
                                              [[self.params["sigma"]**2, 0],
                                               [0, self.params["sigma"]**2]])
-                return self.params["true_positive"] * gaussian[objobz["loc"]]
+                return self.params[objobz.objid]["true_positive"] * gaussian[objobz["loc"]]
         else:
             if isinstance(objobz, NullObz):
                 # True negative
-                return 1.0 - self.params["false_positive"]
+                return 1.0 - self.params["false_positive"][objobz.objid]
             else:
-                return self.params["false_positive"] * (1 / len(self.sensor_region(objstate.id, robot_state)))
+                return self.params["false_positive"][objobz.objid] * (1 / len(self.sensor_region(objstate.id, robot_state)))
 
     def _isample_loc(self, objstate, robot_state, in_range):
         if in_range:
-            if random.uniform(0,1) <= self.params["true_positive"]:
+            if random.uniform(0,1) <= self.params["true_positive"][objstate.objid]:
                 # sample according to gaussian
                 gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
                                              [[self.params["sigma"]**2, 0],
@@ -95,7 +95,7 @@ class RangeDetector(DetectorModel):
             else:
                 return NullObz(objstate.id)
         else:
-            if random.uniform(0,1) <= self.params["false_positive"]:
+            if random.uniform(0,1) <= self.params["false_positive"][objstate.objid]:
                 # False positive. Can come from anywhere within the sensor
                 # Requires to know the detection locations.
                 region = self.sensor_region(objstate.id, robot_state)
@@ -127,3 +127,20 @@ class RangeDetector(DetectorModel):
             return self._isample_loc(objstate, robot_state, in_range)
         else:
             raise ValueError("Cannot handle detection type %s" % self.detection_type)
+
+
+# Fan shape laser scanner
+class LaserRangeDetector(RangeDetector):
+
+    def __init__(self, name="laser2d",
+                 fov=90, min_range=1, max_range=5,
+                 angle_increment=5):
+        self.name = name
+        self.robot_id = robot_id
+        self.fov = to_rad(fov)  # convert to radian
+        self.min_range = min_range
+        self.max_range = max_range
+        self.angle_increment = to_rad(angle_increment)
+
+    def in_range(self, objstate, robot_state):
+        raise NotImplementedError
