@@ -3,10 +3,12 @@ import pomdp_py
 import itertools
 from corrsearch.models.problem import *
 from corrsearch.models.detector import *
+from corrsearch.models.robot_model import *
 from corrsearch.probability import TabularDistribution, FactorGraph
 from corrsearch.objects.template import Object
 from corrsearch.experiments.domains.field2d.detector import *
 from corrsearch.experiments.domains.field2d.problem import Field2D
+from corrsearch.experiments.domains.field2d.transition import *
 from corrsearch.experiments.domains.field2d.spatial_relations import *
 
 def parse_sensor(sensor_spec):
@@ -30,7 +32,6 @@ def parse_domain(spec):
     """
     dim = spec["dim"]
     name = spec["name"]
-    bg = spec["bg"]
 
     objects = []
     robot_id = None
@@ -46,6 +47,11 @@ def parse_domain(spec):
             idbyclass[objspec["class"]] = set()
         idbyclass[objspec["class"]].add(objspec["id"])
         id2objects[obj.id] = obj
+
+    target_object = None
+    if "target_id" in spec:
+        target_id = spec["target_id"]
+        target_object = (target_id, id2objects[target_id]["class"])
 
     detectors = []
     for i in range(len(spec["detectors"])):
@@ -82,17 +88,19 @@ def parse_domain(spec):
                             continue
                         params[param_name][objid] = pspec[ref]
         detectors.append(RangeDetector(dspec["id"], robot_id,
-                                       dspec["type"], sensors, **params))
-    return dict(dim=dim, name=name, bg=bg,
+                                       dspec["type"], sensors,
+                                       energy_cost=dspec.get("energy_cost", 0),
+                                       name=dspec["name"],
+                                       **params))
+    return dict(dim=dim, name=name,
                 robot_id=robot_id,
                 objects=objects, detectors=detectors,
+                target_object=target_object,
                 idbyclass=idbyclass,
                 id2objects=id2objects)
 
 def parse_dist(domain_info, spec):
     """Build a joint distribution given spec (dict)"""
-    dim = domain_info["dim"]
-    locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
     factors = []
     variables = set()
     for i in range(len(spec["probability"])):
@@ -119,6 +127,7 @@ def parse_dist(domain_info, spec):
         # Obtain the cartesian product of the object ids of classes
         objid_combos = itertools.product(*objids)
         # Do a cartesian product of the locations for each object in combo
+        locations = domain_info["locations"]
         locations_combos = itertools.product(*([locations]*len(objids)))
         for combo in objid_combos:
             # combo: a tuple of object ids
@@ -142,15 +151,67 @@ def parse_dist(domain_info, spec):
     factor_graph = FactorGraph(list(sorted(variables)),
                                factors)
 
+def parse_robot(info, spec):
+    # Move actions
+    actions = set()
+    move_spec = spec["robot"]["move"]
+    for i in range(len(move_spec)):
+        delta = move_spec[i]["delta"]
+        for j in range(len(delta)):
+            if type(delta[j]) == str:
+                delta[j] = eval(delta[j])
+        move_action = Move(delta, name=move_spec[i]["name"],
+                           energy_cost=move_spec[i]["energy_cost"])
+        actions.add(move_action)
+
+    # Declare actions
+    declare_type = spec["robot"]["declare"]
+    if declare_type == "on_top":
+        actions.add(Declare())
+    elif declare_type == "all":
+        for loc in info["locations"]:
+            actions.add(Declare(loc=loc))
+    else:
+        raise ValueError("Unsupported declare type %s" % declare_type)
+
+    # Detector actions
+    for detector in info["detectors"]:
+        actions.add(UseDetector(detector.id,
+                                name=detector.name,
+                                energy_cost=detector.energy_cost))
+
+    if spec["robot"]["transition"] == "deterministic":
+        robot_trans = DetRobotTrans(info["robot_id"], spec["robot"]["move_schema"])
+    else:
+        raise ValueError("Unsupported robot transition type: %s" % spec["transition"])
+
+    return actions, robot_trans
+
+
 def problem_parser(domain_file):
     with open(domain_file) as f:
         spec = yaml.load(f, Loader=yaml.Loader)
     info = parse_domain(spec)
+
+    # enumerate list of locations
+    dim = info["dim"]
+    locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
+    info["locations"] = locations
+
+    # parse the joint distribution
     joint_dist = parse_dist(info, spec)
-    # return Field2D(info["dim"], name=name, bg=bg,
-    #                robot_id=robot_id, objects=objects,
-    #                detectors=detectors)
+
+    # parse the robot
+    actions, robot_trans = parse_robot(info, spec)
+    robot_model = RobotModel(info["detectors"],
+                             actions,
+                             robot_trans)
+    problem = Field2D(dim, info["objects"], joint_dist,
+                      info["robot_id"], robot_model,
+                      locations=locations,
+                      target_object=info.get("target_object", None))
+    return problem
 
 
 if __name__ == "__main__":
-    problem_parser("./simple_config.yaml")
+    problem_parser("./configs/simple_config.yaml")

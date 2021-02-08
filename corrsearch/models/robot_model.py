@@ -3,20 +3,29 @@ from corrsearch.objects.object_state import ObjectState
 
 class Move(pomdp_py.SimpleAction):
     """Move action, changes the robot state"""
-    def __init__(self, delta, **kwargs):
+    def __init__(self, delta, name=None, energy_cost=0, **kwargs):
+        if name is None:
+            name = str(delta)
+        self.name = name
         self.delta = delta
-        super().__init__("move-{}".format(delta))
+        self.energy_cost = 0
+        super().__init__("move-{}".format(self.name))
 
 class UseDetector(pomdp_py.SimpleAction):
     """Use detector action, applies a detector"""
-    def __init__(self, detector_id, **kwargs):
+    def __init__(self, detector_id, name=None, energy_cost=0, **kwargs):
+        if name is None:
+            name = "detector_%d" % detector_id
+        self.name = name
         self.detector_id = detector_id
-        super().__init__("use-detector-{}".format(detector_id))
+        self.energy_cost = 0
+        super().__init__("use-detector-{}-{}".format(detector_id, self.name))
 
 class Declare(pomdp_py.SimpleAction):
     """Declare action. Declare target found"""
     def __init__(self, loc=None, **kwargs):
         self.loc = loc
+        self.energy_cost = 0
         if loc is None:
             super().__init__("declare")
         else:
@@ -32,11 +41,13 @@ class RobotModel:
     """
     def __init__(self,
                  object_detectors,
+                 actions,
                  trans_model):
         """
         Args:
             object_detectors (array-like): Object detectors,
                 each can be thought of as a SensorModel
+            actions (array-like): Actions that the robot can perform
             trans_model (TransitionModel): a POMDP transition model
                 for the robot state.
         """

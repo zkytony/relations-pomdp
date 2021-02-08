@@ -16,7 +16,7 @@ class LabelObz(ObjectObz):
 
 class RangeDetector(DetectorModel):
     def __init__(self, detector_id, robot_id,
-                 detection_type, sensors, **params):
+                 detection_type, sensors, name=None, energy_cost=0, **params):
         """
         Args:
             detection_type (str): "loc" or "label".
@@ -33,7 +33,8 @@ class RangeDetector(DetectorModel):
         self.detection_type = detection_type
         self.params = params
         self.sensors = sensors
-        super().__init__(detector_id, robot_id)
+        self.energy_cost = energy_cost
+        super().__init__(detector_id, robot_id, name=name)
 
     def sensor_region_size(self, objid, robot_state):
         return self.sensors[objid].sensor_region_size

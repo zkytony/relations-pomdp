@@ -10,7 +10,6 @@ import random
 import time
 import os
 from corrsearch.models.visualizer import Visualizer
-from corrsearch.experiments.domains.field2d.problem import Field2D
 from corrsearch.utils import overlay
 from corrsearch.objects import ObjectState, JointState
 
@@ -95,21 +94,3 @@ class Field2DViz(Visualizer):
             objimg = cv2.resize(objimg, (dim[0]*self._res, dim[1]*self._res))
             overlay(img, objimg, opacity=1.0, pos=(startx, starty))
         return img
-
-
-
-
-if __name__ == "__main__":
-    problem = Field2D((20, 10))
-    viz = Field2DViz(problem, "./imgs/whitefloor.jpeg", res=80)
-
-    objstate = ObjectState(1, "cup", {"loc": (5,5),
-                                      "dim": (1,1),
-                                      "obj_img_path": "imgs/cup.png"})
-    objstate2 = ObjectState(0, "table", {"loc": (4,5),
-                                        "dim": (4,4),
-                                        "obj_img_path": "imgs/table.png"})
-    state = JointState({1:objstate, 0:objstate2})
-    img = viz.visualize(state)
-    cv2.imshow("TT", img)
-    cv2.waitKey(3000)

@@ -5,8 +5,8 @@ from scipy.spatial.transform import Rotation as scipyR
 import scipy.stats as stats
 import math
 
-def indicator(cond):
-    return 1.0 if cond else 0.0
+def indicator(cond, epsilon=0.0):
+    return 1.0 - epsilon if cond else epsilon
 
 def euclidean_dist(p1, p2):
     return math.sqrt(sum([(a - b)** 2 for a, b in zip(p1, p2)]))

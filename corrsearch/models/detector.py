@@ -23,9 +23,12 @@ class DetectorModel(pomdp_py.ObservationModel):
     notion of "joint null observation". The observation is always factored, and
     could be factored into null observation for every object.
     """
-    def __init__(self, detector_id, robot_id):
+    def __init__(self, detector_id, robot_id, name=None):
         self.id = detector_id
         self.robot_id = robot_id
+        if name is None:
+            name = "detector_%d" % self.id
+        self.name = name
 
     def iprob(self, objobz, objstate, robot_state, action):
         """
@@ -162,6 +165,12 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     def sample(self, next_state, action, **kwargs):
         """In order to generate an observation from this model,
         we need access to the list of objects"""
+        if not isinstance(action, UseDetector)\
+           or action.detector_id != self.id:
+            # .sample should return the joint of null observations, which is expected
+            return JointObz({objid:NullObz(objid)}
+                            for objid in next_state)
+
         objzs = {}
         for objid in self.objects:
             # First generate object state according to Pr(si | starget),
@@ -181,3 +190,29 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
             zi = self.detector_model.isample(si, sr, action)
             objzs[objid] = zi
         return JointObz(objzs)
+
+
+class MultiDetectorModel(pomdp_py.ObservationModel):
+    def __init__(self, detectors):
+        """
+        Args:
+            detectors (list or array-like): a list of detector models (DetectorModel).
+        """
+        self.detectors = {d.id: d
+                          for d in detectors}
+
+    def probability(self, observation, next_state, action, **kwargs):
+        if isinstance(action, UseDetector):
+            return self.detectors[action.detector_id].probability(observation, next_state, action)
+        else:
+            all_null = all(isinstance(observation[objid], NullObz)
+                           for objid in observation)
+            return indicator(all_null)
+
+    def sample(self, next_state, action, **kwargs):
+        if isinstance(action, UseDetector):
+            return self.detectors[action.detector_id].sample(next_state, action)
+        else:
+            return JointObz({objid : NullObz(objid)
+                             for objid in next_state
+                             if not isinstance(next_state[objid], RobotState)})

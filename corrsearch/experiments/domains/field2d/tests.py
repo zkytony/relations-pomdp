@@ -2,9 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import unittest
 from corrsearch.experiments.domains.field2d.detector import *
+from corrsearch.experiments.domains.field2d.problem import Field2D
+from corrsearch.experiments.domains.field2d.parser import *
 from corrsearch.models import *
 from corrsearch.utils import *
 from scipy import stats
+import cv2
 import math
 
 class TestRangeDetector(unittest.TestCase):
@@ -120,9 +123,7 @@ class TestRangeDetector(unittest.TestCase):
             counts[point] = counts.get(point, 0) + 1
         self.assertEqual(len(counts), sensor.sensor_region_size)
 
-
-
-
+# Test detector geometry by plotting
 def plot_disk_sensor_geometry():
     w = 10
     l = 10
@@ -141,7 +142,9 @@ def plot_disk_sensor_geometry():
     plot_pose(ax, robot_pose[0:2], robot_pose[2])
     ax.set_xlim(0, w)
     ax.set_ylim(0, l)
-    plt.show()
+    plt.show(block=False)
+    plt.pause(1.5)
+    plt.close()
 
 def plot_laser_sensor_geometry():
     w = 10
@@ -169,10 +172,28 @@ def plot_laser_sensor_geometry():
         samples_x.append(point[0])
         samples_y.append(point[1])
     plt.scatter(samples_x, samples_y, zorder=1, s=50)
-    plt.show()
+    plt.show(block=False)
+    plt.pause(1.5)
+    plt.close()
 
+def test_field2d_initialize():
+    problem = problem_parser("./configs/simple_config.yaml")
+    viz = problem.visualizer(bg="./imgs/whitefloor.jpeg", res=30)
+
+    objstate = ObjectState(1, "cup", {"loc": (0,2),
+                                      "dim": (2,1),
+                                      "obj_img_path": "imgs/cup.png"})
+    objstate2 = ObjectState(0, "table", {"loc": (2,0),
+                                        "dim": (1,1),
+                                        "obj_img_path": "imgs/table.png"})
+    state = JointState({1:objstate, 0:objstate2})
+
+    img = viz.visualize(state)
+    cv2.imshow("TT", img)
+    cv2.waitKey(3000)
 
 if __name__ == "__main__":
-    unittest.main()
-    # test_disk_sensor_geometry()
+    # unittest.main(exit=False)
+    # plot_disk_sensor_geometry()
     # plot_laser_sensor_geometry()
+    test_field2d_initialize()
