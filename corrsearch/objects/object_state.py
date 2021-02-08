@@ -10,6 +10,7 @@ port over the ObjectState class here, specifically.
 It is, perhaps, the same framework as OOPOMDP. So, probably I
 should reuse the code there. That is the right thing to do.
 """
+import pomdp_py
 from pomdp_py.framework.basics import State
 import pprint
 import copy
@@ -164,3 +165,65 @@ class JointState(State):
     def __iter__(self):
         """Iterate over object ids"""
         return iter(self.object_states)
+
+
+class JointBelief(pomdp_py.GenerativeDistribution):
+    """
+    Belief factored by objects.
+    """
+    def __init__(self, object_beliefs):
+        """
+        object_beliefs (objid -> GenerativeDistribution)
+        """
+        self._object_beliefs = object_beliefs
+
+    def __getitem__(self, state):
+        """__getitem__(self, state)
+        Returns belief probability of given state"""
+        if not isinstance(state, JointState):
+            raise ValueError("state must be JointState")
+        belief_prob = 1.0
+        for objid in self._object_beliefs:
+            object_state = state.object_states[objid]
+            belief_prob = belief_prob * self._object_beliefs[objid].probability(object_state)
+        return belief_prob
+
+    def mpe(self, **kwargs):
+        """mpe(self, **kwargs)
+        Returns most likely state."""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].mpe(**kwargs)
+        return JointState(object_states)
+
+    def random(self, **kwargs):
+        """random(self, **kwargs)
+        Returns a random state"""
+        object_states = {}
+        for objid in self._object_beliefs:
+            object_states[objid] = self._object_beliefs[objid].random(**kwargs)
+        return JointState(object_states)
+
+    def __setitem__(self, oostate, value):
+        """__setitem__(self, oostate, value)
+        Sets the probability of a given `oostate` to `value`.
+        Note always feasible."""
+        raise NotImplemented
+
+    def object_belief(self, objid):
+        """object_belief(self, objid)
+        Returns the belief (GenerativeDistribution) for the given object."""
+        return self._object_beliefs[objid]
+
+    def set_object_belief(self, objid, belief):
+        """set_object_belief(self, objid, belief)
+        Sets the belief of object to be the given `belief` (GenerativeDistribution)"""
+        self._object_beliefs[objid] = belief
+
+    @property
+    def object_beliefs(self):
+        """object_beliefs(self)"""
+        return self._object_beliefs
+
+    def update(self, observation, action):
+        return self

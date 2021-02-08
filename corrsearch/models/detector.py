@@ -1,5 +1,6 @@
 import pomdp_py
 from corrsearch.objects import JointObz, ObjectObz
+from corrsearch.models.state import *
 from corrsearch.models.robot_model import UseDetector
 from corrsearch.utils import *
 

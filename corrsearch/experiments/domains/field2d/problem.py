@@ -28,6 +28,7 @@ class Field2D(SearchProblem):
                  name="field2d"):
         self.dim = dim
         self.name = name
+        self.robot_id = robot_id
         if locations is None:
             locations = [(x,y) for x in range(dim[0])
                          for y in range(dim[1])]
@@ -80,7 +81,7 @@ class Field2D(SearchProblem):
         object_states = {}
         for obj in self.objects:
             loc = init_locs[obj.id]
-            si = ObjectState(obj.id, obj["class"],
+            si = LocObjState(obj.id, obj["class"],
                              {"loc": loc})
             object_states[obj.id] = si
 
@@ -120,14 +121,17 @@ class Field2D(SearchProblem):
         else:
             raise ValueError("Unsupported initial belief type %s" % init_belief)
 
-        init_belief = pomdp_py.Histogram(belief_hist)
+        init_target_belief = pomdp_py.Histogram(belief_hist)
+        init_robot_belief = pomdp_py.Histogram({robot_state: 1.0})
+        init_belief = JointBelief({self.target_id:init_target_belief,
+                                   self.robot_id:init_robot_belief})
 
         # transition model
         transition_model = SearchTransitionModel(
             self.robot_id, self.robot_model.trans_model)
 
         # reward model
-        reward_model = SearchRewardModel(
+        reward_model = Field2DRewardModel(
             self.robot_id, self.target_id,
             rmax=kwargs.get("rmax", 100),
             rmin=kwargs.get("rmin", -100)
@@ -145,7 +149,7 @@ class Field2D(SearchProblem):
         observation_model = MultiDetectorModel(detectors)
 
         # policy model. Default is uniform
-        policy_model = UniformPolicyModel(self.robot_model.actions)
+        policy_model = pomdp_py.UniformPolicyModel(self.robot_model.actions)
 
         env = pomdp_py.Environment(init_state,
                                    transition_model,
@@ -160,3 +164,11 @@ class Field2D(SearchProblem):
 
     def visualizer(self, **kwargs):
         return Field2DViz(self, **kwargs)
+
+
+class Field2DRewardModel(SearchRewardModel):
+    def step_reward_func(self, state, action, next_state):
+        if next_state[self.robot_id]["energy"] <= 0:
+            return -self.rmin
+        else:
+            return 0

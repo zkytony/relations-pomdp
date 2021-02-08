@@ -66,7 +66,7 @@ class FactorGraph(JointDist):
         # For efficiency
         print("Computing joint probability table..")
         self._ranges = all_state_names  # maps from variable name to ranges (list)
-        self.joint = PGMFactorDist(self.bp.query(self.variables))
+        self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=False))
 
     def prob(self, setting):
         """
@@ -83,7 +83,7 @@ class FactorGraph(JointDist):
         """Performs marignal inference,
         produce a joint distribution over `variables`,
         given evidence (if supplied)"""
-        dist = self.bp.query(variables, evidence=observation)
+        dist = self.bp.query(variables, evidence=observation, show_progress=False)
         return PGMFactorDist(dist)
 
     def valrange(self, var):
@@ -127,7 +127,7 @@ class PGMFactorDist(JointDist):
         """Performs marignal inference,
         produce a joint distribution over `variables`,
         given evidence (if supplied)"""
-        dist = self.bp.query(variables, evidence=observation)
+        dist = self.bp.query(variables, evidence=observation, show_progress=False)
         return PGMFactorDist(dist)
 
     def valrange(self, var):

@@ -1,4 +1,5 @@
 from corrsearch.objects import ObjectState, JointState
+import copy
 
 class LocObjState(ObjectState):
     """State of an object that has 'location'
@@ -8,9 +9,10 @@ class LocObjState(ObjectState):
         return self.attributes["loc"]
 
     def copy(self):
-        return LocObjectState(self.objid,
-                              self.objclass,
-                              copy.deepcopy(self.attributes))
+        return LocObjState(self.objid,
+                           self.objclass,
+                           copy.deepcopy(self.attributes))
+
     def __lt__(self, other):
         return self.loc < other.loc
 

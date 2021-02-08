@@ -115,6 +115,10 @@ class RangeDetector(DetectorModel):
     def iprob(self, objobz, objstate, robot_state, action):
         assert isinstance(action, UseDetector)
         assert action.detector_id == self.id
+        if objobz.id not in self.sensors:
+            # Not capable of detecting the given object
+            return indicator(objobz == NullObz(objobz.id))
+
         in_range = self.in_range(objstate, robot_state)
         if self.detection_type == "label":
             return self._iprob_label(objobz, in_range)
@@ -127,6 +131,10 @@ class RangeDetector(DetectorModel):
     def isample(self, objstate, robot_state, action):
         assert isinstance(action, UseDetector)
         assert action.detector_id == self.id
+        if objstate.id not in self.sensors:
+            # Not capable of detecting the given object
+            return NullObz(objstate.id)
+
         in_range = self.in_range(objstate, robot_state)
         if self.detection_type == "label":
             return self._isample_label(objstate, in_range)

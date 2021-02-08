@@ -176,7 +176,7 @@ def plot_laser_sensor_geometry():
     plt.pause(1.5)
     plt.close()
 
-def test_field2d_initialize():
+def test_field2d_visualize():
     problem = problem_parser("./configs/simple_config.yaml")
     viz = problem.visualizer(bg="./imgs/whitefloor.jpeg", res=30)
 
@@ -196,4 +196,4 @@ if __name__ == "__main__":
     unittest.main(exit=False)
     plot_disk_sensor_geometry()
     plot_laser_sensor_geometry()
-    test_field2d_initialize()
+    test_field2d_visualize()

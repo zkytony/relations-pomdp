@@ -53,6 +53,7 @@ class RobotModel:
         """
         self.detectors = object_detectors
         self.trans_model = trans_model
+        self.actions = actions
 
 
 class RobotTransModel(pomdp_py.TransitionModel):

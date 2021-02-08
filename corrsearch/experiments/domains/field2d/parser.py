@@ -150,6 +150,7 @@ def parse_dist(domain_info, spec):
             factors.append(factor)
     factor_graph = FactorGraph(list(sorted(variables)),
                                factors)
+    return factor_graph
 
 def parse_robot(info, spec):
     # Move actions
