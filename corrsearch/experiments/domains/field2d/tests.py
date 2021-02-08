@@ -150,10 +150,10 @@ def plot_laser_sensor_geometry():
     w = 10
     l = 10
     locations = [(x,y) for x in range(w) for y in range(l)]
-    robot_pose = (5, 5, to_rad(45))
+    robot_pose = (5, 5, to_rad(18))
     accepted_x = []
     accepted_y = []
-    sensor = FanSensor(fov=90, min_range=0, max_range=4)
+    sensor = FanSensor(fov=75, min_range=0, max_range=4)
     for point in locations:
         if sensor.in_range(point, robot_pose):
             accepted_x.append(point[0])
@@ -183,10 +183,14 @@ def test_field2d_visualize():
     objstate = ObjectState(1, "cup", {"loc": (0,2),
                                       "dim": (1,1),
                                       "obj_img_path": "imgs/cup.png"})
-    objstate2 = ObjectState(0, "table", {"loc": (0,0),
+    objstate2 = ObjectState(2, "table", {"loc": (0,0),
                                         "dim": (2,2),
                                         "obj_img_path": "imgs/table.png"})
-    state = JointState({1:objstate, 0:objstate2})
+    objstate3 = ObjectState(0, "robot", {"loc": (0,0),
+                                         "pose": (0,0,0),
+                                        "dim": (1,1),
+                                        "obj_img_path": "./imgs/blue_cube.png"})
+    state = JointState({1:objstate, 2:objstate2, 0:objstate3})
 
     img = viz.visualize(state)
     cv2.imshow("TT", img)

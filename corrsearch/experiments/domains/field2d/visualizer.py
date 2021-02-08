@@ -26,11 +26,33 @@ class Field2DViz(Visualizer):
         I probably want to use a better image representation than numpy array
         maintained all by myself.
         """
-        self.problem = problem
+        super().__init__(problem)
         self._bg_path = bg_path
         self._res = config.get("res", 30)   # resolution
         self._linewidth = config.get("linewidth", 1)
-        super().__init__(problem)
+        self.on_init()
+
+    @property
+    def img_width(self):
+        return self.problem.dim[0] * self._res
+
+    @property
+    def img_height(self):
+        return self.problem.dim[1] * self._res
+
+    def on_init(self):
+        """pygame init"""
+        pygame.init()  # calls pygame.font.init()
+        # init main screen and background
+        self._display_surf = pygame.display.set_mode((self.img_width,
+                                                      self.img_height),
+                                                     pygame.HWSURFACE)
+        self._background = pygame.Surface(self._display_surf.get_size()).convert()
+        self._clock = pygame.time.Clock()
+
+        # Font
+        self._myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        self._running = True
 
     def visualize(self, state, belief=None):
         """
@@ -48,6 +70,19 @@ class Field2DViz(Visualizer):
             color = state[objid].get("base_color", (128, 128, 128, 255))
             obj_img_path = state[objid].get("obj_img_path", None)
             img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path)
+
+        # Render
+        img_render = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
+        img_render = cv2.flip(img_render, 1)  # flip horizontally
+        img_render = cv2.cvtColor(img_render, cv2.COLOR_RGBA2BGR)
+        pygame.surfarray.blit_array(self._display_surf, img_render)
+
+        rx, ry, th = state[self.problem.robot_id]["pose"]
+        fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())
+        pygame.display.set_caption("robot_pose(%.2f,%.2f,%.2f) | %s" %
+                                   (rx, ry, th,
+                                    fps_text))
+        pygame.display.flip()
         return img
 
     def _make_gridworld_image(self, r, state):
