@@ -64,6 +64,7 @@ class FactorGraph(JointDist):
         self.bp = BeliefPropagation(self.fg)
 
         # For efficiency
+        print("Computing joint probability table..")
         self._ranges = all_state_names  # maps from variable name to ranges (list)
         self.joint = PGMFactorDist(self.bp.query(self.variables))
 

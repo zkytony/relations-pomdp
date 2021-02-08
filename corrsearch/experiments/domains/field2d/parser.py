@@ -147,9 +147,9 @@ def problem_parser(domain_file):
         spec = yaml.load(f, Loader=yaml.Loader)
     info = parse_domain(spec)
     joint_dist = parse_dist(info, spec)
-    return Field2D(dim, name=name, bg=bg,
-                   robot_id=robot_id, objects=objects,
-                   detectors=detectors)
+    # return Field2D(info["dim"], name=name, bg=bg,
+    #                robot_id=robot_id, objects=objects,
+    #                detectors=detectors)
 
 
 if __name__ == "__main__":
