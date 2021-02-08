@@ -24,3 +24,6 @@ class Object:
 
     def __getitem__(self, attr):
         return self.attributes[attr]
+
+    def get(self, attr, default_val):
+        return self.attributes.get(attr, default_val)

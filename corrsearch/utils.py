@@ -276,7 +276,7 @@ def ci_normal(series, confidence_interval=0.95):
 def lighter(color, percent):
     '''assumes color is rgb between (0, 0, 0) and (255, 255, 255)'''
     color = np.array(color)
-    white = np.array([255, 255, 255])
+    white = np.array([255] * len(color))
     vector = white-color
     return color + vector * percent
 

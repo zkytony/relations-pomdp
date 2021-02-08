@@ -10,7 +10,7 @@ import random
 import time
 import os
 from corrsearch.models.visualizer import Visualizer
-from corrsearch.utils import overlay
+from corrsearch.utils import overlay, lighter
 from corrsearch.objects import ObjectState, JointState
 
 class Field2DViz(Visualizer):
@@ -64,12 +64,23 @@ class Field2DViz(Visualizer):
         img = self._make_gridworld_image(self._res, state)
 
         # Place objects
+        import pdb; pdb.set_trace()
         for objid in range(len(state.object_states)):
-            x, y = state[objid]["loc"]
-            dim = state[objid].get("dim", (1,1))
-            color = state[objid].get("base_color", (128, 128, 128, 255))
-            obj_img_path = state[objid].get("obj_img_path", None)
-            img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path)
+            color = self.problem.objects[objid].get("color", (128, 128, 128, 255))
+            if len(color) == 3:
+                color = color + [255]
+            color = tuple(color)
+
+            if objid == self.problem.robot_id:
+                x, y, th = state[objid]["pose"]
+                img = self.draw_robot(img, x, y, th,
+                                      color=color)
+            else:
+                x, y = state[objid]["loc"]
+                dim = self.problem.objects[objid].get("dim", (1,1))
+                obj_img_path = self.problem.objects[objid].get("obj_img_path", None)
+                img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path)
+
 
         # Render
         img_render = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
@@ -128,4 +139,26 @@ class Field2DViz(Visualizer):
             objimg = cv2.imread(obj_img_path, cv2.IMREAD_UNCHANGED)
             objimg = cv2.resize(objimg, (dim[0]*self._res, dim[1]*self._res))
             overlay(img, objimg, opacity=1.0, pos=(startx, starty))
+        else:
+            # No image. draw a square.
+            radius = int(round(self._res / 2))
+            shift = int(round(self._res / 2))
+            cv2.circle(img, (starty+shift, startx+shift), radius,
+                       color, thickness=-1)
+            cv2.circle(img, (starty+shift, startx+shift), radius//2,
+                       lighter(color, 0.4), thickness=-1)
+        return img
+
+    def draw_robot(self, img, x, y, th, color=(255, 150, 0)):
+        size = self._res
+        x *= self._res
+        y *= self._res
+
+        radius = int(round(size / 2))
+        shift = int(round(self._res / 2))
+        cv2.circle(img, (y+shift, x+shift), radius, color, thickness=2)
+
+        endpoint = (y+shift + int(round(shift*math.sin(th))),
+                    x+shift + int(round(shift*math.cos(th))))
+        cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
         return img
