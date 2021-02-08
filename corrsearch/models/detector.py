@@ -8,6 +8,10 @@ class NullObz(ObjectObz):
     def __init__(self, objid):
         super().__init__(objid, None, {})
 
+def svar(objid):
+    """Convention to name the state variable of an object"""
+    return "s" + str(objid)
+
 class DetectorModel(pomdp_py.ObservationModel):
     """Detector Model is the sensor model of the detector.
     The observation should be factored by objects,
@@ -117,14 +121,11 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     def robot_id(self):
         return self.detector_model.robot_id
 
-    def svar(self, objid):
-        return "s" + str(objid)
-
     def dist_si(self, objid, starget):
         """Returns the distribution (JointDist) for Pr(si | starget)"""
         # Compute the Pr(si | starget). TODO: can this be pre-computed?
-        si_dist = self.dist.marginal([self.svar(objid)],
-                                     observation={self.svar(self.target_id) : starget})
+        si_dist = self.dist.marginal([svar(objid)],
+                                     observation={svar(self.target_id) : starget})
         return si_dist
 
     def probability(self, observation, next_state, action, **kwargs):
@@ -153,7 +154,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
             # sum_si Pr(zi | sr, si, a) * Pr(si | starget)
             dist_si = self.dist_si(objid, starget)
             pi = sum(self.detector_model.iprob(zi, si, sr, action)
-                     for si in dist_si.valrange(self.svar(objid)))
+                     for si in dist_si.valrange(svar(objid)))
             p *= pi
         return p
 
@@ -175,7 +176,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
 
             starget = next_state[self.target_id]
             dist_si = self.dist_si(objid, starget)
-            si = dist_si.sample()[self.svar(objid)]
+            si = dist_si.sample()[svar(objid)]
             zi = self.detector_model.isample(si, sr, action)
             objzs[objid] = zi
         return JointObz(objzs)

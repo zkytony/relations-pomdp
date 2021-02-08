@@ -26,8 +26,3 @@ class Field2D(SearchProblem):
         self.name = kwargs.get("name", "field2d")
         if locations is None:
             locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
-
-
-
-if __name__ == "__main__":
-    problem_parser("./simple_config.yaml", None)

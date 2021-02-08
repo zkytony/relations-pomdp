@@ -1,0 +1,65 @@
+# Configuration file for a field2d problem.
+# This is an example of a really small domain.
+
+name: "empty_room"
+
+bg: "./imgs/whitefloor.jpeg"
+
+dim: [3, 3]
+
+objects:
+
+ - class: blue-cube
+   id: 1
+   color: (30, 30, 200)
+   dim: [1,1]
+
+ - class: red-cube
+   id: 2
+   color: (200, 30, 30)
+   dim: [1,1]
+
+ - class: robot
+   id: 0
+   dim: [1,1]
+
+detectors:
+
+  - name: blue-detector
+    id: 100
+    type: "label"
+    sensors:
+      1:  # objid
+        type: "disk"
+        params:
+          radius: 0
+    params:
+      true_positive:
+        1: 0.9   # objid -> val
+      false_positive:
+        1: 0.05
+
+  - name: red-detector
+    id: 200
+    type: "label"
+    sensors:
+      2:
+        type: "disk"
+        params:
+          radius: 1
+    params:
+      true_positive:
+        2: 0.9
+      false_positive:
+        2: 0.05
+
+# Probability distribution between objects, specified via spatial relations
+probability:
+
+  - objects: [2]
+    dist: "uniform"
+
+  - classes: [blue-cube, red-cube]
+    dist: "nearby"  # spatial relation
+    params:
+      radius: 2
