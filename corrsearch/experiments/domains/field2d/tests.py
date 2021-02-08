@@ -181,19 +181,19 @@ def test_field2d_initialize():
     viz = problem.visualizer(bg="./imgs/whitefloor.jpeg", res=30)
 
     objstate = ObjectState(1, "cup", {"loc": (0,2),
-                                      "dim": (2,1),
+                                      "dim": (1,1),
                                       "obj_img_path": "imgs/cup.png"})
-    objstate2 = ObjectState(0, "table", {"loc": (2,0),
-                                        "dim": (1,1),
+    objstate2 = ObjectState(0, "table", {"loc": (0,0),
+                                        "dim": (2,2),
                                         "obj_img_path": "imgs/table.png"})
     state = JointState({1:objstate, 0:objstate2})
 
     img = viz.visualize(state)
     cv2.imshow("TT", img)
-    cv2.waitKey(3000)
+    cv2.waitKey(1000)
 
 if __name__ == "__main__":
-    # unittest.main(exit=False)
-    # plot_disk_sensor_geometry()
-    # plot_laser_sensor_geometry()
+    unittest.main(exit=False)
+    plot_disk_sensor_geometry()
+    plot_laser_sensor_geometry()
     test_field2d_initialize()
