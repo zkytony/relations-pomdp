@@ -66,7 +66,7 @@ probability:
   - classes: [blue-cube, red-cube]
     dist: "nearby"  # spatial relation
     params:
-      radius: 2
+      radius: 1
 
 robot:
 
@@ -74,7 +74,7 @@ robot:
   move_schema: "xy"
   move:
     - name: north
-      delta: [0, 1, "math.pi/2"]
+      delta: [0, -1, "math.pi/2"]
       energy_cost: 0.0
 
     - name: east
@@ -82,7 +82,7 @@ robot:
       energy_cost: 0.0
 
     - name: south
-      delta: [0, -1, "3*math.pi/2"]
+      delta: [0, 1, "3*math.pi/2"]
       energy_cost: 0.0
 
     - name: west

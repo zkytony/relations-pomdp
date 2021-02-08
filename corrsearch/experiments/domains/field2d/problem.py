@@ -73,13 +73,18 @@ class Field2D(SearchProblem):
 
         # object locations
         if init_locs == "random":
-            locs = random.sample(self.locations, len(self.objects))
-            init_locs = {self.objects[i].id : locs[i]
-                         for i in range(len(self.objects))}
+            # Random, according to the distribution
+            sample = self.joint_dist.sample()
+            init_locs = {}
+            for obj in self.objects:
+                if obj.id != self.robot_id:
+                    init_locs[obj.id] = sample[svar(obj.id)]["loc"]
 
         # init state
         object_states = {}
         for obj in self.objects:
+            if obj.id == self.robot_id:
+                continue
             loc = init_locs[obj.id]
             si = LocObjState(obj.id, obj["class"],
                              {"loc": loc})
