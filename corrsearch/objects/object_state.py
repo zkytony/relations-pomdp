@@ -225,5 +225,8 @@ class JointBelief(pomdp_py.GenerativeDistribution):
         """object_beliefs(self)"""
         return self._object_beliefs
 
+    def obj(self, objid):
+        return self._object_beliefs[objid]
+
     def update(self, observation, action):
         return self

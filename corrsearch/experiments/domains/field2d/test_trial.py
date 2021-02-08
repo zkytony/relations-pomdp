@@ -14,7 +14,7 @@ def make_trial(domain_file):
     instance_config = dict(
         init_locs="random",
         init_robot_setting=((0, 0, 0), 100),
-        init_belief="informed"
+        init_belief="uniform"
     )
     planner = "pomdp_py.POUCT"
     planner_init_config = dict(

@@ -10,7 +10,7 @@ import random
 import time
 import os
 from corrsearch.models.visualizer import Visualizer
-from corrsearch.utils import overlay, lighter
+from corrsearch.utils import overlay, lighter, lighter_with_alpha, cv2shape
 from corrsearch.objects import ObjectState, JointState
 
 class Field2DViz(Visualizer):
@@ -54,6 +54,13 @@ class Field2DViz(Visualizer):
         self._myfont = pygame.font.SysFont('Comic Sans MS', 30)
         self._running = True
 
+    def get_color(self, objid, default=(128, 128, 128, 255), alpha=1.0):
+        color = self.problem.objects[objid].get("color", default)
+        if len(color) == 3:
+            color = color + [int(round(alpha*255))]
+        color = tuple(color)
+        return color
+
     def visualize(self, state, belief=None):
         """
         Args:
@@ -64,22 +71,27 @@ class Field2DViz(Visualizer):
         img = self._make_gridworld_image(self._res, state)
 
         # Place objects
-        import pdb; pdb.set_trace()
         for objid in range(len(state.object_states)):
-            color = self.problem.objects[objid].get("color", (128, 128, 128, 255))
-            if len(color) == 3:
-                color = color + [255]
-            color = tuple(color)
-
-            if objid == self.problem.robot_id:
-                x, y, th = state[objid]["pose"]
-                img = self.draw_robot(img, x, y, th,
-                                      color=color)
-            else:
+            if objid != self.problem.robot_id:
                 x, y = state[objid]["loc"]
                 dim = self.problem.objects[objid].get("dim", (1,1))
                 obj_img_path = self.problem.objects[objid].get("obj_img_path", None)
-                img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path)
+                color = self.get_color(objid, default=(30, 10, 200, 255))
+                img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path,
+                                       is_target=objid==self.problem.target_id)
+
+        # Draw belief (only about target)
+        if belief is not None:
+            target_id = self.problem.target_id
+            target_color = self.get_color(target_id, alpha=0.8)
+            img = self.draw_object_belief(img, belief.obj(target_id),
+                                          target_color)
+
+        # Draw robot
+        x, y, th = state[self.problem.robot_id]["pose"]
+        color = self.get_color(self.problem.robot_id)
+        img = self.draw_robot(img, x, y, th,
+                              color=color)
 
 
         # Render
@@ -120,7 +132,7 @@ class Field2DViz(Visualizer):
 
     def draw_object(self, img, x, y, dim,
                     color=(128, 128, 128, 255),
-                    obj_img_path=None, add_bg=False):
+                    obj_img_path=None, add_bg=False, is_target=False):
         """
         Draws an object at location (x,y) that takes up a footprint of rectangle
         of dimensions `dim` (w,l). The object image will be overlayed. The
@@ -145,8 +157,10 @@ class Field2DViz(Visualizer):
             shift = int(round(self._res / 2))
             cv2.circle(img, (starty+shift, startx+shift), radius,
                        color, thickness=-1)
-            cv2.circle(img, (starty+shift, startx+shift), radius//2,
-                       lighter(color, 0.4), thickness=-1)
+            if is_target:
+                cv2.circle(img, (starty+shift, startx+shift), radius//2,
+                           (30, 200, 30, 255), thickness=-1)
+
         return img
 
     def draw_robot(self, img, x, y, th, color=(255, 150, 0)):
@@ -161,4 +175,40 @@ class Field2DViz(Visualizer):
         endpoint = (y+shift + int(round(shift*math.sin(th))),
                     x+shift + int(round(shift*math.cos(th))))
         cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
+        return img
+
+    def draw_object_belief(self, img, belief, color,
+                           circle_drawn=None):
+        """
+        circle_drawn: map from pose to number of times drawn;
+            Used to determine size of circle to draw at a location
+        """
+        if circle_drawn is None:
+            circle_drawn = {}
+        radius = int(round(self._res / 2))
+        size = self._res // 3
+        last_val = -1
+        hist = belief.get_histogram()
+        for state in reversed(sorted(hist, key=hist.get)):
+            if last_val != -1:
+                color = lighter_with_alpha(color, 1-hist[state]/last_val)
+
+            if len(color) == 4:
+                stop = color[3]/255 < 0.1
+            else:
+                stop = np.mean(np.array(color[:3]) / np.array([255, 255, 255])) < 0.999
+
+            if not stop:
+                tx, ty = state['loc']
+                if (tx,ty) not in circle_drawn:
+                    circle_drawn[(tx,ty)] = 0
+                circle_drawn[(tx,ty)] += 1
+
+                img = cv2shape(img, cv2.circle,
+                               (ty*self._res+radius,
+                                tx*self._res+radius), size//circle_drawn[(tx,ty)],
+                               color, thickness=-1, alpha=color[3]/255)
+                last_val = hist[state]
+                if last_val <= 0:
+                    break
         return img

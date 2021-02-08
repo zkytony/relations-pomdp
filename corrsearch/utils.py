@@ -4,6 +4,7 @@ import math
 from scipy.spatial.transform import Rotation as scipyR
 import scipy.stats as stats
 import math
+import cv2
 
 def indicator(cond, epsilon=0.0):
     return 1.0 - epsilon if cond else epsilon
@@ -274,9 +275,20 @@ def ci_normal(series, confidence_interval=0.95):
 
 # colors
 def lighter(color, percent):
-    '''assumes color is rgb between (0, 0, 0) and (255, 255, 255)'''
+    '''assumes color is rgb between (0, 0, 0) and (255, 255, 255)
+    If `change_alpha` is True, then the alpha will also be redueced
+    by the specified amount.'''
     color = np.array(color)
-    white = np.array([255] * len(color))
+    white = np.array([255, 255, 255])
+    vector = white-color
+    return color + vector * percent
+
+def lighter_with_alpha(color, percent):
+    '''assumes color is rgb between (0, 0, 0) and (255, 255, 255)
+    If `change_alpha` is True, then the alpha will also be redueced
+    by the specified amount.'''
+    color = np.array(color)
+    white = np.array([255, 255, 255, 255])
     vector = white-color
     return color + vector * percent
 
@@ -371,6 +383,14 @@ def overlay(img1, img2, opacity=1.0, pos=(0,0)):
             (alpha * img2[ys2:yf2, xs2:xf2, c]\
              + (1.0-alpha) * img1[ys1:yf1, xs1:xf1, c])
     return img1
+
+def cv2shape(img, func, *args, alpha=1.0, **kwargs):
+    """Draws cv2 shape using `func` with arguments,
+    on top of given image `img` that allows transparency."""
+    img_paint = img.copy()
+    func(img_paint, *args, **kwargs)
+    img = cv2.addWeighted(img_paint, alpha, img, 1. - alpha, 0)
+    return img
 
 # Plotting
 def plot_pose(ax, pos, rot, color='b', radians=True):

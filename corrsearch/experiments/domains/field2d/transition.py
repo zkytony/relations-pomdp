@@ -8,9 +8,10 @@ from corrsearch.utils import *
 class DetRobotTrans(RobotTransModel):
     """Deterministic robot transition model"""
 
-    def __init__(self, robot_id, schema="xy"):
+    def __init__(self, robot_id, locations, schema="xy"):
         self.robot_id = robot_id
         self.schema = schema
+        self.locations = set(locations)
 
     def move_by(self, robot_pose, action):
         if self.schema == "xy":
@@ -33,6 +34,8 @@ class DetRobotTrans(RobotTransModel):
         next_energy = robot_state["energy"] - action.energy_cost
         if isinstance(action, Move):
             next_robot_pose = self.move_by(robot_pose, action)
+            if next_robot_pose[:2] not in self.locations:
+                next_robot_pose = robot_pose
         else:
             next_robot_pose = robot_pose
 
