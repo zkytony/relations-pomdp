@@ -153,8 +153,9 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
 
             # sum_si Pr(zi | sr, si, a) * Pr(si | starget)
             dist_si = self.dist_si(objid, starget)
-            pi = sum(self.detector_model.iprob(zi, si, sr, action)
-                     for si in dist_si.valrange(svar(objid)))
+            pi = 0.0
+            for si in dist_si.valrange(svar(objid)):
+                pi += self.detector_model.iprob(zi, si, sr, action) * dist_si.prob(si)
             p *= pi
         return p
 

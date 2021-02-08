@@ -1,5 +1,6 @@
 import unittest
 from tabular_dist import TabularDistribution
+from factor_graph import FactorGraph
 
 ### Tests
 class TestTabularDistribution(unittest.TestCase):
@@ -85,6 +86,53 @@ class TestTabularDistribution(unittest.TestCase):
 
     def test_valrange(self):
         self.assertEqual(self.pxy.valrange("X"), {"x1", "x2", "x3"})
+
+
+
+class TestFactorGraphDistribution(unittest.TestCase):
+    def setUp(self):
+        variables = ["X", "Y"]
+        weights = [
+            (('x1', 'y1'), 0.8),
+            (('x1', 'y2'), 0.2),
+            (('x2', 'y1'), 0.3),
+            (('x2', 'y2'), 0.7),
+        ]
+        self.pxy = TabularDistribution(variables, weights)
+        variables = ["X", "Z"]
+        weights = [
+            (('x1', 'z1'), 0.2),
+            (('x1', 'z2'), 0.8),
+            (('x2', 'z1'), 0.5),
+            (('x2', 'z2'), 0.5),
+        ]
+        self.pxz = TabularDistribution(variables, weights)
+        self.fg = FactorGraph(["X", "Y", "Z"],
+                              [self.pxy, self.pxz])
+
+    def test_fg_prob(self):
+        self.assertGreater(self.fg.prob({"X":"x1", "Y":"y1", "Z":"z2"}),
+                           self.fg.prob({"X":"x1", "Y":"y1", "Z":"z1"}))
+
+    def test_fg_sample(self):
+        counts = 0
+        setting = {"X":"x2", "Y":"y1", "Z":"z2"}
+        for i in range(3000):
+            s = self.fg.sample()
+            if s == setting:
+                counts += 1
+        self.assertAlmostEqual(counts / 3000,
+                               self.fg.prob(setting),
+                               1)
+
+    def test_fg_valrange(self):
+        self.assertEqual(self.fg.valrange("X"),
+                         ["x1", "x2"])
+
+    def test_fg_marginal(self):
+        dist = self.fg.marginal(["X", "Y"], observation={"Z":"z1"})
+        self.assertGreater(dist.prob({"X":"x1", "Y":"y1"}),
+                           dist.prob({"X":"x2", "Y":"y1"}))
 
 
 if __name__ == "__main__":

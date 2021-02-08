@@ -171,19 +171,17 @@ class TestCorrModel(unittest.TestCase):
             4: ObjectObz(4, "obj4", {"loc": (0,)}),
             6: ObjectObz(6, "obj6", {"loc": (2,)})
         })
-        # Should be 1.0 because it checks out
-        self.assertEqual(self.corr_detector.probability(z3, joint_state, action),
-                         1.0)
-
+        # Should non-zero 0.0 because this is probable
+        self.assertGreater(self.corr_detector.probability(z3, joint_state, action),
+                           0.0)
         z4 = JointObz({
             2: ObjectObz(2, "obj2", {"loc": (1,)}),
             4: NullObz(4),
             6: ObjectObz(6, "obj6", {"loc": (2,)})
         })
-        # Should be probable, and greater than the probability for the case before, because we
-        # do not know 4 and 4 can take more than one possible values
-        self.assertGreater(self.corr_detector.probability(z4, joint_state, action),
-                           self.corr_detector.probability(z3, joint_state, action))
+        # Improbable because given the joint state, 4 is expected to be observed
+        self.assertEqual(self.corr_detector.probability(z4, joint_state, action),
+                         0.0)
 
 
 

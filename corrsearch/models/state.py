@@ -11,6 +11,9 @@ class LocObjState(ObjectState):
         return LocObjectState(self.objid,
                               self.objclass,
                               copy.deepcopy(self.attributes))
+    def __lt__(self, other):
+        return self.loc < other.loc
+
 
 class RobotState(LocObjState):
     """
