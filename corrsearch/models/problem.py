@@ -22,7 +22,7 @@ class SearchProblem:
                  target_object,
                  robot_model):
         self.locations      = locations
-        self.objects        = objects
+        self._objects       = objects
         self.joint_dist     = joint_dist
         self.target_object  = target_object
         self.robot_model    = robot_model
@@ -54,6 +54,8 @@ class SearchRewardModel(pomdp_py.RewardModel):
                 decloc = state[self.robot_id].loc
             else:
                 decloc = action.loc
+            # if decloc != (0,0):
+            #     import pdb; pdb.set_trace()
             if decloc == state[self.target_id].loc:
                 return self.rmax
             else:

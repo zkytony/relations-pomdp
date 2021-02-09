@@ -26,9 +26,17 @@ class Field2D(SearchProblem):
                  locations=None,
                  target_object=None,
                  name="field2d"):
+        """
+        Args:
+            objects (array-like): List of objects (Object)
+            joint_dist (JointDist)
+            robot_id (int): Robot id
+            robot_model (RobotModel)
+        """
         self.dim = dim
         self.name = name
         self.robot_id = robot_id
+        self.id2objects = {obj.id : obj for obj in objects}
         if locations is None:
             locations = [(x,y) for x in range(dim[0])
                          for y in range(dim[1])]
@@ -47,6 +55,9 @@ class Field2D(SearchProblem):
     @property
     def target_class(self):
         return self.target_object[1]
+
+    def obj(self, objid):
+        return self.id2objects[objid]
 
     def instantiate(self,
                     init_locs,
@@ -76,13 +87,13 @@ class Field2D(SearchProblem):
             # Random, according to the distribution
             sample = self.joint_dist.sample()
             init_locs = {}
-            for obj in self.objects:
+            for obj in self._objects:
                 if obj.id != self.robot_id:
                     init_locs[obj.id] = sample[svar(obj.id)]["loc"]
 
         # init state
         object_states = {}
-        for obj in self.objects:
+        for obj in self._objects:
             if obj.id == self.robot_id:
                 continue
             loc = init_locs[obj.id]
@@ -147,7 +158,7 @@ class Field2D(SearchProblem):
         for detector in self.robot_model.detectors:
             corr_detector = CorrDetectorModel(self.target_id,
                                               {obj.id : obj
-                                               for obj in self.objects},
+                                               for obj in self._objects},
                                               detector,
                                               self.joint_dist)
             detectors.append(corr_detector)

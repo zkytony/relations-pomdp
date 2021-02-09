@@ -180,24 +180,18 @@ def test_field2d_visualize():
     problem = problem_parser("./configs/simple_config.yaml")
     viz = problem.visualizer(bg="./imgs/whitefloor.jpeg", res=30)
 
-    objstate = ObjectState(1, "cup", {"loc": (0,2),
-                                      "dim": (1,1),
-                                      "obj_img_path": "imgs/cup.png"})
-    objstate2 = ObjectState(2, "table", {"loc": (0,0),
-                                        "dim": (2,2),
-                                        "obj_img_path": "imgs/table.png"})
+    objstate = ObjectState(1, "blue-cube", {"loc": (0,1)})
+    objstate2 = ObjectState(2, "red-cube", {"loc": (1,0)})
     objstate3 = ObjectState(0, "robot", {"loc": (0,0),
-                                         "pose": (0,0,0),
-                                        "dim": (1,1),
-                                        "obj_img_path": "./imgs/blue_cube.png"})
+                                         "pose": (0,0,0)})
     state = JointState({1:objstate, 2:objstate2, 0:objstate3})
 
     img = viz.visualize(state)
     cv2.imshow("TT", img)
-    cv2.waitKey(1000)
+    cv2.waitKey(10000)
 
 if __name__ == "__main__":
-    unittest.main(exit=False)
-    plot_disk_sensor_geometry()
-    plot_laser_sensor_geometry()
+    # unittest.main(exit=False)
+    # plot_disk_sensor_geometry()
+    # plot_laser_sensor_geometry()
     test_field2d_visualize()

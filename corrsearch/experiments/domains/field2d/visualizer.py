@@ -55,7 +55,7 @@ class Field2DViz(Visualizer):
         self._running = True
 
     def get_color(self, objid, default=(128, 128, 128, 255), alpha=1.0):
-        color = self.problem.objects[objid].get("color", default)
+        color = self.problem.obj(objid).get("color", default)
         if len(color) == 3:
             color = color + [int(round(alpha*255))]
         color = tuple(color)
@@ -70,12 +70,14 @@ class Field2DViz(Visualizer):
         # Makes the background image with grid overlay
         img = self._make_gridworld_image(self._res, state)
 
+        print(state)
+
         # Place objects
         for objid in range(len(state.object_states)):
             if objid != self.problem.robot_id:
                 x, y = state[objid]["loc"]
-                dim = self.problem.objects[objid].get("dim", (1,1))
-                obj_img_path = self.problem.objects[objid].get("obj_img_path", None)
+                dim = self.problem.obj(objid).get("dim", (1,1))
+                obj_img_path = self.problem.obj(objid).get("obj_img_path", None)
                 color = self.get_color(objid, default=(30, 10, 200, 255))
                 img = self.draw_object(img, x, y, dim, color=color, obj_img_path=obj_img_path,
                                        is_target=objid==self.problem.target_id)
@@ -93,10 +95,10 @@ class Field2DViz(Visualizer):
         img = self.draw_robot(img, x, y, th,
                               color=color)
 
-
-        # Render
-        img_render = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
-        img_render = cv2.flip(img_render, 1)  # flip horizontally
+        # Render; Need to rotate and flip so that pygame displays
+        # the image in the same way as opencv where (0,0) is top left.
+        img_render = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)  # rotate 90deg clockwise
+        img_render = cv2.flip(img_render, 0)  # flip horizontally
         img_render = cv2.cvtColor(img_render, cv2.COLOR_RGBA2BGR)
         pygame.surfarray.blit_array(self._display_surf, img_render)
 

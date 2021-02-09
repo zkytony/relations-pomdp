@@ -1,4 +1,5 @@
 import copy
+import pprint
 
 class Object:
     """
@@ -27,3 +28,9 @@ class Object:
 
     def get(self, attr, default_val):
         return self.attributes.get(attr, default_val)
+
+    def __str__(self):
+        return pprint.pformat(self.attributes)
+
+    def __repr__(self):
+        return "Object{} [{}]\n".format(self.id, str(self.attributes))

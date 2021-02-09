@@ -13,11 +13,13 @@ objects:
    id: 1
    color: [30, 30, 200]
    dim: [1,1]
+   obj_img_path: "./imgs/blue_cube.png"
 
  - class: red-cube
    id: 2
    color: [200, 30, 30]
    dim: [1,1]
+   obj_img_path: "./imgs/red_cube.png"
 
  - class: robot
    id: 0

@@ -182,7 +182,9 @@ def parse_robot(info, spec):
                                 energy_cost=detector.energy_cost))
 
     if spec["robot"]["transition"] == "deterministic":
-        robot_trans = DetRobotTrans(info["robot_id"], spec["robot"]["move_schema"])
+        robot_trans = DetRobotTrans(info["robot_id"],
+                                    locations=info["locations"],
+                                    schema=spec["robot"]["move_schema"])
     else:
         raise ValueError("Unsupported robot transition type: %s" % spec["transition"])
 
