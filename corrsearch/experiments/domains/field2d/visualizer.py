@@ -70,8 +70,6 @@ class Field2DViz(Visualizer):
         # Makes the background image with grid overlay
         img = self._make_gridworld_image(self._res, state)
 
-        print(state)
-
         # Place objects
         for objid in range(len(state.object_states)):
             if objid != self.problem.robot_id:
@@ -97,10 +95,8 @@ class Field2DViz(Visualizer):
 
         # Render; Need to rotate and flip so that pygame displays
         # the image in the same way as opencv where (0,0) is top left.
-        img_render = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)  # rotate 90deg clockwise
-        img_render = cv2.flip(img_render, 0)  # flip horizontally
-        img_render = cv2.cvtColor(img_render, cv2.COLOR_RGBA2BGR)
-        pygame.surfarray.blit_array(self._display_surf, img_render)
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+        pygame.surfarray.blit_array(self._display_surf, img)
 
         rx, ry, th = state[self.problem.robot_id]["pose"]
         fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())

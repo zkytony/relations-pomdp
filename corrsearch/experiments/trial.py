@@ -36,7 +36,7 @@ class SearchTrial(Trial):
             if isinstance(zi, NullObz):
                 _step_info += "    z(%d) = Null\n" % objid
             else:
-                _step_info += "    z(%d) = {}\n" % (objid, zi)
+                _step_info += "    z(P{) = {}\n".format(objid, zi)
         _step_info += "\n"
         return _step_info
 

@@ -187,8 +187,13 @@ def test_field2d_visualize():
     state = JointState({1:objstate, 2:objstate2, 0:objstate3})
 
     img = viz.visualize(state)
-    cv2.imshow("TT", img)
-    cv2.waitKey(10000)
+    # These operations are necessary for imshow to match
+    # pygame's display
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)  # rotate 90deg clockwise
+    img = cv2.flip(img, 0)  # flip horizontally
+    cv2.imshow("TT", img)  # imshow uses BGR, while pygame uses RGB
+    cv2.waitKey(3000)
 
 if __name__ == "__main__":
     # unittest.main(exit=False)

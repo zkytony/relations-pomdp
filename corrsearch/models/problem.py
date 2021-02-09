@@ -54,8 +54,6 @@ class SearchRewardModel(pomdp_py.RewardModel):
                 decloc = state[self.robot_id].loc
             else:
                 decloc = action.loc
-            # if decloc != (0,0):
-            #     import pdb; pdb.set_trace()
             if decloc == state[self.target_id].loc:
                 return self.rmax
             else:
