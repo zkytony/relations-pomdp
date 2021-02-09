@@ -26,7 +26,7 @@ PLANNER_CONFIG = {
 MAX_STEPS = 30
 
 # we want the same seeds every time
-NUM_TRIALS_PER_SETTING = 15
+NUM_TRIALS_PER_SETTING = 5
 
 
 def build_trials():
@@ -81,4 +81,5 @@ if __name__ == "__main__":
     exp = Experiment("Field2D-VaryingNoise-SimpleConfig",
                      trials, OUTPUT_DIR, verbose=True)
     exp.generate_trial_scripts(split=5)
+    print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")

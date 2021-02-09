@@ -43,6 +43,8 @@ class SearchTrial(Trial):
 
 
     def run(self, logging=False):
+        for import_cmd in self.config.get("imports", []):
+            exec(import_cmd)
         problem_creator = eval(self.config["problem_creator"])
         problem = problem_creator(**self.config["problem_config"])
         env, agent = problem.instantiate(**self.config["instance_config"])

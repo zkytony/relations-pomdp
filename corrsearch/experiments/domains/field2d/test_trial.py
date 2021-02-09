@@ -55,7 +55,13 @@ def make_config(domain_file_or_spec,
     )
     discount_factor = planner_config.get("discount_factor", 0.95)
 
+    # modules that need to be imported when a trial runs
+    imports = [
+        "from corrsearch.experiments.domains.field2d.problem import *",
+        "from corrsearch.experiments.domains.field2d.parser import *"
+    ]
     config = dict(
+        imports=imports,
         problem_creator=problem_creator,
         problem_config=problem_config,
         instance_config=instance_config,
