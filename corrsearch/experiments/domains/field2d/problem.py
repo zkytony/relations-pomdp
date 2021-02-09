@@ -86,7 +86,12 @@ class Field2D(SearchProblem):
         # object locations
         if init_locs == "random":
             # Random, according to the distribution
-            sample = self.joint_dist.sample()
+            rnd = random
+            if "seed" in kwargs and kwargs["seed"] != None:
+                seed = kwargs["seed"]
+                rnd = random.Random(seed)
+
+            sample = self.joint_dist.sample(rnd=rnd)
             init_locs = {}
             for obj in self._objects:
                 if obj.id != self.robot_id:

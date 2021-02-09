@@ -166,3 +166,6 @@ relpomdp2/ipynb/*.slides.html
 results*.csv
 plot*.png
 *.pkl
+
+corrsearch/experiments/domains/**/imgs
+corrsearch/experiments/results

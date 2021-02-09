@@ -191,9 +191,20 @@ def parse_robot(info, spec):
     return actions, robot_trans
 
 
-def problem_parser(domain_file):
+def read_domain_file(domain_file):
     with open(domain_file) as f:
         spec = yaml.load(f, Loader=yaml.Loader)
+    return spec
+
+def problem_from_file(domain_file):
+    return problem_parser(read_domain_file(domain_file))
+
+def problem_parser(spec):
+    """
+    Returns a Field2D search problem by parsing the domain file.
+    First, the domain file (a .yaml) file will be read. Modifications
+    specified in the dictionary `modits` will be applied.
+    """
     info = parse_domain(spec)
 
     # enumerate list of locations

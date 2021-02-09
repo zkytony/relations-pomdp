@@ -24,7 +24,7 @@ class TestRangeDetector(unittest.TestCase):
                                           detection_type="loc",
                                           true_positive={10:0.7, 14:0.7},
                                           false_positive={10:0.1, 14:0.1},
-                                          sigma=0.9,
+                                          sigma={10:0.9, 14:0.1},
                                           sensors={10:disk_sensor, 14:disk_sensor})
 
     def test_label_detector(self):
@@ -123,6 +123,27 @@ class TestRangeDetector(unittest.TestCase):
             counts[point] = counts.get(point, 0) + 1
         self.assertEqual(len(counts), sensor.sensor_region_size)
 
+
+class TestField2DProblem(unittest.TestCase):
+    def setUp(self):
+        self.problem = problem_from_file("./configs/simple_config.yaml")
+
+    def test_deterministic_random_world(self):
+        """Tests that the `seed` makes the random generation
+        of the world deterministic"""
+        instance_config = dict(
+            init_locs="random",
+            init_robot_setting=((0, 0, 0), 100),
+            init_belief="uniform",
+            seed=100
+        )
+        env, agent = self.problem.instantiate(**instance_config)
+        for i in range(10):
+            env2, agent2 = self.problem.instantiate(**instance_config)
+            self.assertEqual(env.state, env2.state)
+
+
+
 # Test detector geometry by plotting
 def plot_disk_sensor_geometry():
     w = 10
@@ -177,7 +198,7 @@ def plot_laser_sensor_geometry():
     plt.close()
 
 def test_field2d_visualize():
-    problem = problem_parser("./configs/simple_config.yaml")
+    problem = problem_from_file("./configs/simple_config.yaml")
     viz = problem.visualizer(bg="./imgs/whitefloor.jpeg", res=30)
 
     objstate = ObjectState(1, "blue-cube", {"loc": (0,1)})
@@ -197,6 +218,6 @@ def test_field2d_visualize():
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    plot_disk_sensor_geometry()
-    plot_laser_sensor_geometry()
-    test_field2d_visualize()
+    # plot_disk_sensor_geometry()
+    # plot_laser_sensor_geometry()
+    # test_field2d_visualize()
