@@ -14,13 +14,13 @@ def make_trial(domain_file):
     instance_config = dict(
         init_locs="random",
         init_robot_setting=((0, 0, 0), 100),
-        init_belief="uniform"
+        init_belief="prior"
     )
     planner = "pomdp_py.POUCT"
     planner_init_config = dict(
         max_depth=10,
         discount_factor=0.95,
-        num_sims=100,
+        num_sims=200,
         exploration_const=200
     )
     planner_exec_config = dict()

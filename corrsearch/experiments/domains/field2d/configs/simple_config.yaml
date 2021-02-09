@@ -41,24 +41,24 @@ detectors:
           radius: 0
     params:
       true_positive:
-        1: 0.9   # objid -> val
+        1: 0.7   # objid -> val
       false_positive:
         1: 0.05
 
-  # - name: red-detector
-  #   id: 200
-  #   type: "label"
-  #   energy_cost: 0.0
-  #   sensors:
-  #     2:
-  #       type: "disk"
-  #       params:
-  #         radius: 1
-  #   params:
-  #     true_positive:
-  #       2: 0.9
-  #     false_positive:
-  #       2: 0.05
+  - name: red-detector
+    id: 200
+    type: "label"
+    energy_cost: 0.0
+    sensors:
+      2:
+        type: "disk"
+        params:
+          radius: 1
+    params:
+      true_positive:
+        2: 0.9
+      false_positive:
+        2: 0.05
 
 # Probability distribution between objects, specified via spatial relations
 probability:
