@@ -196,7 +196,7 @@ def test_field2d_visualize():
     cv2.waitKey(3000)
 
 if __name__ == "__main__":
-    # unittest.main(exit=False)
-    # plot_disk_sensor_geometry()
-    # plot_laser_sensor_geometry()
+    unittest.main(exit=False)
+    plot_disk_sensor_geometry()
+    plot_laser_sensor_geometry()
     test_field2d_visualize()

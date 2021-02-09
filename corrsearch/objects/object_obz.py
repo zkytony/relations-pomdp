@@ -9,6 +9,7 @@ interface as ObjState and JointState.
 """
 from pomdp_py.framework.basics import Observation
 import copy
+import pprint
 
 class ObjectObz(Observation):
     def __init__(self, objid, objclass, attributes):

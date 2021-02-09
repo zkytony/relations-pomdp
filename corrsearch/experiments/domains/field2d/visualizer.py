@@ -12,6 +12,7 @@ import os
 from corrsearch.models.visualizer import Visualizer
 from corrsearch.utils import overlay, lighter, lighter_with_alpha, cv2shape
 from corrsearch.objects import ObjectState, JointState
+from corrsearch.models.robot_model import UseDetector
 
 class Field2DViz(Visualizer):
 
@@ -61,7 +62,7 @@ class Field2DViz(Visualizer):
         color = tuple(color)
         return color
 
-    def visualize(self, state, belief=None):
+    def visualize(self, state, belief=None, action=None):
         """
         Args:
             state (JointState): full state of the world
@@ -92,6 +93,20 @@ class Field2DViz(Visualizer):
         color = self.get_color(self.problem.robot_id)
         img = self.draw_robot(img, x, y, th,
                               color=color)
+
+        # Draw detector field of view
+        if isinstance(action, UseDetector):
+            detector = self.problem.robot_model.detectors[action.id]
+            for sensor in detectors.sensors:
+                for loc in self.problem.locations:
+                    if sensor.in_range(loc, (x, y, th)):
+                        # point within range of sensor
+                        radius = int(round(self._res / 3))
+                        shift = int(round(self._res / 2))
+                        img = cv2shape(img, cv2.circle,
+                                       (loc[1]*self._res+radius,
+                                        loc[0]*self._res+radius), size,
+                                       (190, 190, 20), thickness=-1, alpha=0.7)
 
         # Render; Need to rotate and flip so that pygame displays
         # the image in the same way as opencv where (0,0) is top left.

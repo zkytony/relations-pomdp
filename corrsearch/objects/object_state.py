@@ -229,4 +229,4 @@ class JointBelief(pomdp_py.GenerativeDistribution):
         return self._object_beliefs[objid]
 
     def update(self, observation, action):
-        return self
+        raise NotImplementedError

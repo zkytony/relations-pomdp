@@ -8,14 +8,13 @@ from corrsearch.objects import *
 
 
 def make_trial(domain_file):
-    random.seed(500)
     problem_creator = "corrsearch.experiments.domains.field2d.parser.problem_parser"
     problem_config = {"domain_file": domain_file}
 
     instance_config = dict(
         init_locs="random",
         init_robot_setting=((0, 0, 0), 100),
-        init_belief="informed"
+        init_belief="uniform"
     )
     planner = "pomdp_py.POUCT"
     planner_init_config = dict(
@@ -32,7 +31,7 @@ def make_trial(domain_file):
     )
 
     exec_config = dict(
-        max_steps=10
+        max_steps=100
     )
     discount_factor = 0.95
 

@@ -159,7 +159,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
             dist_si = self.dist_si(objid, starget)
             pi = 0.0
             for si in dist_si.valrange(svar(objid)):
-                pi += self.detector_model.iprob(zi, si, sr, action) * dist_si.prob(si)
+                pi += self.detector_model.iprob(zi, si, sr, action) * dist_si.prob({svar(objid):si})
             p *= pi
         return p
 
@@ -199,8 +199,13 @@ class MultiDetectorModel(pomdp_py.ObservationModel):
         Args:
             detectors (list or array-like): a list of detector models (DetectorModel).
         """
-        self.detectors = {d.id: d
-                          for d in detectors}
+        if type(detectors) == list:
+            self.detectors = {d.id: d
+                              for d in detectors}
+        elif type(detectors) == dict:
+            self.detectors = detectors
+        else:
+            raise ValueError("unsupported type for detectors: {}".format(type(detectors)))
 
     def probability(self, observation, next_state, action, **kwargs):
         if isinstance(action, UseDetector):

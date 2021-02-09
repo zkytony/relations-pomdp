@@ -51,7 +51,7 @@ class RobotModel:
             trans_model (TransitionModel): a POMDP transition model
                 for the robot state.
         """
-        self.detectors = object_detectors
+        self.detectors = {d.id: d for d in object_detectors}
         self.trans_model = trans_model
         self.actions = actions
 

@@ -10,6 +10,7 @@ from corrsearch.models import *
 from corrsearch.objects import *
 from corrsearch.experiments.domains.field2d.detector import *
 from corrsearch.experiments.domains.field2d.visualizer import *
+from corrsearch.experiments.domains.field2d.belief import *
 
 class Field2D(SearchProblem):
     """
@@ -139,8 +140,8 @@ class Field2D(SearchProblem):
 
         init_target_belief = pomdp_py.Histogram(belief_hist)
         init_robot_belief = pomdp_py.Histogram({robot_state: 1.0})
-        init_belief = JointBelief({self.target_id:init_target_belief,
-                                   self.robot_id:init_robot_belief})
+        init_belief = Field2DBelief(self.robot_id, init_robot_belief,
+                                    self.target_id, init_target_belief)
 
         # transition model
         transition_model = SearchTransitionModel(
@@ -155,7 +156,8 @@ class Field2D(SearchProblem):
 
         # observation model. Multiple detectors.
         detectors = []
-        for detector in self.robot_model.detectors:
+        for detector_id in self.robot_model.detectors:
+            detector = self.robot_model.detectors[detector_id]
             corr_detector = CorrDetectorModel(self.target_id,
                                               {obj.id : obj
                                                for obj in self._objects},
@@ -187,4 +189,4 @@ class Field2DRewardModel(SearchRewardModel):
         if next_state[self.robot_id]["energy"] <= 0:
             return -self.rmin
         else:
-            return 0
+            return -1
