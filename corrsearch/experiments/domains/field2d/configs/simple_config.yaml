@@ -32,7 +32,7 @@ detectors:
 
   - name: blue-detector
     id: 100
-    type: "label"
+    type: "loc"
     energy_cost: 0.0
     sensors:
       1:  # objid
@@ -43,11 +43,13 @@ detectors:
       true_positive:
         1: 0.7   # objid -> val
       false_positive:
-        1: 0.05
+        1: 0.01
+      sigma:
+        1: 0.1
 
   - name: red-detector
     id: 200
-    type: "label"
+    type: "loc"
     energy_cost: 0.0
     sensors:
       2:
@@ -58,7 +60,10 @@ detectors:
       true_positive:
         2: 0.9
       false_positive:
-        2: 0.05
+        2: 0.01
+      sigma:
+        2: 0.1
+
 
 # Probability distribution between objects, specified via spatial relations
 probability:
