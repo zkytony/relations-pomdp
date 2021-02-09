@@ -203,9 +203,9 @@ class TabularDistribution(Histogram, JointDist):
         event = self._convert_to_event(values)
         return self._prob_event(event)
 
-    def sample(self):
+    def sample(self, rnd=random):
         """This is already implemented by the Histogram"""
-        return self.random()
+        return self.random(rnd=rnd)
 
     def condition(self, observation):
         """

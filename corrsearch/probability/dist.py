@@ -14,6 +14,8 @@ Obviously, the distribution does not need to be specified
 at the object-level. It could be class level. How to use
 the distribution should depend on the domain.
 """
+import random
+
 class JointDist:
     """
     A JointDist represents a distribution over
@@ -37,7 +39,7 @@ class JointDist:
         """
         raise NotImplementedError
 
-    def sample(self):
+    def sample(self, rnd=random):
         raise NotImplementedError
 
     def marginal(self, variables, observation=None):

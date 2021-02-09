@@ -76,8 +76,8 @@ class FactorGraph(JointDist):
         """
         return self.joint.prob(setting)
 
-    def sample(self):
-        return self.joint.sample()
+    def sample(self, rnd=random):
+        return self.joint.sample(rnd=rnd)
 
     def marginal(self, variables, observation=None):
         """Performs marignal inference,
@@ -117,10 +117,10 @@ class PGMFactorDist(JointDist):
         """
         return self.factor.get_value(setting)
 
-    def sample(self):
+    def sample(self, rnd=random):
         weights = self.factor.values.flatten()
-        idx = random.choices(np.arange(0, len(weights)),
-                             weights=weights, k=1)[0]
+        idx = rnd.choices(np.arange(0, len(weights)),
+                          weights=weights, k=1)[0]
         return self._idx_to_setting(idx)
 
     def marginal(self, variables, observation=None):
