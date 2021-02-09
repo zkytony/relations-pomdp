@@ -81,9 +81,9 @@ class RangeDetector(DetectorModel):
             else:
                 # True positive, gaussian centered at robot pose
                 gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
-                                             [[self.params["sigma"]**2, 0],
-                                              [0, self.params["sigma"]**2]])
-                return self.params[objobz.objid]["true_positive"] * gaussian[objobz["loc"]]
+                                             [[self.params["sigma"][objstate.objid]**2, 0],
+                                              [0, self.params["sigma"][objstate.objid]**2]])
+                return self.params["true_positive"][objobz.objid] * gaussian[objobz["loc"]]
         else:
             if isinstance(objobz, NullObz):
                 # True negative
@@ -96,8 +96,8 @@ class RangeDetector(DetectorModel):
             if random.uniform(0,1) <= self.params["true_positive"][objstate.objid]:
                 # sample according to gaussian
                 gaussian = pomdp_py.Gaussian(list(objstate["loc"]),
-                                             [[self.params["sigma"]**2, 0],
-                                              [0, self.params["sigma"]**2]])
+                                             [[self.params["sigma"][objstate.objid]**2, 0],
+                                              [0, self.params["sigma"][objstate.objid]**2]])
                 loc = tuple(map(int, map(round, gaussian.random())))
                 return LocObz(objstate.id, objstate.objclass, loc)
             else:
@@ -230,8 +230,8 @@ class DiskSensor(Sensor):
         self._sensor_region = np.array(
             [
                 [x,y]
-                for x in range(-2*self.radius, 2*self.radius)
-                for y in range(-2*self.radius, 2*self.radius)
+                for x in range(-2*self.radius-1, 2*self.radius+1)
+                for y in range(-2*self.radius-1, 2*self.radius+1)
                 if x**2 + y**2 <= self.radius**2
             ]
         )
