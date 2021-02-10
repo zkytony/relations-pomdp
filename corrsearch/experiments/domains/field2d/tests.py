@@ -142,6 +142,21 @@ class TestField2DProblem(unittest.TestCase):
             env2, agent2 = self.problem.instantiate(**instance_config)
             self.assertEqual(env.state, env2.state)
 
+    def test_idential_enumeration(self):
+        instance_config = dict(
+            init_locs="random",
+            init_robot_setting=((0, 0, 0), 100),
+            init_belief="uniform",
+            seed=100
+        )
+        env, agent = self.problem.instantiate(**instance_config)
+        self.assertEqual(agent.all_states, agent.all_states)
+        self.assertEqual(agent.all_actions, agent.all_actions)
+        self.assertEqual(agent.all_observations, agent.all_observations)
+        print("|S| = %d" % len(agent.all_states))
+        print("|A| = %d" % len(agent.all_actions))
+        print("|Z| = %d" % len(agent.all_observations))
+
 
 
 # Test detector geometry by plotting

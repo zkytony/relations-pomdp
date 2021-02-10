@@ -35,9 +35,10 @@ def make_config(domain_file_or_spec,
 
     instance_config = dict(
         init_locs=init_locs,
-        init_robot_setting=((0, 0, 0), 100),
+        init_robot_setting=((0, 0, 0), 0.0),
         init_belief=init_belief,
-        seed=seed
+        seed=seed,
+        explicit_enum_states=True
     )
     if planner == "pomdp_py.POUCT":
         planner_init_config = dict(

@@ -8,6 +8,7 @@ import pomdp_py
 import random
 from corrsearch.models import *
 from corrsearch.objects import *
+from corrsearch.utils import *
 from corrsearch.experiments.domains.field2d.detector import *
 from corrsearch.experiments.domains.field2d.visualizer import *
 from corrsearch.experiments.domains.field2d.belief import *
@@ -144,14 +145,27 @@ class Field2D(SearchProblem):
             raise ValueError("Unsupported initial belief type %s" % init_belief)
 
         init_target_belief = pomdp_py.Histogram(belief_hist)
-        init_robot_belief = pomdp_py.Histogram({robot_state: 1.0})
+
+        if kwargs.get("explicit_enum_states", False):
+            target_states = list(belief_hist.keys())
+            robot_states = self.robot_model.trans_model.get_all_states()
+        else:
+            target_states = None
+            robot_states = [robot_state]
+
+        transition_model = SearchTransitionModel(
+            self.robot_id, self.robot_model.trans_model,
+            target_states=target_states)
+
+        robot_belief_hist = {}
+        for sr in robot_states:
+            robot_belief_hist[sr] = indicator(sr == robot_state)
+        init_robot_belief = pomdp_py.Histogram(robot_belief_hist)
+
+        # joint init belief
         init_belief = Field2DBelief(self.robot_id, init_robot_belief,
                                     self.target_id, init_target_belief)
 
-        # transition model
-        transition_model = SearchTransitionModel(
-            self.robot_id, self.robot_model.trans_model,
-            target_states=list(belief_hist.keys()))
 
         # reward model
         reward_model = Field2DRewardModel(

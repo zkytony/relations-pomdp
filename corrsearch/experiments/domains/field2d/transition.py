@@ -57,6 +57,8 @@ class DetRobotTrans(RobotTransModel):
             raise ValueError("Currently only support explicit enumeration for 'xy' schema")
         angles = set()
         for a in self.actions:
+            assert a.energy_cost == 0.0,\
+                "Unsupported action energy cost for explicit enumeration of state space."
             if isinstance(a, Move):
                 # by definition of 'xy' schema, th is an absolute angle
                 # the the robot will take after applying this action
@@ -70,6 +72,7 @@ class DetRobotTrans(RobotTransModel):
                 pose = (loc[0], loc[1], th)
                 robot_state = RobotState(self.robot_id,
                                          {"loc": loc,
-                                          "pose": pose})
+                                          "pose": pose,
+                                          "energy": 0.0})
                 robot_states.append(robot_state)
         return robot_states
