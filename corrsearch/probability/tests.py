@@ -134,6 +134,11 @@ class TestFactorGraphDistribution(unittest.TestCase):
         self.assertGreater(dist.prob({"X":"x1", "Y":"y1"}),
                            dist.prob({"X":"x2", "Y":"y1"}))
 
+    def test_factor_conversion(self):
+        tab = self.fg.joint.to_tabular_dist()
+        for event in tab.events:
+            self.assertEqual(tab.prob(event), self.fg.joint.prob(event.values))
+
 
 if __name__ == "__main__":
     unittest.main()

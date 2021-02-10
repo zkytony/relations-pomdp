@@ -111,11 +111,29 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     then another more scalable model should be used.
 
     """
-    def __init__(self, target_id, objects, detector_model, dist):
+    def __init__(self, target_id, objects, detector_model, dist, compute_conditions=True):
+        """
+        Args:
+            objects (dict): mapping from id (int) to Object
+            dist (JointDist): Joint distribution of all objects (including the target)
+        """
         self.target_id = target_id
         self.detector_model = detector_model
         self.dist = dist
         self.objects = objects
+
+        # mapping from starget to a distribution Pr(si|starget)
+        self.cond_dists = {}
+        if compute_conditions:
+            # Compute conditional probabilities, for all objects
+            # conditioned on every possible value of the target location.
+            target_states = self.dist.valrange(svar(self.target_id))
+            for var in self.dist.variables:  # variable is string like 's#'
+                if var != svar(self.target_id):
+                    for starget in target_states:
+                        mg = self.dist.marginal([var],
+                                                observation={svar(self.target_id) : starget})
+                        self.cond_dists[starget] = mg.to_tabular_dist()
 
     @property
     def id(self):
@@ -128,8 +146,15 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     def dist_si(self, objid, starget):
         """Returns the distribution (JointDist) for Pr(si | starget)"""
         # Compute the Pr(si | starget). TODO: can this be pre-computed?
-        si_dist = self.dist.marginal([svar(objid)],
-                                     observation={svar(self.target_id) : starget})
+        if starget in self.cond_dists:
+            si_dist = self.cond_dists[starget]
+        else:
+            si_dist = self.dist.marginal([svar(objid)],
+                                         observation={svar(self.target_id) : starget})
+            # convert to tabular for faster inference
+            si_dist = si_dist.to_tabular_dist()
+            # cache
+            self.cond_dists[starget] = si_dist
         return si_dist
 
     def probability(self, observation, next_state, action, **kwargs):

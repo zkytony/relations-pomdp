@@ -10,6 +10,7 @@ from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.inference import BeliefPropagation
 import itertools
 from corrsearch.probability.dist import JointDist
+from corrsearch.probability.tabular_dist import Event, TabularDistribution
 
 class FactorGraph(JointDist):
 
@@ -66,7 +67,7 @@ class FactorGraph(JointDist):
         # For efficiency
         print("Computing joint probability table..")
         self._ranges = all_state_names  # maps from variable name to ranges (list)
-        self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=False))
+        self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=True))
 
     def prob(self, setting):
         """
@@ -94,6 +95,7 @@ class FactorGraph(JointDist):
 
 class PGMFactorDist(JointDist):
     def __init__(self, discrete_factor):
+        """discrete_factor (DiscreteFactor)"""
         self.factor = discrete_factor
         self.variables = discrete_factor.variables
 
@@ -134,3 +136,13 @@ class PGMFactorDist(JointDist):
         """Returns an enumerable that contains the possible values
         of the given variable var"""
         return self.factor.state_names[var]
+
+    def to_tabular_dist(self):
+        weights = {}
+        for combo in itertools.product(*[self.valrange(var)
+                                           for var in self.variables]):
+            setting = {self.variables[i]:combo[i]
+                       for i in range(len(self.variables))}
+            event = Event(setting)
+            weights[event] = self.prob(setting)
+        return TabularDistribution(self.variables, weights)
