@@ -2,6 +2,8 @@ from corrsearch.objects import ObjectState, JointState, ObjectObz, JointObz
 import pomdp_py
 import unittest
 import copy
+import pickle
+import os
 
 class TestObjectState(unittest.TestCase):
     def setUp(self):
@@ -52,6 +54,16 @@ class TestObjectState(unittest.TestCase):
     def test_hashable(self):
         hash(self.so1)
         hash(self.so2)
+
+    def test_hashcode_integrity(self):
+        with open("tmp.pkl", "wb") as f:
+            pickle.dump(self.so1, f)
+        with open("tmp.pkl", "rb") as f:
+            so1_pkl = pickle.load(f)
+        self.assertEqual(hash(self.so1), hash(so1_pkl))
+        self.assertEqual(self.so1, so1_pkl)
+        os.remove("tmp.pkl")
+
 
 
 class TestObjectObz(unittest.TestCase):
@@ -104,6 +116,7 @@ class TestObjectObz(unittest.TestCase):
     def test_hashable(self):
         hash(self.zo1)
         hash(self.zo2)
+
 
 
 if __name__ == "__main__":

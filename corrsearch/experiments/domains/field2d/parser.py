@@ -1,6 +1,7 @@
 import yaml
 import pomdp_py
 import itertools
+import pickle
 from corrsearch.models.problem import *
 from corrsearch.models.detector import *
 from corrsearch.models.robot_model import *
@@ -205,16 +206,28 @@ def read_domain_file(domain_file):
 def problem_from_file(domain_file):
     return problem_parser(read_domain_file(domain_file))
 
-def problem_parser(spec):
+def problem_parser(spec, joint_dist=None, joint_dist_path=None):
     """
     Returns a Field2D search problem by parsing the domain file.
     First, the domain file (a .yaml) file will be read. Modifications
     specified in the dictionary `modits` will be applied.
+
+    Args:
+        joint_dist (JointDist or None): In some cases we already
+            have precomputed the joint distribution, independent
+            from the given spec. So we will just use the given one,
+            to build the Problem, if it is not None.
+        joint_dist_path (str): Path to a .pkl file that stores the joint distribution.
     """
     info = parse_domain(spec)
 
     # parse the joint distribution
-    joint_dist = parse_dist(info, spec)
+    if joint_dist_path is not None:
+        print("Loading joint distribution from %s" % joint_dist_path)
+        with open(joint_dist_path, "rb") as f:
+            joint_dist = pickle.load(f)
+    if joint_dist is None:
+        joint_dist = parse_dist(info, spec)
 
     # parse the robot
     actions, robot_trans = parse_robot(info, spec)

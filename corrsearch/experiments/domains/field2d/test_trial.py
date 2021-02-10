@@ -15,6 +15,7 @@ from relpomdp2.constants import SARSOP_PATH
 def make_config(domain_file_or_spec,
                 init_locs="random",
                 init_belief="prior",
+                joint_dist_path=None,
                 planner_config={},
                 planner="pomdp_py.POUCT",
                 max_steps=100,
@@ -31,14 +32,15 @@ def make_config(domain_file_or_spec,
     else:
         raise TypeError("domain_file_or_spec must be string or dict")
     problem_creator = "corrsearch.experiments.domains.field2d.parser.problem_parser"
-    problem_config = {"spec": spec}
+    problem_config = {"spec": spec,
+                      "joint_dist_path": joint_dist_path}
 
     instance_config = dict(
         init_locs=init_locs,
         init_robot_setting=((0, 0, 0), 0.0),
         init_belief=init_belief,
         seed=seed,
-        explicit_enum_states=True
+        explicit_enum_states=False
     )
     if planner == "pomdp_py.POUCT":
         planner_init_config = dict(
@@ -97,6 +99,6 @@ def make_trial(config, trial_name="test_trial"):
 
 if __name__ == "__main__":
     config = make_config("./configs/simple_config.yaml",
-                         planner="pomdp_py.sarsop")
+                         planner="pomdp_py.POUCT")
     trial = make_trial(config)
     trial.run()

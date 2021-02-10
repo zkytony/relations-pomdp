@@ -9,10 +9,13 @@ from corrsearch.experiments.domains.field2d.parser import *
 import copy
 import os
 import random
+import pickle
 from sciex import Experiment
+from datetime import datetime as dt
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(ABS_PATH, "results", "field2d")
+RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
 # True positive settings for the target detector
 TARGET_DETECTOR_TRUE_POSITIVES = [0.6, 0.7, 0.8, 0.9, 0.99]
 
@@ -26,12 +29,20 @@ PLANNER_CONFIG = {
 MAX_STEPS = 30
 
 # we want the same seeds every time
-NUM_TRIALS_PER_SETTING = 5
+NUM_TRIALS_PER_SETTING = 30
 
 
-def build_trials():
+def build_trials(exp_name):
     domain_file = "./domains/field2d/configs/simple_config.yaml"
     spec_original = read_domain_file(domain_file)
+
+    # We parse the domain file once, parse the joint distribution,
+    # and then specify the path to that problem .pkl file.
+    problem = problem_from_file(domain_file)
+    os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
+    joint_dist_path = os.path.join(RESOURCE_DIR, exp_name, "joint_dist.pkl")
+    with open(joint_dist_path, "wb") as f:
+        pickle.dump(problem.joint_dist, f)
 
     rnd = random.Random(100)
     seeds = [rnd.randint(1000, 10000)
@@ -60,15 +71,17 @@ def build_trials():
         for seed in seeds:
             # seed for world generation
             baseline = "corr"
-            config = make_config(spec_corr_agent, init_locs="random", seed=seed,
-                                 init_belief="prior", planner_config=PLANNER_CONFIG,
+            config = make_config(spec_corr_agent, init_locs="random", joint_dist_path=joint_dist_path,
+                                 seed=seed, init_belief="prior", planner_config=PLANNER_CONFIG,
                                  max_steps=MAX_STEPS, visualize=False)
             trial_name = "varynoise-{}_{}_{}".format(tp, seed, baseline)
             all_trials.append(make_trial(config, trial_name=trial_name))
 
             baseline = "target-only"
-            config = make_config(spec_targetonly_agent, init_locs="random", seed=seed,
-                                 init_belief="uniform", planner_config=PLANNER_CONFIG,
+            config = make_config(spec_targetonly_agent, init_locs="random",
+                                 joint_dist_path=joint_dist_path,
+                                 seed=seed, init_belief="uniform",
+                                 planner_config=PLANNER_CONFIG,
                                  max_steps=MAX_STEPS, visualize=False)
             trial_name = "varynoise-{}_{}_{}".format(tp, seed, baseline)
             all_trials.append(make_trial(config, trial_name=trial_name))
@@ -76,10 +89,18 @@ def build_trials():
 
 
 if __name__ == "__main__":
-    trials = build_trials()
+    # Experiment name
+    exp_name = "Field2D-VaryingNoise-SimpleConfig"
+    start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+    exp_name += "_" + start_time_str
+
+    # build trials
+    trials = build_trials(exp_name)
     random.shuffle(trials)
-    exp = Experiment("Field2D-VaryingNoise-SimpleConfig",
-                     trials, OUTPUT_DIR, verbose=True)
-    exp.generate_trial_scripts(split=5)
+    exp = Experiment(exp_name,
+                     trials, OUTPUT_DIR,
+                     verbose=True, add_timestamp=False)
+
+    exp.generate_trial_scripts(split=8)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")

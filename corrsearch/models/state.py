@@ -16,6 +16,9 @@ class LocObjState(ObjectState):
     def __lt__(self, other):
         return self.loc < other.loc
 
+    def __hash__(self):
+        return hash((self.objid, self.objclass, self.loc))
+
 
 class RobotState(LocObjState):
     """
@@ -37,3 +40,6 @@ class RobotState(LocObjState):
             return self.attributes["pose"]
         else:
             return self.attributes["loc"]
+
+    def __hash__(self):
+        return hash((self.objid, self.objclass, self.pose))
