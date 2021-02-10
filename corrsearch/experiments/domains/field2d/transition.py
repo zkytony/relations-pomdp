@@ -8,10 +8,14 @@ from corrsearch.utils import *
 class DetRobotTrans(RobotTransModel):
     """Deterministic robot transition model"""
 
-    def __init__(self, robot_id, locations, schema="xy"):
+    def __init__(self, robot_id, locations, schema="xy", actions=None):
+        """
+        If `actions` is supplied, then robot state can be explicitly enumerated
+        """
         self.robot_id = robot_id
         self.schema = schema
         self.locations = set(locations)
+        self.actions = actions
 
     def move_by(self, robot_pose, action):
         if self.schema == "xy":
@@ -43,3 +47,29 @@ class DetRobotTrans(RobotTransModel):
                           {"pose": next_robot_pose,
                            "loc": next_robot_pose[:2],
                            "energy": next_energy})
+
+    def get_all_states(self):
+        """The set of robot states is the set of
+        all possible robot poses. We will ignore the
+        `energy` attribute."""
+        print("Warning: energy attribute ignored when enumerating robot states")
+        if self.schema != "xy":
+            raise ValueError("Currently only support explicit enumeration for 'xy' schema")
+        angles = set()
+        for a in self.actions:
+            if isinstance(a, Move):
+                # by definition of 'xy' schema, th is an absolute angle
+                # the the robot will take after applying this action
+                dx, dy, th = a.delta
+                angles.add(th)
+
+        # enumerate over all poses
+        robot_states = []
+        for loc in self.locations:
+            for th in angles:
+                pose = (loc[0], loc[1], th)
+                robot_state = RobotState(self.robot_id,
+                                         {"loc": loc,
+                                          "pose": pose})
+                robot_states.append(robot_state)
+        return robot_states

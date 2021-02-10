@@ -150,7 +150,8 @@ class Field2D(SearchProblem):
 
         # transition model
         transition_model = SearchTransitionModel(
-            self.robot_id, self.robot_model.trans_model)
+            self.robot_id, self.robot_model.trans_model,
+            target_states=list(belief_hist.keys()))
 
         # reward model
         reward_model = Field2DRewardModel(
@@ -187,6 +188,7 @@ class Field2D(SearchProblem):
 
     def visualizer(self, **kwargs):
         return Field2DViz(self, **kwargs)
+
 
 
 class Field2DRewardModel(SearchRewardModel):

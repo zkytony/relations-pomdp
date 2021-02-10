@@ -100,11 +100,12 @@ class JointState(State):
     __init__(self, object_states)
     """
 
-    def __init__(self, object_states):
+    def __init__(self, object_states, label=None):
         """
         Args:
             objects_states (dict, or array-like): dictionary {ID:ObjectState},
                 or an array like object consisting of ObjectStates
+            label (str): Label for this state. Used in .pomdp file.
         """
         if type(object_states) != dict:
             # expect object_states to be enumerable as an array
@@ -123,10 +124,14 @@ class JointState(State):
         self.object_states = object_states
         self._situation = frozenset(self.object_states.items())
         self._hashcode = hash(self._situation)
+        self._label = label
 
     def __str__(self):
-        return pprint.pformat(self.object_states,
-                              indent=2)
+        if self._label is not None:
+            return self._label
+        else:
+            return pprint.pformat(self.object_states,
+                                  indent=2)
 
     def __repr__(self):
         return '%s::[%s]' % (str(self.__class__.__name__),

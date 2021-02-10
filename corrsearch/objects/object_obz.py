@@ -96,7 +96,7 @@ class JointObz(Observation):
     __init__(self, object_obzs)
     """
 
-    def __init__(self, object_obzs):
+    def __init__(self, object_obzs, label=None):
         """
         Args:
             objects_obzs (dict, or array-like): dictionary {ID:ObjectObz},
@@ -119,10 +119,14 @@ class JointObz(Observation):
         self.object_obzs = object_obzs
         self._situation = frozenset(self.object_obzs.items())
         self._hashcode = hash(self._situation)
+        self._label = label
 
     def __str__(self):
-        return pprint.pformat(self.object_obzs,
-                              indent=2)
+        if self._label is not None:
+            return self._label
+        else:
+            return pprint.pformat(self.object_obzs,
+                                  indent=2)
 
     def __repr__(self):
         return '%s::[%s]' % (str(self.__class__.__name__),

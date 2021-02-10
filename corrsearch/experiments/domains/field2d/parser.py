@@ -30,8 +30,10 @@ def parse_domain(spec):
     Return:
         Field2D problem, so that Field2D can be created and POMDPs can be instantiated.
     """
-    dim = spec["dim"]
     name = spec["name"]
+    dim = spec["dim"]
+    # enumerate list of locations
+    locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
 
     objects = []
     robot_id = None
@@ -91,13 +93,16 @@ def parse_domain(spec):
                                        dspec["type"], sensors,
                                        energy_cost=dspec.get("energy_cost", 0),
                                        name=dspec["name"],
+                                       locations=locations,
+                                       objects=objects,
                                        **params))
     return dict(dim=dim, name=name,
                 robot_id=robot_id,
                 objects=objects, detectors=detectors,
                 target_object=target_object,
                 idbyclass=idbyclass,
-                id2objects=id2objects)
+                id2objects=id2objects,
+                locations=locations)
 
 def parse_dist(domain_info, spec):
     """Build a joint distribution given spec (dict)"""
@@ -184,7 +189,8 @@ def parse_robot(info, spec):
     if spec["robot"]["transition"] == "deterministic":
         robot_trans = DetRobotTrans(info["robot_id"],
                                     locations=info["locations"],
-                                    schema=spec["robot"]["move_schema"])
+                                    schema=spec["robot"]["move_schema"],
+                                    actions=actions)
     else:
         raise ValueError("Unsupported robot transition type: %s" % spec["transition"])
 
@@ -207,11 +213,6 @@ def problem_parser(spec):
     """
     info = parse_domain(spec)
 
-    # enumerate list of locations
-    dim = info["dim"]
-    locations = [(x,y) for x in range(dim[0]) for y in range(dim[1])]
-    info["locations"] = locations
-
     # parse the joint distribution
     joint_dist = parse_dist(info, spec)
 
@@ -220,9 +221,9 @@ def problem_parser(spec):
     robot_model = RobotModel(info["detectors"],
                              actions,
                              robot_trans)
-    problem = Field2D(dim, info["objects"], joint_dist,
+    problem = Field2D(info["dim"], info["objects"], joint_dist,
                       info["robot_id"], robot_model,
-                      locations=locations,
+                      locations=info["locations"],
                       target_object=info.get("target_object", None))
     return problem
 

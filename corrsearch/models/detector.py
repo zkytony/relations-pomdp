@@ -192,13 +192,19 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
             objzs[objid] = zi
         return JointObz(objzs)
 
+    def get_all_observations(self):
+        """The observation space is still the same as the one of the detector model"""
+        return self.detector_model.get_all_observations()
+
 
 class MultiDetectorModel(pomdp_py.ObservationModel):
-    def __init__(self, detectors):
+    def __init__(self, detectors, observations=None):
         """
         Args:
             detectors (list or array-like): a list of detector models (DetectorModel).
+            observations (list): List of all possible observations.
         """
+        self.observations = observations
         if type(detectors) == list:
             self.detectors = {d.id: d
                               for d in detectors}
@@ -222,3 +228,16 @@ class MultiDetectorModel(pomdp_py.ObservationModel):
             return JointObz({objid : NullObz(objid)
                              for objid in next_state
                              if not isinstance(next_state[objid], RobotState)})
+
+    def get_all_observations(self):
+        obz_set = set()
+        obz_list = []
+        for d_id in sorted(self.detectors):
+            detector = self.detectors[d_id]
+            # We assume detector.get_all_observations() always returns observations
+            # in the same order every time it is called.
+            for z in detector.get_all_observations():
+                if z not in obz_set:
+                    obz_list.append(z)
+                    obz_set.add(z)
+        return obz_list

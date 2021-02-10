@@ -48,7 +48,7 @@ class SearchTrial(Trial):
         problem_creator = eval(self.config["problem_creator"])
         problem = problem_creator(**self.config["problem_config"])
         env, agent = problem.instantiate(**self.config["instance_config"])
-        if self.config["planner"] == "sarsop":
+        if self.config["planner"].endswith("sarsop"):
             planner = pomdp_py.sarsop(agent, **self.config["planner_init_config"])
         else:
             planner = eval(self.config["planner"])(rollout_policy=agent.policy_model,

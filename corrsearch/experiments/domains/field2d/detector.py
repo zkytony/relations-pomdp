@@ -1,7 +1,8 @@
 import pomdp_py
 import random
 import numpy as np
-from corrsearch.objects.object_obz import ObjectObz
+import itertools
+from corrsearch.objects.object_obz import ObjectObz, JointObz
 from corrsearch.utils import *
 from corrsearch.models import *
 
@@ -16,7 +17,9 @@ class LabelObz(ObjectObz):
 
 class RangeDetector(DetectorModel):
     def __init__(self, detector_id, robot_id,
-                 detection_type, sensors, name=None, energy_cost=0, **params):
+                 detection_type, sensors, name=None,
+                 energy_cost=0, locations=None, objects=None,
+                 **params):
         """
         Args:
             detection_type (str): "loc" or "label".
@@ -29,11 +32,18 @@ class RangeDetector(DetectorModel):
             sensors (dict): Mapping from object id to sensor.
                 Using the given sensor for the object. One sensor
                 per object per detector
+            locations (list): List of locations in the search environment.
+                Specify if you want to explicitly enumerate over the observation
+                space and if any one of this detector is of type "loc".
+            objects (array-like): List of objects (Object). Optional. Needed
+                for explicit enumeration of the observation space.
         """
         self.detection_type = detection_type
         self.params = params
         self.sensors = sensors
         self.energy_cost = energy_cost
+        self._locations = locations
+        self._objects = objects
         super().__init__(detector_id, robot_id, name=name)
 
     def sensor_region_size(self, objid, robot_state):
@@ -127,7 +137,6 @@ class RangeDetector(DetectorModel):
         else:
             raise ValueError("Cannot handle detection type %s" % self.detection_type)
 
-
     def isample(self, objstate, robot_state, action):
         assert isinstance(action, UseDetector)
         assert action.detector_id == self.id
@@ -142,6 +151,30 @@ class RangeDetector(DetectorModel):
             return self._isample_loc(objstate, robot_state, in_range)
         else:
             raise ValueError("Cannot handle detection type %s" % self.detection_type)
+
+    def get_all_observations(self):
+        """Return a list of JointObz objects as the observation space"""
+        obzs_by_objects = []  # a list of list of object observations
+        for obj in self._objects:
+            obj_obzs = []  # observations for this object
+            if self.detection_type == "label":
+                obj_obzs.append(LabelObz(obj.id, obj["class"]))
+                obj_obzs.append(NullObz(obj.id))
+            elif self.detection_type == "loc":
+                for loc in self._locations:
+                    obj_obzs.append(LocObz(obj.id, obj["class"], loc))
+            else:
+                raise ValueError("Cannot handle detection type %s" % self.detection_type)
+            obzs_by_objects.append(obj_obzs)
+        # get combination of all object observations
+        all_combos = itertools.product(*obzs_by_objects)
+        observations = []
+        for combo in all_combos:
+            z = JointObz({zi.id:zi  # z should be an ObjectObz
+                          for zi in combo},
+                         label="o%d" % len(observations))
+            observations.append(z)
+        return observations
 
 
 class Sensor:
