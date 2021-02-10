@@ -163,6 +163,7 @@ class RangeDetector(DetectorModel):
             elif self.detection_type == "loc":
                 for loc in self._locations:
                     obj_obzs.append(LocObz(obj.id, obj["class"], loc))
+                obj_obzs.append(NullObz(obj.id))
             else:
                 raise ValueError("Cannot handle detection type %s" % self.detection_type)
             obzs_by_objects.append(obj_obzs)

@@ -66,7 +66,8 @@ def make_config(domain_file_or_spec,
     )
 
     exec_config = dict(
-        max_steps=max_steps
+        max_steps=max_steps,
+        step_delay=0.5,
     )
     discount_factor = planner_config.get("discount_factor", 0.95)
 

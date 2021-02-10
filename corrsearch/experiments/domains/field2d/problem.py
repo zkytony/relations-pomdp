@@ -207,7 +207,7 @@ class Field2D(SearchProblem):
 
 class Field2DRewardModel(SearchRewardModel):
     def step_reward_func(self, state, action, next_state):
-        if next_state[self.robot_id]["energy"] <= 0:
-            return -self.rmin
+        if next_state[self.robot_id]["energy"] < 0:
+            return self.rmin
         else:
             return -1

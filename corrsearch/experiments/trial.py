@@ -98,6 +98,8 @@ class SearchTrial(Trial):
                     print("Declared. Done.")
                 break
 
+            time.sleep(self.config["exec_config"].get("step_delay", 0.1))
+
         results = [
             RewardsResult(_Rewards),
             StatesResult(_States),
