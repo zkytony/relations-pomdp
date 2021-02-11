@@ -111,32 +111,3 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
         else:
             # Improvement not good enough. Move
             return self.move_towards_highest_belief(agent, mpe_state)
-
-
-
-
-
-
-
-
-
-        for detector_action, entr in expected_entropies:
-            entropy_map[(robot_pose, None, detector_action)] = entr
-
-        # Next, compute the entropy of expected beliefs if the robot
-        # moves one step, and then applies detector
-        for action in robot_trans.actions:
-            if isinstance(action, Move):
-                # incorporating the movement
-                next_belief = self.sample_next_belief(agent, action)
-                expected_entropies = self.compute_expected_entropy(agent, next_belief)
-                next_robot_pose = next_belief.mpe()[robot_id]["pose"]
-                for detector_action, entr in expected_entropies:
-                    entropy_map[(next_robot_pose, action, detector_action)] = entr
-
-        # Now, pick the pair of pose and action with lowest entropy
-        pose, move_action, detector_action = min(entropy_map, key=entropy_map.get)
-        if move_action is not None:
-            return move_action
-        else:
-            return detector_action
