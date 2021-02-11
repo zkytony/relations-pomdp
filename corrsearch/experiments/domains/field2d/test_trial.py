@@ -59,7 +59,7 @@ def make_config(domain_file_or_spec,
             logfile=None
         )
     else:
-        raise ValueError("Unsupported planner type %s" % planner)
+        planner_init_config = planner_config
 
     planner_exec_config = dict()
 
@@ -76,7 +76,8 @@ def make_config(domain_file_or_spec,
     # modules that need to be imported when a trial runs
     imports = [
         "from corrsearch.experiments.domains.field2d.problem import *",
-        "from corrsearch.experiments.domains.field2d.parser import *"
+        "from corrsearch.experiments.domains.field2d.parser import *",
+        "from corrsearch.planning import *"
     ]
     config = dict(
         imports=imports,
@@ -99,6 +100,9 @@ def make_trial(config, trial_name="test_trial"):
 
 if __name__ == "__main__":
     config = make_config("./configs/simple_config.yaml",
-                         planner="pomdp_py.POUCT", planner_config=dict(num_sims=1500))
+                         planner="EntropyMinimizationPlanner",
+                         # planner_config=dict(num_sims=1500),
+                         planner_config=dict(num_samples=100),
+                         init_belief="uniform")
     trial = make_trial(config)
     trial.run()

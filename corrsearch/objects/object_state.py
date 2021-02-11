@@ -13,6 +13,7 @@ should reuse the code there. That is the right thing to do.
 import pomdp_py
 from pomdp_py.framework.basics import State
 import pprint
+import itertools
 import copy
 
 class ObjectState(State):
@@ -241,3 +242,13 @@ class JointBelief(pomdp_py.GenerativeDistribution):
 
     def update(self, observation, action):
         raise NotImplementedError
+
+    def __iter__(self):
+        state_spaces = []
+        for objid in self._object_beliefs:
+            state_spaces.append([s for s in self._object_beliefs[objid]])
+        joint_state_space = []
+        for combo in itertools.product(*state_spaces):
+            state = JointState({si.id : si for si in combo})
+            joint_state_space.append(state)
+        return iter(joint_state_space)
