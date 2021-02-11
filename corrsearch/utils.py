@@ -5,6 +5,8 @@ from scipy.spatial.transform import Rotation as scipyR
 import scipy.stats as stats
 import math
 import cv2
+import shutil
+import tarfile
 
 def indicator(cond, epsilon=0.0):
     return 1.0 - epsilon if cond else epsilon
@@ -404,3 +406,36 @@ def plot_pose(ax, pos, rot, color='b', radians=True):
              0.2*math.cos(rot),  # dx
              0.2*math.sin(rot),  # dy
              width=0.005, head_width=0.05, color=color)
+
+def discounted_cumulative_reward(rewards, discount_factor):
+    total = 0
+    d = 1.0
+    for r in rewards:
+        total += r*d
+        d *= discount_factor
+    return total
+
+#### File Utils ####
+def save_images_and_compress(images, outdir, filename="images", img_type="png"):
+    # First write the images as temporary files into the outdir
+    cur_time = dt.now()
+    cur_time_str = cur_time.strftime("%Y%m%d%H%M%S%f")[:-3]
+    img_save_dir = os.path.join(outdir, "tmp_imgs_%s" % cur_time_str)
+    os.makedirs(img_save_dir)
+
+    for i, img in enumerate(images):
+        img = img.astype(np.float32)
+        img = cv2.flip(img, 0)
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)  # rotate 90deg clockwise
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        save_path = os.path.join(img_save_dir, "tmp_img%d.%s" % (i, img_type))
+        cv2.imwrite(save_path, img)
+
+    # Then compress the image files in the outdir
+    output_filepath = os.path.join(outdir, "%s.tar.gz" % filename)
+    with tarfile.open(output_filepath, "w:gz") as tar:
+        tar.add(img_save_dir, arcname=filename)
+
+    # Then remove the temporary directory
+    shutil.rmtree(img_save_dir)

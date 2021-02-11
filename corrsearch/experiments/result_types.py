@@ -58,6 +58,14 @@ class RewardsResult(YamlResult):
                 noise = float(global_name.split("-")[1])
                 prepend.append(noise)
                 prepend_header = ["noise"]
+                xlabel = "Target detector True Positive Rate"
+                invert_x = True
+            elif global_name.startswith("varysize"):
+                size = global_name.split("-")[1]
+                prepend.append(int(size.split(",")[0]))
+                prepend_header = ["size"]
+                xlabel = "Size"
+                invert_x = False
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
@@ -66,11 +74,12 @@ class RewardsResult(YamlResult):
         df.to_csv(os.path.join(path, "rewards.csv"))
         # plotting
         fig, ax = plt.subplots(figsize=(5.5,4))
-        sns.barplot(x="noise", y="disc_reward",
+        sns.barplot(x=prepend_header[0], y="disc_reward",
                     hue="baseline", ax=ax, data=df, ci=95)
-        ax.invert_xaxis()
         ax.set_ylabel("Discounted Cumulative Reward")
-        ax.set_xlabel("Target detector True Positive Rate")
+        ax.set_xlabel(xlabel)
+        if invert_x:
+            ax.invert_xaxis()
         plt.savefig(os.path.join(path, "rewards.png"))
 
 

@@ -209,8 +209,7 @@ def problem_from_file(domain_file):
 def problem_parser(spec, joint_dist=None, joint_dist_path=None):
     """
     Returns a Field2D search problem by parsing the domain file.
-    First, the domain file (a .yaml) file will be read. Modifications
-    specified in the dictionary `modits` will be applied.
+    First, the domain file (a .yaml) file will be read.
 
     Args:
         joint_dist (JointDist or None): In some cases we already

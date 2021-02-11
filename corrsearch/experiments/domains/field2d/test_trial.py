@@ -99,6 +99,6 @@ def make_trial(config, trial_name="test_trial"):
 
 if __name__ == "__main__":
     config = make_config("./configs/simple_config.yaml",
-                         planner="pomdp_py.POUCT")
+                         planner="pomdp_py.POUCT", planner_config=dict(num_sims=1500))
     trial = make_trial(config)
     trial.run()

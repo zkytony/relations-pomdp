@@ -15,7 +15,7 @@ class SearchTrial(Trial):
         """
         Args:
             config (dict): Configuration
-                "problem": SearchProblem,
+                "problem_creator": method that returns SearchProblem,
                 "problem_config": dict(),   configuration to create the problem
                 "instance_config": dict(),  configuration to create an instance
                 "viualize": bool,           True if visualization is on
@@ -50,9 +50,11 @@ class SearchTrial(Trial):
         env, agent = problem.instantiate(**self.config["instance_config"])
         if self.config["planner"].endswith("sarsop"):
             planner = pomdp_py.sarsop(agent, **self.config["planner_init_config"])
-        else:
+        elif self.config["planner"].lower().endswith("pouct"):
             planner = eval(self.config["planner"])(rollout_policy=agent.policy_model,
                                                    **self.config["planner_init_config"])
+        else:
+            planner = eval(self.config["planner"])(**self.config["planner_init_config"])
 
         if self.config["visualize"]:
             viz = problem.visualizer(**self.config["visualize_config"])
