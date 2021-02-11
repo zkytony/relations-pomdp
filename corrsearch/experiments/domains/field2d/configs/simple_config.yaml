@@ -5,7 +5,7 @@ name: "empty_room"
 
 #bg: "./imgs/whitefloor.jpeg"
 
-dim: [3, 3]
+dim: [5, 5]
 
 objects:
 
@@ -32,7 +32,7 @@ detectors:
 
   - name: blue-detector
     id: 100
-    type: "label"
+    type: "loc"
     energy_cost: 0.0
     sensors:
       1:  # objid
@@ -41,26 +41,26 @@ detectors:
           radius: 0
     params:
       true_positive:
-        1: 0.7   # objid -> val
+        1: 0.9   # objid -> val
       false_positive:
-        1: 0.01
+        1: 0.05
       sigma:
         1: 0.1
 
   - name: red-detector
     id: 200
-    type: "label"
+    type: "loc"
     energy_cost: 0.0
     sensors:
       2:
         type: "disk"
         params:
-          radius: 0
+          radius: 1
     params:
       true_positive:
         2: 0.9
       false_positive:
-        2: 0.01
+        2: 0.05
       sigma:
         2: 0.1
 
