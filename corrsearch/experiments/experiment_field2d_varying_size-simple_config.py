@@ -3,7 +3,6 @@ For the field2d domain. Vary the dimension of the search space.
 Compare between two baselines: One leverages the correlation
 for planning (i.e. considers the dependency), and one that does not.
 """
-
 from corrsearch.experiments.domains.field2d.test_trial import make_config, make_trial
 from corrsearch.experiments.domains.field2d.parser import *
 import copy
@@ -12,21 +11,16 @@ import random
 import pickle
 from sciex import Experiment
 from datetime import datetime as dt
+from defaults import *
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(ABS_PATH, "results", "field2d")
 RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
 # True positive settings for the target detector
-DIMS = [(2,2), (3,3), (4,4), (5,5), (6,6)]
+DIMS = [(3,3), (4,4), (5,5), (6,6)]
 
 # general configs
-PLANNER_CONFIG = {
-    "max_depth": 25,
-    "discount_factor": 0.95,
-    "num_sims": 1500,
-    "exploration_const": 200
-}
-MAX_STEPS = 30
+MAX_STEPS = 300
 
 # we want the same seeds every time
 NUM_TRIALS_PER_SETTING = 30
@@ -71,23 +65,50 @@ def build_trials(exp_name):
             # seed for world generation
             name_prefix = "varysize-{}_{}".format(",".join(map(str,dim)), seed)
 
+            # Correlation used. POMCP Planning
             baseline = "corr"
             config = make_config(spec_corr_agent, init_locs="random",
                                  joint_dist_path=joint_dist_path,
                                  seed=seed, init_belief="prior",
-                                 planner_config=PLANNER_CONFIG,
+                                 planner="pomdp_py.POUCT",
+                                 planner_config=POMCP_PLANNER_CONFIG,
                                  max_steps=MAX_STEPS, visualize=False)
             trial_name = "{}_{}".format(name_prefix, baseline)
             all_trials.append(make_trial(config, trial_name=trial_name))
 
+            # Correlation not used. POMCP Planning (ablation)
             baseline = "target-only"
             config = make_config(spec_targetonly_agent, init_locs="random",
                                  joint_dist_path=joint_dist_path,
                                  seed=seed, init_belief="uniform",
-                                 planner_config=PLANNER_CONFIG,
+                                 planner="pomdp_py.POUCT",
+                                 planner_config=POMCP_PLANNER_CONFIG,
                                  max_steps=MAX_STEPS, visualize=False)
             trial_name = "{}_{}".format(name_prefix, baseline)
             all_trials.append(make_trial(config, trial_name=trial_name))
+
+            # Correlation used. Entropy minimization (baseline)
+            baseline = "entropymin"
+            config = make_config(spec_corr_agent, init_locs="random",
+                                 joint_dist_path=joint_dist_path,
+                                 seed=seed, init_belief="prior",
+                                 planner="EntropyMinimizationPlanner",
+                                 planner_config=ENTROPY_PLANNER_CONFIG,
+                                 max_steps=MAX_STEPS, visualize=False)
+            trial_name = "{}_{}".format(name_prefix, baseline)
+            all_trials.append(make_trial(config, trial_name=trial_name))
+
+            # Correlation used. Random Planner (baseline)
+            baseline = "random"
+            config = make_config(spec_corr_agent, init_locs="random",
+                                 joint_dist_path=joint_dist_path,
+                                 seed=seed, init_belief="prior",
+                                 planner="RandomPlanner",
+                                 planner_config=RANDOM_PLANNER_CONFIG,
+                                 max_steps=MAX_STEPS, visualize=False)
+            trial_name = "{}_{}".format(name_prefix, baseline)
+            all_trials.append(make_trial(config, trial_name=trial_name))
+
     return all_trials
 
 
@@ -104,6 +125,6 @@ if __name__ == "__main__":
                      trials, OUTPUT_DIR,
                      verbose=True, add_timestamp=False)
 
-    exp.generate_trial_scripts(split=8)
+    exp.generate_trial_scripts(split=5)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")
