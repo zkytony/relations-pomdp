@@ -67,7 +67,6 @@ class SearchTrial(Trial):
         max_steps = self.config["exec_config"].get("max_steps", 100)
         for step in range(max_steps):
             action = planner.plan(agent, **self.config["planner_exec_config"])
-            action = UseDetector(200)
             if self.config["exec_config"].get("debugging", False):
                 agent.tree.print_children_value()
             reward = env.state_transition(action, execute=True)
