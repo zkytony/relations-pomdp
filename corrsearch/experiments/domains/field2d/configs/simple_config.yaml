@@ -41,9 +41,9 @@ detectors:
           radius: 0
     params:
       true_positive:
-        1: 0.9   # objid -> val
+        1: 0.8   # objid -> val
       false_positive:
-        1: 0.05
+        1: 0.00
       sigma:
         1: 0.1
 
@@ -60,10 +60,9 @@ detectors:
       true_positive:
         2: 0.9
       false_positive:
-        2: 0.05
+        2: 0.00
       sigma:
         2: 0.1
-
 
 # Probability distribution between objects, specified via spatial relations
 probability:
