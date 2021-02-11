@@ -36,14 +36,6 @@ def build_trials(exp_name):
     domain_file = "./domains/field2d/configs/simple_config.yaml"
     spec_original = read_domain_file(domain_file)
 
-    # We parse the domain file once, parse the joint distribution,
-    # and then specify the path to that problem .pkl file.
-    problem = problem_from_file(domain_file)
-    os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
-    joint_dist_path = os.path.join(RESOURCE_DIR, exp_name, "joint_dist.pkl")
-    with open(joint_dist_path, "wb") as f:
-        pickle.dump(problem.joint_dist, f)
-
     rnd = random.Random(100)
     seeds = [rnd.randint(1000, 10000)
              for i in range(NUM_TRIALS_PER_SETTING)]
@@ -63,6 +55,17 @@ def build_trials(exp_name):
         spec_targetonly_agent = copy.deepcopy(spec)
         dpsec_popped = spec_targetonly_agent["detectors"].pop(1)
         assert dpsec_popped["name"] == "red-detector"
+
+
+        # We parse the domain file once PER DOMAIN SIZE, parse the joint distribution,
+        # and then specify the path to that problem .pkl file.
+        problem = problem_parser(spec)
+        os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
+        joint_dist_path = os.path.join(RESOURCE_DIR, exp_name,
+                                       "joint_dist_{}.pkl".format(",".join(map(str,dim))))
+        with open(joint_dist_path, "wb") as f:
+            pickle.dump(problem.joint_dist, f)
+
 
         for seed in seeds:
             # seed for world generation
