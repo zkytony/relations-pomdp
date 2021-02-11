@@ -5,7 +5,7 @@ name: "empty_room"
 
 #bg: "./imgs/whitefloor.jpeg"
 
-dim: [5, 5]
+dim: [4, 4]
 
 objects:
 
