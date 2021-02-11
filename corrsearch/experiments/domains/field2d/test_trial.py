@@ -103,6 +103,6 @@ if __name__ == "__main__":
                          planner="EntropyMinimizationPlanner",
                          # planner_config=dict(num_sims=1500),
                          planner_config=dict(num_samples=100),
-                         init_belief="uniform")
+                         init_belief="prior")
     trial = make_trial(config)
     trial.run()
