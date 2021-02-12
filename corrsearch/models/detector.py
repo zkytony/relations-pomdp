@@ -133,7 +133,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
                     for starget in target_states:
                         mg = self.dist.marginal([var],
                                                 observation={svar(self.target_id) : starget})
-                        self.cond_dists[starget] = mg.to_tabular_dist()
+                        self.cond_dists[(var, starget)] = mg.to_tabular_dist()
 
     @property
     def id(self):
@@ -147,14 +147,14 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
         """Returns the distribution (JointDist) for Pr(si | starget)"""
         # Compute the Pr(si | starget). TODO: can this be pre-computed?
         if starget in self.cond_dists:
-            si_dist = self.cond_dists[starget]
+            si_dist = self.cond_dists[(svar(objid), starget)]
         else:
             si_dist = self.dist.marginal([svar(objid)],
                                          observation={svar(self.target_id) : starget})
             # convert to tabular for faster inference
             si_dist = si_dist.to_tabular_dist()
             # cache
-            self.cond_dists[starget] = si_dist
+            self.cond_dists[(svar(objid), starget)] = si_dist
         return si_dist
 
     def probability(self, observation, next_state, action, **kwargs):
