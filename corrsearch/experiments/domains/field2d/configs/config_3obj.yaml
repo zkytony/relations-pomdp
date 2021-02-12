@@ -1,0 +1,131 @@
+# Configuration file for a field2d problem.
+# This is an example of a really small domain.
+
+name: "empty_room"
+
+#bg: "./imgs/whitefloor.jpeg"
+
+dim: [4, 4]
+
+objects:
+
+ - class: blue-cube
+   id: 1
+   color: [30, 30, 200]
+   dim: [1,1]
+   # obj_img_path: "./imgs/blue_cube.png"
+
+ - class: red-cube
+   id: 2
+   color: [200, 30, 30]
+   dim: [1,1]
+   # obj_img_path: "./imgs/red_cube.png"
+
+ - class: orange-cube
+   id: 3
+   color: [200, 170, 30]
+   dim: [1,1]
+   # obj_img_path: "./imgs/red_cube.png"
+
+ - class: robot
+   id: 0
+   dim: [1,1]
+   color: [10, 190, 10]
+
+target_id: 1
+
+detectors:
+
+  - name: blue-detector
+    id: 100
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      1:  # objid
+        type: "disk"
+        params:
+          radius: 0
+    params:
+      true_positive:
+        1: 0.8   # objid -> val
+      false_positive:
+        1: 0.00
+      sigma:
+        1: 0.1
+
+  - name: red-detector
+    id: 200
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      2:
+        type: "disk"
+        params:
+          radius: 1
+    params:
+      true_positive:
+        2: 0.9
+      false_positive:
+        2: 0.00
+      sigma:
+        2: 0.1
+
+  - name: orange-detector
+    id: 300
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      3:
+        type: "disk"
+        params:
+          radius: 2
+    params:
+      true_positive:
+        3: 0.9
+      false_positive:
+        3: 0.00
+      sigma:
+        3: 0.1
+
+# Probability distribution between objects, specified via spatial relations
+probability:
+
+  - objects: [2]
+    dist: "uniform"
+
+  - objects: [3]
+    dist: "uniform"
+
+  - classes: [blue-cube, red-cube]
+    dist: "nearby"  # spatial relation
+    params:
+      radius: 1
+
+  - classes: [blue-cube, orange-cube]
+    dist: "nearby"  # spatial relation
+    params:
+      radius: 2
+
+robot:
+
+  # x is horizontal; x+ is right. y is vertical; y+ is up.
+  move_schema: "xy"
+  move:
+    - name: north
+      delta: [0, -1, "3*math.pi/2"]
+      energy_cost: 0.0
+
+    - name: east
+      delta: [1, 0, 0]
+      energy_cost: 0.0
+
+    - name: south
+      delta: [0, 1, "math.pi/2"]
+      energy_cost: 0.0
+
+    - name: west
+      delta: [-1, 0, "math.pi"]
+      energy_cost: 0.0
+
+  declare: "on_top"
+  transition: "deterministic"
