@@ -26,8 +26,8 @@ MAX_STEPS = 200
 NUM_TRIALS_PER_SETTING = 30
 
 
-def build_trials(exp_name):
-    domain_file = "./domains/field2d/configs/simple_config.yaml"
+def build_trials(exp_name, config_name):
+    domain_file = "./domains/field2d/configs/{}.yaml".format(config_name)
     spec_original = read_domain_file(domain_file)
 
     rnd = random.Random(100)
@@ -113,12 +113,13 @@ def build_trials(exp_name):
 
 if __name__ == "__main__":
     # Experiment name
-    exp_name = "Field2D-VaryingSize-SimpleConfig"
+    config_name = "config_3obj"
+    exp_name = "Field2D-VaryingSize-{}".format(config_name.title())
     start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     exp_name += "_" + start_time_str
 
     # build trials
-    trials = build_trials(exp_name)
+    trials = build_trials(exp_name, config_name)
     random.shuffle(trials)
     exp = Experiment(exp_name,
                      trials, OUTPUT_DIR,

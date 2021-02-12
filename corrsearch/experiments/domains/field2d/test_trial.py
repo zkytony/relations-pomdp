@@ -99,7 +99,7 @@ def make_trial(config, trial_name="test_trial"):
     return trial
 
 if __name__ == "__main__":
-    config = make_config("./configs/simple_config.yaml",
+    config = make_config("./configs/config_3obj.yaml",
                          planner="EntropyMinimizationPlanner",
                          # planner_config=dict(num_sims=1500),
                          planner_config=dict(num_samples=100),
