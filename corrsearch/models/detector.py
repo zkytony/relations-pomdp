@@ -146,7 +146,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     def dist_si(self, objid, starget):
         """Returns the distribution (JointDist) for Pr(si | starget)"""
         # Compute the Pr(si | starget). TODO: can this be pre-computed?
-        if starget in self.cond_dists:
+        if (svar(objid), starget) in self.cond_dists:
             si_dist = self.cond_dists[(svar(objid), starget)]
         else:
             si_dist = self.dist.marginal([svar(objid)],
