@@ -42,10 +42,18 @@ class RewardsResult(YamlResult):
                 # compute cumulative reward discounted
                 cum_reward = 0.0
                 discount = 1.0
+
+                success = 0  # Found, correct
+                fail = 0     # Found, incorrect
+
                 for r in rewards:
                     cum_reward += discount*r
                     discount *= discount_factor
-                rows.append([baseline, int(seed), cum_reward])
+                    if r == 100.0:
+                        success = 1  # means found and correct
+                    elif r == -100.0:
+                        fail = 1  # means found, but wrong
+                rows.append([baseline, int(seed), cum_reward, success, fail])
         return rows
 
     @classmethod
@@ -70,9 +78,10 @@ class RewardsResult(YamlResult):
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
         df = pd.DataFrame(all_rows,
-                          columns=prepend_header + ["baseline", "seed", "disc_reward"])
+                          columns=prepend_header + ["baseline", "seed", "disc_reward", "success", "fail"])
         df.to_csv(os.path.join(path, "rewards.csv"))
-        # plotting
+
+        # plotting reward vs. size
         fig, ax = plt.subplots(figsize=(5.5,4))
         sns.barplot(x=prepend_header[0], y="disc_reward",
                     hue="baseline", ax=ax, data=df, ci=95)
@@ -81,6 +90,30 @@ class RewardsResult(YamlResult):
         if invert_x:
             ax.invert_xaxis()
         plt.savefig(os.path.join(path, "rewards.png"))
+
+        # plotting outcome vs. size
+        fig, ax = plt.subplots(figsize=(5.5,4))
+        sns.barplot(x=prepend_header[0], y="success",
+                    hue="baseline", ax=ax, data=df, ci=95)
+        ax.set_ylabel("Success Rate")
+        ax.set_xlabel(xlabel)
+        ax.set_title("Success Rate vs. Size")
+        if invert_x:
+            ax.invert_xaxis()
+        plt.savefig(os.path.join(path, "outcome_success.png"))
+
+        # plotting outcome vs. size
+        fig, ax = plt.subplots(figsize=(5.5,4))
+        sns.barplot(x=prepend_header[0], y="fail",
+                    hue="baseline", ax=ax, data=df, ci=95)
+        ax.set_ylabel("Incorrect Declaration Rate")
+        ax.set_xlabel(xlabel)
+        ax.set_title("Incorrect Declaration Rate vs. Size")
+        if invert_x:
+            ax.invert_xaxis()
+        plt.savefig(os.path.join(path, "outcome_fail.png"))
+
+
 
 
 class StatesResult(PklResult):

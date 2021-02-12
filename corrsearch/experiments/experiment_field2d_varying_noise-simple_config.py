@@ -26,7 +26,7 @@ PLANNER_CONFIG = {
     "num_sims": 1000,
     "exploration_const": 200
 }
-MAX_STEPS = 30
+MAX_STEPS = 200
 
 # we want the same seeds every time
 NUM_TRIALS_PER_SETTING = 30
@@ -101,6 +101,6 @@ if __name__ == "__main__":
                      trials, OUTPUT_DIR,
                      verbose=True, add_timestamp=False)
 
-    exp.generate_trial_scripts(split=8)
+    exp.generate_trial_scripts(split=5)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")

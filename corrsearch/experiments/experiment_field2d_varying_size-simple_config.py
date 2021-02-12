@@ -17,10 +17,10 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(ABS_PATH, "results", "field2d")
 RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
 # True positive settings for the target detector
-DIMS = [(3,3), (4,4), (5,5), (6,6)]
+DIMS = [(2,2), (3,3), (4,4), (5,5), (6,6)]
 
 # general configs
-MAX_STEPS = 300
+MAX_STEPS = 200
 
 # we want the same seeds every time
 NUM_TRIALS_PER_SETTING = 30
@@ -49,7 +49,6 @@ def build_trials(exp_name):
         spec_targetonly_agent = copy.deepcopy(spec)
         dpsec_popped = spec_targetonly_agent["detectors"].pop(1)
         assert dpsec_popped["name"] == "red-detector"
-
 
         # We parse the domain file once PER DOMAIN SIZE, parse the joint distribution,
         # and then specify the path to that problem .pkl file.
@@ -125,6 +124,6 @@ if __name__ == "__main__":
                      trials, OUTPUT_DIR,
                      verbose=True, add_timestamp=False)
 
-    exp.generate_trial_scripts(split=5)
+    exp.generate_trial_scripts(split=8)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")
