@@ -1,5 +1,6 @@
 import pomdp_py
 from corrsearch.objects import *
+from corrsearch.models.robot_model import *
 
 class SearchTransitionModel(pomdp_py.TransitionModel):
     def __init__(self, robot_id, robot_trans_model, target_states=None):

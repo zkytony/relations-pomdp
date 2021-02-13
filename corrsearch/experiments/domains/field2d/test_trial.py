@@ -8,9 +8,11 @@ import random
 from corrsearch.experiments.domains.field2d.problem import *
 from corrsearch.experiments.domains.field2d.parser import *
 from corrsearch.experiments.trial import SearchTrial
+from corrsearch.experiments.defaults import *
 from corrsearch.models import *
 from corrsearch.objects import *
 from relpomdp2.constants import SARSOP_PATH
+
 
 def make_config(domain_file_or_spec,
                 init_locs="random",
@@ -99,10 +101,13 @@ def make_trial(config, trial_name="test_trial"):
     return trial
 
 if __name__ == "__main__":
-    config = make_config("./configs/config_3obj.yaml",
-                         planner="EntropyMinimizationPlanner",
+    config = make_config("./configs/simple_config.yaml",
+                         # planner="EntropyMinimizationPlanner",
+                         planner="HeuristicSequentialPlanner",
                          # planner_config=dict(num_sims=1500),
-                         planner_config=dict(num_samples=100),
+                         # planner_config=dict(num_samples=100,
+                         #                     entropy_improvement_threshold=1e-3),
+                         planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
                          init_belief="prior")
     trial = make_trial(config)
     trial.run()

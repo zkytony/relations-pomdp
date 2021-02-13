@@ -50,8 +50,6 @@ class SearchRewardModel(pomdp_py.RewardModel):
 
     def sample(self, state, action, next_state):
         if isinstance(action, Declare):
-            if state[self.robot_id] == (2,1):
-                import pdb; pdb.set_trace()
             if action.loc is None:
                 decloc = state[self.robot_id].loc
             else:

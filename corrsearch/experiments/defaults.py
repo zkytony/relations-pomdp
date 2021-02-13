@@ -12,3 +12,12 @@ ENTROPY_PLANNER_CONFIG = {
 RANDOM_PLANNER_CONFIG = {
     "declare_threshold": 0.9,
 }
+HEURISTIC_ONLINE_PLANNER_CONFIG = {
+    **POMCP_PLANNER_CONFIG,
+    "k": 2,
+    "num_zsamples": 30,
+    "gamma": 0.95,
+    "ap_num_visits_init": 10,
+    "ap_val_init": 100,
+    "num_visits_init": 0
+}
