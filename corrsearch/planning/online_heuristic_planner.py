@@ -6,6 +6,7 @@ Heuristic planner that plans as follows:
   object detections.
 """
 
+import random
 import pomdp_py
 from corrsearch.models import *
 from corrsearch.utils import *
@@ -18,7 +19,6 @@ def monte_carlo_belief_reward(belief, reward_model, transition_model, action, nu
         reward += belief[state] * transition_model.probability(next_state, state, action)\
                   * reward_model.sample(state, action, next_state)
     return reward
-
 
 class HeuristicSequentialPlanner(pomdp_py.Planner):
 
@@ -88,10 +88,11 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         robot_id = agent.belief.robot_id
         target_id = agent.belief.target_id
         default_policy_model = agent.policy_model
+        actions = set(agent.policy_model.move_actions) | set(UseDetector(d) for d in detector_valmap)\
+                  | set(agent.policy_model.declare_actions)
         heuristic_policy_model = HeuristicRollout(
             robot_id, target_id,
-            default_policy_model,
-            [UseDetector(d) for d in detector_valmap],
+            actions,
             agent.transition_model.robot_trans_model,
             agent.observation_model,
             num_visits_init=self.params.get("ap_num_visits_init", 10),
@@ -102,12 +103,12 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                                    agent.observation_model,
                                    agent.reward_model)
 
-        # Insert Q-Node for root node with initial value equal to the lower
-        # bound, returned by `choose_detectors
+        # Build new tree
         tmp_agent.tree = pomdp_py.RootVNode(self.params["num_visits_init"],
                                             float("-inf"),
                                             agent.history)
-        for action in tmp_agent.valid_actions():
+
+        for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
             if isinstance(action, UseDetector):
                 val_init = detector_valmap[action.detector_id]
             else:
@@ -120,15 +121,16 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
 
         # Create planner, plan action
         planner = pomdp_py.POUCT(max_depth=self.params["max_depth"],
-                                 num_sims=self.params["max_depth"],
+                                 num_sims=self.params["num_sims"],
                                  discount_factor=self.params["discount_factor"],
                                  num_visits_init=self.params.get("num_visits_init", 0),
                                  exploration_const=self.params["exploration_const"],
-                                 rollout_policy=tmp_agent.policy_model,
-                                 action_prior=tmp_agent.policy_model.action_prior)
+                                 rollout_policy=tmp_agent.policy_model)
         action = planner.plan(tmp_agent)
         agent.tree = tmp_agent.tree
         return action
+
+    # def update(agent, real_action,
 
 
 class HeuristicRollout(BasicPolicyModel):
@@ -138,76 +140,39 @@ class HeuristicRollout(BasicPolicyModel):
     def __init__(self,
                  robot_id,
                  target_id,
-                 default_policy_model,
-                 detector_actions,
+                 actions,
                  robot_trans_model,
                  observation_model,
                  num_visits_init=10,
                  val_init=100):
         self.robot_id = robot_id
         self.target_id = target_id
-
-        self.robot_trans_model = robot_trans_model
-
-        assert not isinstance(default_policy_model, HeuristicRollout)
-        self._default_policy_model = default_policy_model
-        all_actions = default_policy_model.actions
-        move_actions, _, declare_actions = self._separate(all_actions)
-        actions_by_type = {"move": set(move_actions),
-                   "detect": set(detector_actions),
-                   "declare": set(declare_actions)}
-
-        self.action_prior = HeuristicActionPrior(robot_id, target_id,
-                                                 robot_trans_model,
-                                                 actions_by_type,
-                                                 observation_model,
-                                                 num_visits_init=num_visits_init,
-                                                 val_init=val_init)
-        super().__init__(actions_by_type["move"] | actions_by_type["detect"] | actions_by_type["declare"])
-
-    def sample(self, state, **kwargs):
-        """For sampling, use the given agent's policy model directly."""
-        return default_policy_model.sample(state, **kwargs)
+        self.observation_model = observation_model
+        self._cache = {}
+        super().__init__(actions, robot_trans_model)
 
     def rollout(self, state, history):
         """For rollout, use a policy from an action prior"""
         # Obtain preference and returns the action in it.
-        if not hasattr(self, "action_prior"):
-            raise ValueError("PreferredPolicyModel is not assigned an action prior.")
-        preferences = self.action_prior.get_preferred_actions(state, history)
-        if len(preferences) > 0:
-            return random.sample(preferences, 1)[0][0]
+        if state in self._cache:
+            candidates = self._cache[state]
         else:
-            return self.sample(state)
-
-
-class HeuristicActionPrior(pomdp_py.ActionPrior):
-    def __init__(self, robot_id, target_id,
-                 robot_trans_model, actions_by_type, observation_model,
-                 num_visits_init=10, val_init=100):
-        self.robot_id = robot_id
-        self.target_id = target_id
-        self.num_visits_init = num_visits_init
-        self.val_init = val_init
-        self.robot_trans_model = robot_trans_model
-        self.actions_by_type = actions_by_type
-        self.observation_model = observation_model
-
-    def get_preferred_actions(self, state, history):
-        preferences = set()
-
-        # Preference of move
-        move_actions = self.actions_by_type["move"]
-        preferred_move = min(move_actions,
-            key=lambda move_action: euclidean_dist(self.robot_trans_model.sample(state, move_action)["loc"],
-                                                   state[self.robot_id]["loc"]))
-        preferences.add((preferred_move, self.num_visits_init, self.val_init))
-
-        for detect_action in self.actions_by_type["detect"]:
-            z = self.observation_model.sample(state, detect_action)
-            for objid in z.object_obzs:
-                if not isinstance(z[objid], NullObz):
-                    preferences.add((detect_action, self.num_visits_init, self.val_init))
-                    break
-
-        return preferences
+            candidates = []
+            move_actions = self.valid_moves(state)
+            preferred_move = min(move_actions,
+                key=lambda move_action: euclidean_dist(self.robot_trans_model.sample(state, move_action)["loc"],
+                                                       state[self.target_id]["loc"]))
+            candidates.append(preferred_move)
+            for detect_action in self.detect_actions:
+                z = self.observation_model.sample(state, detect_action)
+                for objid in z.object_obzs:
+                    if not isinstance(z[objid], NullObz):
+                        candidates.append(detect_action)
+                        break
+            if Declare(state[self.target_id]) in self.declare_actions:
+                candidates.append(Declare(state[self.target_id]))
+            else:
+                if state[self.robot_id]["loc"] == state[self.target_id]["loc"]:
+                    candidates.append(Declare())
+            self._cache[state] = candidates
+        return random.sample(candidates, 1)[0]

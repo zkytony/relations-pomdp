@@ -188,8 +188,8 @@ class Field2D(SearchProblem):
         observation_model = MultiDetectorModel(detectors)
 
         # policy model. Default is uniform
-        policy_model = DefaultPolicyModel(self.robot_model.actions,
-                                          self.robot_model.trans_model)
+        policy_model = BasicPolicyModel(self.robot_model.actions,
+                                        self.robot_model.trans_model)
 
         env = pomdp_py.Environment(init_state,
                                    transition_model,

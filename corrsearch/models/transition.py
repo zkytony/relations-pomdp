@@ -1,4 +1,5 @@
 import pomdp_py
+import random
 from corrsearch.objects import *
 from corrsearch.models.robot_model import *
 
@@ -54,9 +55,11 @@ class SearchTransitionModel(pomdp_py.TransitionModel):
 class BasicPolicyModel(pomdp_py.UniformPolicyModel):
     """Default policy model. Pruning
     move actions that bumps into the wall"""
-    def __init__(self, actions):
+    def __init__(self, actions, robot_trans_model):
         self.move_actions, self.detect_actions, self.declare_actions =\
             self._separate(actions)
+        self._legal_moves = {}  # cache
+        self.robot_trans_model = robot_trans_model
         super().__init__(actions)
 
     def _separate(self, actions):
@@ -66,7 +69,24 @@ class BasicPolicyModel(pomdp_py.UniformPolicyModel):
         return move_actions, detect_actions, declare_actions
 
     def sample(self, state, **kwargs):
-        return random.sample(self._get_all_actions(state=state, **kwargs), 1)[0]
+        return random.sample(self.get_all_actions(state=state, **kwargs), 1)[0]
 
     def rollout(self, state, history=None):
-        return random.sample(self._get_all_actions(state=state, history=history), 1)[0]
+        return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
+
+    def valid_moves(self, state):
+        robot_id = self.robot_trans_model.robot_id
+        if state[robot_id] in self._legal_moves:
+            return self._legal_moves[state[robot_id]]
+        else:
+            robot_pose = state[robot_id]["pose"]
+            valid_moves = set(a for a in self.move_actions
+                if self.robot_trans_model.sample(state, a)["pose"] != robot_pose)
+            self._legal_moves[state[robot_id]] = valid_moves
+            return valid_moves
+
+    def get_all_actions(self, state=None, history=None):
+        if state is None:
+            return self.actions
+        else:
+            return self.valid_moves(state) | self.detect_actions | self.declare_actions

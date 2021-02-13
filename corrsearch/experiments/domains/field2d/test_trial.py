@@ -104,6 +104,7 @@ if __name__ == "__main__":
     config = make_config("./configs/simple_config.yaml",
                          # planner="EntropyMinimizationPlanner",
                          planner="HeuristicSequentialPlanner",
+                         # planner="pomdp_py.POUCT",
                          # planner_config=dict(num_sims=1500),
                          # planner_config=dict(num_samples=100,
                          #                     entropy_improvement_threshold=1e-3),

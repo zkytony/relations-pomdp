@@ -78,27 +78,3 @@ class DetRobotTrans(RobotTransModel):
                                           "energy": 0.0})
                 robot_states.append(robot_state)
         return robot_states
-
-
-class DefaultPolicyModel(BasicPolicyModel):
-    """Default policy model. Pruning
-    move actions that bumps into the wall"""
-    def __init__(self, actions, robot_trans_model):
-        super().__init__(actions)
-        self.robot_trans_model = robot_trans_model
-        self._legal_moves = {}  # cache
-
-    def get_all_actions(self, state=None, history=None):
-        if state is None:
-            return self.actions
-        else:
-            robot_id = self.robot_trans_model.robot_id
-            if state[robot_id] in self._legal_moves:
-                return self._legal_moves[state[robot_id]] | self._detect_actions\
-                    | self._declare_actions
-            else:
-                robot_pose = state[robot_id]["pose"]
-                valid_moves = set(a for a in self._move_actions
-                    if self.robot_trans_model.sample(state, a)["pose"] != robot_pose)
-                self._legal_moves[state[robot_id]] = valid_moves
-                return valid_moves | self._detect_actions | self._declare_actions
