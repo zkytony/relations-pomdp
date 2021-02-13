@@ -31,6 +31,10 @@ class DetectorModel(pomdp_py.ObservationModel):
             name = "detector_%d" % self.id
         self.name = name
 
+    def detectable(self, objid):
+        """Returns true if object `objid` is detectable"""
+        raise NotImplementedError
+
     def iprob(self, objobz, objstate, robot_state, action):
         """
         Returns the probability of Pr(zi | si, sr', a)
@@ -142,6 +146,9 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
     @property
     def robot_id(self):
         return self.detector_model.robot_id
+
+    def __repr__(self):
+        return "CorrDetectorModel(%d)" % self.detector_model.id
 
     def dist_si(self, objid, starget):
         """Returns the distribution (JointDist) for Pr(si | starget)"""

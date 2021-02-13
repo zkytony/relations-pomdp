@@ -84,6 +84,9 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         detectors_vals = self.choose_detectors(agent)
         detector_valmap = {d:v for d, v in detectors_vals}
 
+        print("Detectors {} chosen from {}".format(list(detector_valmap.keys()),
+                                                   agent.observation_model.detectors))
+
         # Create an agent, for planning, with heuristic policy model
         robot_id = agent.belief.robot_id
         target_id = agent.belief.target_id

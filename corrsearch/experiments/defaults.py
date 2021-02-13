@@ -14,7 +14,7 @@ RANDOM_PLANNER_CONFIG = {
 }
 HEURISTIC_ONLINE_PLANNER_CONFIG = {
     **POMCP_PLANNER_CONFIG,
-    "k": 2,
+    "k": 3,
     "num_zsamples": 30,
     "gamma": 0.95,
     "ap_num_visits_init": 10,

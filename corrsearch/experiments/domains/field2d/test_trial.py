@@ -101,7 +101,7 @@ def make_trial(config, trial_name="test_trial"):
     return trial
 
 if __name__ == "__main__":
-    config = make_config("./configs/simple_config.yaml",
+    config = make_config("./configs/config_4obj.yaml",
                          # planner="EntropyMinimizationPlanner",
                          planner="HeuristicSequentialPlanner",
                          # planner="pomdp_py.POUCT",
