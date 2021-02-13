@@ -48,3 +48,24 @@ class SearchTransitionModel(pomdp_py.TransitionModel):
                                    label="s%d" % (len(states)))
                 states.append(state)
         return states
+
+
+class BasicPolicyModel(pomdp_py.UniformPolicyModel):
+    """Default policy model. Pruning
+    move actions that bumps into the wall"""
+    def __init__(self, actions):
+        self.move_actions, self.detect_actions, self.declare_actions =\
+            self._separate(actions)
+        super().__init__(actions)
+
+    def _separate(self, actions):
+        move_actions = set(a for a in actions if isinstance(a, Move))
+        detect_actions = set(a for a in actions if isinstance(a, UseDetector))
+        declare_actions = set(a for a in actions if isinstance(a, Declare))
+        return move_actions, detect_actions, declare_actions
+
+    def sample(self, state, **kwargs):
+        return random.sample(self._get_all_actions(state=state, **kwargs), 1)[0]
+
+    def rollout(self, state, history=None):
+        return random.sample(self._get_all_actions(state=state, history=history), 1)[0]
