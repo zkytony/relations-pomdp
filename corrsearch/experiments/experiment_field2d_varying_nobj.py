@@ -45,7 +45,8 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     Will test 2, 3, 4, 5 objects on 5x5 domain.
     """
     # Experiment name
-    exp_name = "Field2D-VaryingNumObj-5x5"
+    dim = [5,5]
+    exp_name = "Field2D-VaryingNumObj-{}x{}".format(dim[0], dim[1])
     start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     exp_name += "_" + start_time_str
 
@@ -65,7 +66,6 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     add_robot_simple2d(spec)
 
     # Set dimension
-    dim = [5,5]
     set_dim(spec, dim)
 
     # Creating Trials
