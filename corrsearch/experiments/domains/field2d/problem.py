@@ -115,7 +115,7 @@ class Field2D(SearchProblem):
                                   "pose": init_robot_pose,
                                   "energy": init_energy,
                                   "terminal": False})
-        object_states[obj.id] = robot_state
+        object_states[self.robot_id] = robot_state
         init_state = JointState(object_states)
 
         # init belief. Only over the target object

@@ -139,6 +139,7 @@ def parse_dist(domain_info, spec):
         dist_spec = spec["probability"][i]
         spatial_relation = eval(dist_spec["dist"])
         params = dist_spec.get("params", {})
+        locations = domain_info["locations"]
 
         # objids is a 2D array:
         # [
@@ -147,20 +148,22 @@ def parse_dist(domain_info, spec):
         # ]
         if "objects" in dist_spec:
             objids = [dist_spec["objects"]]
+            objid_combos = objids
+            # Do a cartesian product of the locations for each object
+            locations_combos = itertools.product(*([locations]*len(dist_spec["objects"])))
 
         elif "classes" in dist_spec:
             objids = []
             for cls in dist_spec["classes"]:
                 objids.append(domain_info["idbyclass"][cls])
+            # Obtain the cartesian product of the object ids of classes
+            objid_combos = itertools.product(*objids)
+            # Do a cartesian product of the locations for each object in combo
+            locations_combos = itertools.product(*([locations]*len(objids)))
 
         else:
             raise ValueError("No object specified for distribution (item %d)" % i)
 
-        # Obtain the cartesian product of the object ids of classes
-        objid_combos = itertools.product(*objids)
-        # Do a cartesian product of the locations for each object in combo
-        locations = domain_info["locations"]
-        locations_combos = itertools.product(*([locations]*len(objids)))
         for combo in objid_combos:
             # combo: a tuple of object ids
             variables.update(set(svar(objid) for objid in combo))

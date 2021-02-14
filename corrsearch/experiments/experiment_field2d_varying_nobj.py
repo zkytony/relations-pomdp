@@ -65,7 +65,8 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     add_robot_simple2d(spec)
 
     # Set dimension
-    set_dim(spec_, [5,5])
+    dim = [5,5]
+    set_dim(spec, dim)
 
     # Creating Trials
     ## Deterministic random seeds
@@ -75,7 +76,7 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     all_trials = []
     NOBJS = [2, 3, 4, 5]
     for nobj in NOBJS:
-        print("case {}".format(nobj))
+        print("case {} objects".format(nobj))
         spec_ = copy.deepcopy(spec)
 
         for objtup in OBJECTS[1:nobj]:
@@ -106,7 +107,8 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
         problem = problem_parser(spec_)
         os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
         joint_dist_path = os.path.join(RESOURCE_DIR, exp_name,
-                                       "joint_dist_{}.pkl".format(",".join(map(str,dim))))
+                                       "joint_dist_{}_{}obj.pkl".format(",".join(map(str,dim)),
+                                                                        nobj))
         with open(joint_dist_path, "wb") as f:
             pickle.dump(problem.joint_dist, f)
 
@@ -115,7 +117,7 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
             # Randomize the true positive rates per trial
             rnd = random.Random(seed)
 
-            blue_spec_ = get_detector(spec_, 100)
+            blue_dspec_ = get_detector(spec_, 100)
             add_disk_sensor(blue_dspec_, target_id, radius=0,
                             true_positive=rnd.uniform(0.8, 0.9))
 

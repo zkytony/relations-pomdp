@@ -68,7 +68,7 @@ def target_only_pouct_trial(spec, joint_dist_path, seed, name_prefix):
     baseline = "target-only-pouct"
     config = make_config(spec, planner="pomdp_py.POUCT",
                          planner_config=POMCP_PLANNER_CONFIG,
-                         init_locs="random", init_belief="prior",
+                         init_locs="random", init_belief="uniform",
                          joint_dist_path=joint_dist_path, seed=seed,
                          max_steps=MAX_STEPS, visualize=False)
     trial_name = "{}_{}".format(name_prefix, baseline)

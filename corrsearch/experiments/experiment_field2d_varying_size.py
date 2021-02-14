@@ -87,7 +87,7 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
         problem = problem_parser(spec_)
         os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
         joint_dist_path = os.path.join(RESOURCE_DIR, exp_name,
-                                       "joint_dist_{}.pkl".format(",".join(map(str,dim))))
+                                       "joint_dist_{}_2obj.pkl".format(",".join(map(str,dim))))
         with open(joint_dist_path, "wb") as f:
             pickle.dump(problem.joint_dist, f)
 
