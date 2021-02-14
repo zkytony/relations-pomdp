@@ -102,9 +102,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
             robot_id, target_id,
             actions,
             agent.transition_model.robot_trans_model,
-            agent.observation_model,
-            num_visits_init=self.params.get("ap_num_visits_init", 10),
-            val_init=self.params.get("ap_val_init", 100))
+            agent.observation_model)
         tmp_agent = pomdp_py.Agent(agent.belief,
                                    heuristic_policy_model,
                                    agent.transition_model,
@@ -115,14 +113,15 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         tmp_agent.tree = pomdp_py.RootVNode(self.params["num_visits_init"],
                                             float("-inf"),
                                             agent.history)
+        cur_belief_val_lower_bound = self.value_lower_bound(target_id, tmp_agent.belief,
+                                                            tmp_agent.reward_model)
 
         for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
             if self.init_value_lower_bound:
                 if isinstance(action, UseDetector):
                     val_init = detector_valmap[action.detector_id]
                 else:
-                    val_init = self.value_lower_bound(target_id, tmp_agent.belief,
-                                                      tmp_agent.reward_model)
+                    val_init = cur_belief_val_lower_bound
             else:
                 val_init = self.params.get("val_init", 0)
 
@@ -153,9 +152,7 @@ class HeuristicRollout(BasicPolicyModel):
                  target_id,
                  actions,
                  robot_trans_model,
-                 observation_model,
-                 num_visits_init=10,
-                 val_init=100):
+                 observation_model):
         self.robot_id = robot_id
         self.target_id = target_id
         self.observation_model = observation_model
