@@ -27,6 +27,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                  num_rsamples=30,
                  num_zsamples=100,
                  gamma=0.95,
+                 init_value_lower_bound=True,
                  **params):
         """
         Args:
@@ -39,6 +40,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         self.num_rsamples = num_rsamples
         self.gamma = gamma
         self.params = params
+        self.init_value_lower_bound = init_value_lower_bound
 
     def value_lower_bound(self, target_id, belief, reward_model):
         """Returns a lower bound on the value at the belief"""
@@ -47,7 +49,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         return (reward_model.rmax - reward_model.rmin) * btarget_max\
             + reward_model.rmin
 
-    def choose_detectors(self, agent):
+    def detector_values(self, agent):
         """
         The Agent should maintain belief only about the target object.
         The question is to choose a set of detectors to plan with.
@@ -76,13 +78,16 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                     * agent.transition_model.probability(next_state, state, action)\
                     * self.value_lower_bound(target_id, next_belief, agent.reward_model)
             vals.append(immediate_reward + self.gamma * expected_future_reward)
-        detectors_sorted = [(d,val) for val, d in sorted(zip(vals, detectors))]
-        return detectors_sorted[:self.k]
+        detector_valmap = {d:v for v, d in sorted(zip(vals, detectors))}
+        return detector_valmap
+
 
     def plan(self, agent):
         # First, choose a subset of detectors
-        detectors_vals = self.choose_detectors(agent)
-        detector_valmap = {d:v for d, v in detectors_vals}
+        detector_valmap = self.detector_values(agent)
+        if self.k > 0:
+            chosen_detectors = list(sorted(detector_valmap, key=detector_valmap.get))[:self.k]
+            detector_valmap = {d:detector_valmap[d] for d in chosen_detectors}
 
         print("Detectors {} chosen from {}".format(list(detector_valmap.keys()),
                                                    agent.observation_model.detectors))
@@ -112,11 +117,14 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                                             agent.history)
 
         for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
-            if isinstance(action, UseDetector):
-                val_init = detector_valmap[action.detector_id]
+            if init_value_lower_bound:
+                if isinstance(action, UseDetector):
+                    val_init = detector_valmap[action.detector_id]
+                else:
+                    val_init = self.value_lower_bound(target_id, tmp_agent.belief,
+                                                      tmp_agent.reward_model)
             else:
-                val_init = self.value_lower_bound(target_id, tmp_agent.belief,
-                                                  tmp_agent.reward_model)
+                val_init = self.params.get("val_init", 0)
 
             if tmp_agent.tree[action] is None:
                 tmp_agent.tree[action] = pomdp_py.QNode(self.params.get("num_visits_init", 0),
@@ -167,6 +175,7 @@ class HeuristicRollout(BasicPolicyModel):
                                                        state[self.target_id]["loc"]))
             candidates.append(preferred_move)
             for detect_action in self.detect_actions:
+                detector = observation_model.detectors[detect_action.detector_id]
                 z = self.observation_model.sample(state, detect_action)
                 for objid in z.object_obzs:
                     if not isinstance(z[objid], NullObz):
