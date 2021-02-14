@@ -270,7 +270,8 @@ class DiskSensor(Sensor):
                 [x,y]
                 for x in range(-2*self.radius-1, 2*self.radius+1)
                 for y in range(-2*self.radius-1, 2*self.radius+1)
-                if x**2 + y**2 <= self.radius**2
+                # multiple by sqrt(2) to account for including diagonal cell in discrete grid.
+                if x**2 + y**2 <= (self.radius*math.sqrt(2))**2
             ]
         )
         self._sensor_region_set = set(map(tuple, self._sensor_region.tolist()))

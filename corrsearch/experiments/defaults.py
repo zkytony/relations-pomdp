@@ -89,7 +89,9 @@ def add_detector(spec, name, detector_id, detector_type, energy_cost=0.0):
     spec["detectors"].append({"name": name,
                               "id": detector_id,
                               "type": detector_type,
-                              "energy_cost": energy_cost})
+                              "energy_cost": energy_cost,
+                              "sensors": {},
+                              "params": {}})
     return spec["detectors"][-1]
 
 def remove_detector(spec, detector_id):
@@ -103,6 +105,14 @@ def remove_detector(spec, detector_id):
     if dindex is None:
         raise ValueError("Detector %d was not added" % detector_id)
     spec["detectors"].pop(i)
+
+def get_detector(spec, detector_id):
+    if "detectors" not in spec:
+        raise ValueError("No detector in spec")
+    for i, dspec in enumerate(spec["detectors"]):
+        if dspec["id"] == detector_id:
+            return dspec
+    raise ValueError("Detector {} not in spec".format(detector_id))
 
 
 def add_factor(spec, dist_type, params={}, objects=None, classes=None):
@@ -152,3 +162,11 @@ OBJECTS = [
     (4, "purple-cube", [168, 50, 252]),
     (5, "gray-cube", [136, 134, 138]),
 ]
+
+SENSORS = {
+    1: dict(objid=1, type="disk", radius=0),  # target object (default)
+    2: dict(objid=2, type="disk", radius=2),
+    3: dict(objid=3, type="disk", radius=2),
+    4: dict(objid=4, type="disk", radius=2),
+    5: dict(objid=5, type="disk", radius=2),
+}

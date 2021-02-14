@@ -19,6 +19,7 @@ This is the script that generated the experiment trials for the paper.
 
 from corrsearch.experiments.domains.field2d.test_trial import make_config, make_trial
 from corrsearch.experiments.domains.field2d.parser import *
+from baselines import *
 import copy
 import os
 import random
@@ -35,123 +36,64 @@ RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
 NUM_TRIALS = 150  # number of trials for each data point
 MAX_STEPS = 200   # maximum number of search steps
 
-# Functions to create a trial for a baseline
-def random_trial(spec,
-                 joint_dist_path,  # required
-                 seed,             # required
-                 name_prefix):     # prefix for the trial name (experiment global config)
-    assert joint_dist_path is not None, "Must supply joint distribution path"
-    assert seed is not None, "Must supply seed"
-    baseline = "random"
-    config = make_config(spec, planner="RandomPlanner",
-                         planner_config=RANDOM_PLANNER_CONFIG,
-                         init_locs="random", init_belief="prior",
-                         joint_dist_path=joint_dist_path, seed=seed,
-                         max_steps=MAX_STEPS, visualize=False)
-    trial_name = "{}_{}".format(name_prefix, baseline)
-    return make_trial(config, trial_name=trial_name)
-
-def entropymin_trial(spec, joint_dist_path, seed, name_prefix):
-    assert joint_dist_path is not None, "Must supply joint distribution path"
-    assert seed is not None, "Must supply seed"
-    baseline = "entropymin"
-    config = make_config(spec, planner="EntropyMinimizationPlanner",
-                         planner_config=ENTROPY_PLANNER_CONFIG,
-                         init_locs="random", init_belief="prior",
-                         joint_dist_path=joint_dist_path, seed=seed,
-                         max_steps=MAX_STEPS, visualize=False)
-    trial_name = "{}_{}".format(name_prefix, baseline)
-    return make_trial(config, trial_name=trial_name)
-
-
-def target_only_pouct_trial(spec, joint_dist_path, seed, name_prefix):
-    """Uses POUCT with random rollout"""
-    assert joint_dist_path is not None, "Must supply joint distribution path"
-    assert seed is not None, "Must supply seed"
-
-    # Make sure there is only one detector, for the target
-    assert len(spec["detectors"]) == 1, "Target only baseline uses only one detector"
-    target_id = spec["target_id"]
-    assert target_id in spec["detectors"][0]["sensors"],\
-        "Target must be detectable by the target detector"
-
-    baseline = "target-only-pouct"
-    config = make_config(spec, planner="pomdp_py.POUCT",
-                         planner_config=POMCP_PLANNER_CONFIG,
-                         init_locs="random", init_belief="prior",
-                         joint_dist_path=joint_dist_path, seed=seed,
-                         max_steps=MAX_STEPS, visualize=False)
-    trial_name = "{}_{}".format(name_prefix, baseline)
-    return make_trial(config, trial_name=trial_name)
-
-
-def corr_pouct_trial(spec,
-                     joint_dist_path,
-                     seed,
-                     name_prefix):
-    """Uses POUCT with random rollout"""
-    assert joint_dist_path is not None, "Must supply joint distribution path"
-    assert seed is not None, "Must supply seed"
-
-    # Make sure there is only one detector, for the target
-    assert len(spec["detectors"]) > 1, "Expecting mulitple detectors for corr_pouct baseline"
-
-    baseline = "corr-pouct"
-    config = make_config(spec, planner="pomdp_py.POUCT",
-                         planner_config=POMCP_PLANNER_CONFIG,
-                         init_locs="random", init_belief="prior",
-                         joint_dist_path=joint_dist_path, seed=seed,
-                         max_steps=MAX_STEPS, visualize=False)
-    trial_name = "{}_{}".format(name_prefix, baseline)
-    return make_trial(config, trial_name=trial_name)
-
-def corr_heuristic_pouct_trial(spec, joint_dist_path, seed, name_prefix, k=-1,
-                               init_qvalue_lower_bound=True):
-    """Uses HeuristicSequentialPlanner"""
-    assert joint_dist_path is not None, "Must supply joint distribution path"
-    assert seed is not None, "Must supply seed"
-
-    # Make sure there is only one detector, for the target
-    assert len(spec["detectors"]) > 1, "Expecting mulitple detectors for corr_pouct baseline"
-
-    # baseline naming
-    pruning = "noprune" if k <= 0 else "k={}".format(k)
-    init_qvals = "iq" if init_qvalue_lower_bound else "noiq"
-    baseline = "heuristic#%s#%s" % (pruning, init_qvals)
-
-    planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-    planner_config["k"] = k  # number of detectors to plan with
-    planner_config["init_qvalue_lower_bound"] = init_qvalue_lower_bound
-
-    config = make_config(spec, planner="HeuristicSequentialPlanner",
-                         planner_config=planner_config, init_locs="random",
-                         init_belief="prior", joint_dist_path=joint_dist_path,
-                         seed=seed, max_steps=MAX_STEPS, visualize=False)
-    trial_name = "{}_{}".format(name_prefix, baseline)
-    return make_trial(config, trial_name=trial_name)
 
 # Making trials for experiments
-def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
+def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     """
-    Fix number of objects, randomize detector noise, vary the size of search environment
-    We will do **2 objects**. Target detector TP=0.8~0.9. Other object detector is TP=0.9~1.0
+    2. Fix size, randomize detector noise, vary the number of objects
+
+    Will test 2, 3, 4, 5 objects on 5x5 domain.
     """
     # Experiment name
-    exp_name = "Field2D-VaryingSize-2Obj"
+    exp_name = "Field2D-VaryingNumObj-5x5"
     start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     exp_name += "_" + start_time_str
 
     # Build spec
     spec = {"name": "grid2d_2obj"}
     target_obj = (1, "blue-cube", [30, 30, 200])
-    other_obj = (2, "red-cube", [232, 55, 35])
     robot = (0, "robot", [10, 190, 10])
     add_object(spec, *target_obj, dim=[1,1])
-    add_object(spec, *other_obj, dim=[1,1])
     add_object(spec, *robot, dim=[1,1])
 
+    # add target and target detector (0.8 true positive)
     target_id = target_obj[0]
     set_target(spec, target_id)
+    blue_dspec = add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
+    add_disk_sensor(blue_dspec, target_id, radius=0, true_positive=0.8)
+
+    # add robot
+    add_robot_simple2d(spec)
+
+    # Set dimension
+    set_dim(spec_, [5,5])
+
+    # Creating Trials
+    ## Deterministic random seeds
+    rnd = random.Random(100)
+    seeds = rnd.sample([i for i in range(1000, 10000)], num_trials)
+
+    all_trials = []
+    NOBJS = [2, 3, 4, 5]
+    for nobj in NOBJS:
+        print("case {}".format(nobj))
+        spec_ = copy.deepcopy(spec)
+
+        # Add nobj-1 additional objects.
+        for objtup in OBJECTS[1:nobj]:
+            assert objtup[0] != target_id
+            add_object(spec_, *objtup, dim=[1,1])
+
+            # Add
+
+
+        for seed in seeds:
+            pass
+
+
+
+
+
 
     # add two detectors, one for each object
     blue_dspec = add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
@@ -232,7 +174,3 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
     exp.generate_trial_scripts(split=split)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")
-
-
-if __name__ == "__main__":
-    EXPERIMENT_varysize(split=5, num_trials=3)
