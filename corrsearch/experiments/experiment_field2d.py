@@ -218,23 +218,13 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
             all_trials.append(corr_pouct_trial(spec_corr, joint_dist_path, seed,
                                                name_prefix))
 
+            # NO NEED TO PRUNE, because there are only two objects
             # Correlation heuristic planner. (No Pruning)
             all_trials.append(corr_heuristic_pouct_trial(spec_corr,
                                                          joint_dist_path, seed,
                                                          name_prefix, k=-1,
                                                          init_qvalue_lower_bound=True))
 
-            # Correlation heuristic planner. (Pruning k=2)
-            all_trials.append(corr_heuristic_pouct_trial(spec_corr,
-                                                         joint_dist_path, seed,
-                                                         name_prefix, k=2,
-                                                         init_qvalue_lower_bound=True))
-
-            # Correlation heuristic planner. (Pruning k=2, no value initialization)
-            all_trials.append(corr_heuristic_pouct_trial(spec_corr,
-                                                         joint_dist_path, seed,
-                                                         name_prefix, k=2,
-                                                         init_qvalue_lower_bound=False))
 
     random.shuffle(all_trials)
     exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
