@@ -9,6 +9,7 @@ import copy
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from statannot import add_stat_annotation
 
 
 #### Actual results for experiments ####
@@ -81,37 +82,65 @@ class RewardsResult(YamlResult):
                           columns=prepend_header + ["baseline", "seed", "disc_reward", "success", "fail"])
         df.to_csv(os.path.join(path, "rewards.csv"))
 
-        # plotting reward vs. size
-        fig, ax = plt.subplots(figsize=(5.5,4))
-        sns.barplot(x=prepend_header[0], y="disc_reward",
-                    hue="baseline", ax=ax, data=df, ci=95)
-        ax.set_ylabel("Discounted Cumulative Reward")
-        ax.set_xlabel(xlabel)
-        if invert_x:
-            ax.invert_xaxis()
-        plt.savefig(os.path.join(path, "rewards.png"))
+        # plotting reward
+        cls._plot_summary(df, x=prepend_header[0], y="disc_reward",
+                          title="Discounted Return",
+                          xlabel=xlabel,
+                          ylabel="Discounted Cumulative Reward",
+                          filename=os.path.join(path, "rewards.png"),
+                          invert_x=invert_x,
+                          add_stat_annot=True)
 
-        # plotting outcome vs. size
-        fig, ax = plt.subplots(figsize=(5.5,4))
-        sns.barplot(x=prepend_header[0], y="success",
-                    hue="baseline", ax=ax, data=df, ci=95)
-        ax.set_ylabel("Success Rate")
-        ax.set_xlabel(xlabel)
-        ax.set_title("Success Rate vs. Size")
-        if invert_x:
-            ax.invert_xaxis()
-        plt.savefig(os.path.join(path, "outcome_success.png"))
+        # success rate
+        cls._plot_summary(df, x=prepend_header[0], y="success",
+                          title="Success Rate",
+                          xlabel=xlabel,
+                          ylabel="Success Rate",
+                          filename=os.path.join(path, "outcome_success.png"),
+                          invert_x=invert_x,
+                          add_stat_annot=True)
 
-        # plotting outcome vs. size
+        # failure rate
+        cls._plot_summary(df, x=prepend_header[0], y="fail",
+                          title="Incorrect Declaration Rate",
+                          xlabel=xlabel,
+                          ylabel="Incorrect Declaration Rate",
+                          filename=os.path.join(path, "outcome_fail.png"),
+                          invert_x=invert_x,
+                          add_stat_annot=True)
+
+    @classmethod
+    def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
+                      invert_x, add_stat_annot=True):
         fig, ax = plt.subplots(figsize=(5.5,4))
-        sns.barplot(x=prepend_header[0], y="fail",
+        sns.barplot(x=x, y=y,
                     hue="baseline", ax=ax, data=df, ci=95)
-        ax.set_ylabel("Incorrect Declaration Rate")
+
+        xvals = df[x].unique()
+        if add_stat_annot:
+            boxpairs = []
+            for xval in xvals:
+                pair1 = ((xval, "corr"), (xval, "target-only"))
+                pair2 = ((xval, "corr"), (xval, "entropymin"))
+                boxpairs.extend([pair1,pair2])
+
+            add_stat_annotation(ax, plot="barplot", data=df,
+                                x=x, y=y, hue="baseline",
+                                box_pairs=boxpairs,
+                                loc="inside",
+                                test="t-test_ind",
+                                line_offset_to_box=0.05,
+                                line_offset=0.02,
+                                offset_basis="ymean",
+                                verbose=2)
+
+        ax.set_ylabel(title)
         ax.set_xlabel(xlabel)
-        ax.set_title("Incorrect Declaration Rate vs. Size")
         if invert_x:
             ax.invert_xaxis()
-        plt.savefig(os.path.join(path, "outcome_fail.png"))
+        plt.savefig(filename)
+
+        #os.path.join(path, "rewards.png"))
 
 
 
