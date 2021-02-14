@@ -117,7 +117,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                                             agent.history)
 
         for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
-            if init_value_lower_bound:
+            if self.init_value_lower_bound:
                 if isinstance(action, UseDetector):
                     val_init = detector_valmap[action.detector_id]
                 else:
@@ -175,7 +175,7 @@ class HeuristicRollout(BasicPolicyModel):
                                                        state[self.target_id]["loc"]))
             candidates.append(preferred_move)
             for detect_action in self.detect_actions:
-                detector = observation_model.detectors[detect_action.detector_id]
+                detector = self.observation_model.detectors[detect_action.detector_id]
                 z = self.observation_model.sample(state, detect_action)
                 for objid in z.object_obzs:
                     if not isinstance(z[objid], NullObz):

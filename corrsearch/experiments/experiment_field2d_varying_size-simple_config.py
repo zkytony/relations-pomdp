@@ -17,7 +17,7 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(ABS_PATH, "results", "field2d")
 RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
 # True positive settings for the target detector
-DIMS = [(2,2), (3,3), (4,4), (5,5), (6,6)]
+DIMS = [(2,2), (3,3), (4,4), (5,5)]
 
 # general configs
 MAX_STEPS = 200
@@ -108,12 +108,24 @@ def build_trials(exp_name, config_name):
             trial_name = "{}_{}".format(name_prefix, baseline)
             all_trials.append(make_trial(config, trial_name=trial_name))
 
+            # Correlation used. Heuristic sequential
+            baseline = "heuristic"
+            config = make_config(spec_corr_agent, init_locs="random",
+                                 joint_dist_path=joint_dist_path,
+                                 seed=seed, init_belief="prior",
+                                 planner="HeuristicSequentialPlanner",
+                                 planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
+                                 max_steps=MAX_STEPS, visualize=False)
+            trial_name = "{}_{}".format(name_prefix, baseline)
+            all_trials.append(make_trial(config, trial_name=trial_name))
+
+
     return all_trials
 
 
 if __name__ == "__main__":
     # Experiment name
-    config_name = "config_3obj"
+    config_name = "simple_config"
     exp_name = "Field2D-VaryingSize-{}".format(config_name.title())
     start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     exp_name += "_" + start_time_str
