@@ -49,6 +49,9 @@ class SearchRewardModel(pomdp_py.RewardModel):
         self.target_id = target_id
 
     def sample(self, state, action, next_state):
+        if state[self.robot_id].terminal:
+            return 0
+
         if isinstance(action, Declare):
             if action.loc is None:
                 decloc = state[self.robot_id].loc

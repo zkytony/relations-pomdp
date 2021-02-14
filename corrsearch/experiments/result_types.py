@@ -121,7 +121,9 @@ class RewardsResult(YamlResult):
             boxpairs = []
             for xval in xvals:
                 pair1 = ((xval, "corr"), (xval, "target-only"))
-                pair2 = ((xval, "corr"), (xval, "entropymin"))
+                pair2 = ((xval, "heuristic"), (xval, "entropymin"))
+                pair1 = ((xval, "heuristic"), (xval, "corr"))
+                pair1 = ((xval, "heuristic"), (xval, "target-only"))
                 boxpairs.extend([pair1,pair2])
 
             add_stat_annotation(ax, plot="barplot", data=df,

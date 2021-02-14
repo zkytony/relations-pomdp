@@ -2,6 +2,7 @@ import pomdp_py
 import random
 import numpy as np
 import itertools
+import math
 from corrsearch.objects.object_obz import ObjectObz, JointObz
 from corrsearch.utils import *
 from corrsearch.models import *
@@ -276,7 +277,7 @@ class DiskSensor(Sensor):
 
     def in_range(self, point, robot_pose):
         return euclidean_dist(robot_pose[:2],
-                              point) <= self.radius
+                              point) <= self.radius*math.sqrt(2)
 
     def sensor_region(self, robot_pose):
         region = self._sensor_region + np.array(robot_pose[:2])

@@ -86,7 +86,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         # First, choose a subset of detectors
         detector_valmap = self.detector_values(agent)
         if self.k > 0:
-            chosen_detectors = list(sorted(detector_valmap, key=detector_valmap.get))[:self.k]
+            chosen_detectors = list(sorted(detector_valmap, key=detector_valmap.get, reverse=True))[:self.k]
             detector_valmap = {d:detector_valmap[d] for d in chosen_detectors}
 
         print("Detectors {} chosen from {}".format(list(detector_valmap.keys()),

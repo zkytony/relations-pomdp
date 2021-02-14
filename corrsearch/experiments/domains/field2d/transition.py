@@ -45,10 +45,15 @@ class DetRobotTrans(RobotTransModel):
         else:
             next_robot_pose = robot_pose
 
+        terminal = False
+        if isinstance(action, Declare):
+            terminal = True
+
         return RobotState(self.robot_id,
                           {"pose": next_robot_pose,
                            "loc": next_robot_pose[:2],
-                           "energy": next_energy})
+                           "energy": next_energy,
+                           "terminal": terminal})
 
     def get_all_states(self):
         """The set of robot states is the set of

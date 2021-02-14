@@ -113,7 +113,8 @@ class Field2D(SearchProblem):
         robot_state = RobotState(self.robot_id,
                                  {"loc": init_robot_pose[:2],
                                   "pose": init_robot_pose,
-                                  "energy": init_energy})
+                                  "energy": init_energy,
+                                  "terminal": False})
         object_states[obj.id] = robot_state
         init_state = JointState(object_states)
 

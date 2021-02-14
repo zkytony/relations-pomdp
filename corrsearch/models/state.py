@@ -43,3 +43,7 @@ class RobotState(LocObjState):
 
     def __hash__(self):
         return hash((self.objid, self.objclass, self.pose))
+
+    @property
+    def terminal(self):
+        return self.attributes["terminal"]
