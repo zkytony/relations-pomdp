@@ -10,5 +10,5 @@ setup(name='relpomdp',
           'scipy',
           'matplotlib',
           'pomdp_py',
-          'habitat-sim'
+          # 'habitat-sim'
       ])
