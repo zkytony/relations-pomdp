@@ -59,11 +59,8 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
     set_target(spec, target_id)
 
     # add two detectors, one for each object (SENSOR NOT ADDED YET)
-    blue_dspec = add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
-    red_dspec = add_detector(spec, "red-detector", 200, "loc", energy_cost=0.0)
-    # add disk sensors for each object. Informative object has better sensor
-    target_sensor = SENSORS[target_id]
-    other_sensor = SENSORS[other_obj[0]]
+    blue_dspec = add_detector(spec, "blue-detector", detid(target_id), "loc", energy_cost=0.0)
+    red_dspec = add_detector(spec, "red-detector", detid(other_obj[0]), "loc", energy_cost=0.0)
 
     # add probability factors
     add_factor(spec, objects=[other_obj[0]], dist_type="uniform")
@@ -97,8 +94,9 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
         for seed in seeds:
             # Add sensors, with randomized config. Target sensor range always 0.
             # Other sensor range could be 1 or 2
-            blue_dspec_ = get_detector(spec_, 100)
-            red_dspec_ = get_detector(spec_, 200)
+            rnd = random.Random(seed)
+            blue_dspec_ = get_detector(spec_, detid(target_id))
+            red_dspec_ = get_detector(spec_, detid(other_obj[0]))
             add_disk_sensor(blue_dspec_, target_id, radius=0,
                             true_positive=rnd.uniform(0.8, 0.9))
             add_disk_sensor(red_dspec_, other_obj[0], radius=1,
@@ -108,7 +106,7 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
             # and one that does not.
             spec_corr = copy.deepcopy(spec_)
             spec_targetonly = copy.deepcopy(spec_)
-            remove_detector(spec_targetonly, 200)  # remove detector for the other object
+            remove_detector(spec_targetonly, detid(other_obj[0]))  # remove detector for the other object
 
             # seed for world generation
             name_prefix = "varysize-{}_{}".format(",".join(map(str,dim)), seed)
@@ -136,7 +134,6 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
                                                          name_prefix, k=-1,
                                                          init_qvalue_lower_bound=True))
 
-
     random.shuffle(all_trials)
     exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
                      add_timestamp=False)
@@ -145,4 +142,4 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
     print("Find multiple computers to run these experiments.")
 
 if __name__ == "__main__":
-    EXPERIMENT_varysize(split=5, num_trials=3)
+    EXPERIMENT_varysize(split=5, num_trials=NUM_TRIALS)

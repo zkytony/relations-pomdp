@@ -26,6 +26,9 @@ HEURISTIC_ONLINE_PLANNER_CONFIG = {
     "init_qvalue_lower_bound": True
 }
 
+def detid(objid):
+    return objid*100
+
 # functions for building domain spec
 def add_object(spec, objid, objclass, color, dim=[1,1]):
     if "objects" not in spec:
@@ -162,11 +165,3 @@ OBJECTS = [
     (4, "purple-cube", [168, 50, 252]),
     (5, "gray-cube", [136, 134, 138]),
 ]
-
-SENSORS = {
-    1: dict(objid=1, type="disk", radius=0),  # target object (default)
-    2: dict(objid=2, type="disk", radius=2),
-    3: dict(objid=3, type="disk", radius=2),
-    4: dict(objid=4, type="disk", radius=2),
-    5: dict(objid=5, type="disk", radius=2),
-}

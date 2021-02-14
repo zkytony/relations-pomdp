@@ -56,11 +56,10 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     add_object(spec, *target_obj, dim=[1,1])
     add_object(spec, *robot, dim=[1,1])
 
-    # add target and target detector (0.8 true positive)
+    # add target and target detector (SENSOR NOT ADDED)
     target_id = target_obj[0]
     set_target(spec, target_id)
-    blue_dspec = add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
-    add_disk_sensor(blue_dspec, target_id, radius=0, true_positive=0.8)
+    add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
 
     # add robot
     add_robot_simple2d(spec)
@@ -79,53 +78,30 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
         print("case {}".format(nobj))
         spec_ = copy.deepcopy(spec)
 
-        # Add nobj-1 additional objects.
         for objtup in OBJECTS[1:nobj]:
-            assert objtup[0] != target_id
+            objid = objtup[0]
+
+            # even objects nearby radius 2. Odd nearby radius 2
+            if objid % 2 == 0:
+                near_radius = 1
+            else:
+                near_radius = 2
+
+            assert objid != target_id
             add_object(spec_, *objtup, dim=[1,1])
 
-            # Add
+            # Add detector and sensor for the object (NO SENSOR YET)
+            detector_name = "{}-detector".format(objtup[1].split("-")[0])
+            detector_id = detid(objid)
+            dspec_ = add_detector(spec_, detector_name, detector_id, "loc",
+                                  energy_cost=0.0)
 
+            # Add factor with respect to the target. Also, randomize the radius.
+            add_factor(spec_, objects=[objid], dist_type="uniform")
+            add_factor(spec_, objects=[objid, target_id], dist_type="nearby",
+                       params={"radius": near_radius})
 
-        for seed in seeds:
-            pass
-
-
-
-
-
-
-    # add two detectors, one for each object
-    blue_dspec = add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
-    red_dspec = add_detector(spec, "red-detector", 200, "loc", energy_cost=0.0)
-    # add disk sensors for each object. Informative object has better sensor
-    add_disk_sensor(blue_dspec, target_id, radius=0, true_positive=0.8)
-    add_disk_sensor(red_dspec, target_id, radius=1, true_positive=0.9)
-
-    target_true_pos = random.uniform(0.8, 0.9)
-    other_true_pos = random.uniform(0.9, 1.0)
-
-    # add probability factors
-    add_factor(spec, objects=[other_obj[0]], dist_type="uniform")
-    add_factor(spec, classes=[target_obj[1], other_obj[1]], dist_type="nearby", params={"radius":1})
-
-    # add robot
-    add_robot_simple2d(spec)
-
-    # Creating Trials
-    ## Deterministic random seeds
-    rnd = random.Random(100)
-    seeds = rnd.sample([i for i in range(1000, 10000)], num_trials)
-
-    all_trials = []
-    DIMS = [(2,2), (3,3), (4,4), (5,5), (6,6)]
-    for dim in DIMS:
-        print("case {}".format(dim))
-
-        spec_ = copy.deepcopy(spec) # for safety
-        set_dim(spec_, dim)
-
-        # We parse the domain file once PER DOMAIN SIZE, parse the joint distribution,
+        # We parse the domain file once PER NOBJ amount, parse the joint distribution,
         # and then specify the path to that problem .pkl file.
         problem = problem_parser(spec_)
         os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
@@ -134,15 +110,32 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
         with open(joint_dist_path, "wb") as f:
             pickle.dump(problem.joint_dist, f)
 
-        # Create two specs. One for the agent that uses correlation
-        # and one that does not.
-        spec_corr = copy.deepcopy(spec_)
-        spec_targetonly = copy.deepcopy(spec_)
-        remove_detector(spec_targetonly, 200)  # remove detector for the other object
-
         for seed in seeds:
-            # seed for world generation
-            name_prefix = "varysize-{}_{}".format(",".join(map(str,dim)), seed)
+            # Add nobj-1 additional objects.
+            # Randomize the true positive rates per trial
+            rnd = random.Random(seed)
+
+            blue_spec_ = get_detector(spec_, 100)
+            add_disk_sensor(blue_dspec_, target_id, radius=0,
+                            true_positive=rnd.uniform(0.8, 0.9))
+
+            # Add sensors
+            for objtup in OBJECTS[1:nobj]:
+                objid = objtup[0]
+                assert objid != target_id
+                add_object(spec_, *objtup, dim=[1,1])
+                dspec_ = get_detector(spec_, detid(objid))
+                add_disk_sensor(dspec_, objid, radius=rnd.randint(1,2),
+                                true_positive=rnd.uniform(0.9, 1.0))
+
+            # Create two specs. One for the agent that uses correlation
+            # and one that does not.
+            spec_corr = copy.deepcopy(spec_)
+            spec_targetonly = copy.deepcopy(spec_)
+            for objtup in OBJECTS[1:nobj]:
+                remove_detector(spec_targetonly, detid(objtup[0]))  # remove detector for the other object
+
+            name_prefix = "varynobj-{}_{}".format(nobj, seed)
 
             # Random trial. Correlation used.
             all_trials.append(random_trial(spec_corr, joint_dist_path, seed,
@@ -160,13 +153,23 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
             all_trials.append(corr_pouct_trial(spec_corr, joint_dist_path, seed,
                                                name_prefix))
 
-            # NO NEED TO PRUNE, because there are only two objects
             # Correlation heuristic planner. (No Pruning)
             all_trials.append(corr_heuristic_pouct_trial(spec_corr,
                                                          joint_dist_path, seed,
                                                          name_prefix, k=-1,
                                                          init_qvalue_lower_bound=True))
 
+            # Correlation heuristic planner. (Pruned. k=2)
+            all_trials.append(corr_heuristic_pouct_trial(spec_corr,
+                                                         joint_dist_path, seed,
+                                                         name_prefix, k=2,
+                                                         init_qvalue_lower_bound=True))
+
+            # Correlation heuristic planner. (Pruned. k=2, Not using qvalue init by lower bound)
+            all_trials.append(corr_heuristic_pouct_trial(spec_corr,
+                                                         joint_dist_path, seed,
+                                                         name_prefix, k=2,
+                                                         init_qvalue_lower_bound=False))
 
     random.shuffle(all_trials)
     exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
@@ -174,3 +177,6 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     exp.generate_trial_scripts(split=split)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")
+
+if __name__ == "__main__":
+    EXPERIMENT_varynobj(split=5, num_trials=3)
