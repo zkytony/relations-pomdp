@@ -2,6 +2,8 @@
 For the field2d domain. Vary the dimension of the search space.
 Compare between two baselines: One leverages the correlation
 for planning (i.e. considers the dependency), and one that does not.
+
+This script is for preliminary experiments.
 """
 from corrsearch.experiments.domains.field2d.test_trial import make_config, make_trial
 from corrsearch.experiments.domains.field2d.parser import *

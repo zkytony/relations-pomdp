@@ -23,7 +23,7 @@ HEURISTIC_ONLINE_PLANNER_CONFIG = {
     "num_rsamples": 30,
     "gamma": 0.95,
     "num_visits_init": 0,
-    "init_value_lower_bound": True
+    "init_qvalue_lower_bound": True
 }
 
 # functions for building domain spec
@@ -90,6 +90,20 @@ def add_detector(spec, name, detector_id, detector_type, energy_cost=0.0):
                               "id": detector_id,
                               "type": detector_type,
                               "energy_cost": energy_cost})
+    return spec["detectors"][-1]
+
+def remove_detector(spec, detector_id):
+    if "detectors" not in spec:
+        return
+    dindex = None
+    for i, dspec in enumerate(spec["detectors"]):
+        if dspec["id"] == detector_id:
+            dindex = i
+            break
+    if dindex is None:
+        raise ValueError("Detector %d was not added" % detector_id)
+    spec["detectors"].pop(i)
+
 
 def add_factor(spec, dist_type, params={}, objects=None, classes=None):
     if "probability" not in spec:

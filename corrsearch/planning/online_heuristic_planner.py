@@ -27,7 +27,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                  num_rsamples=30,
                  num_zsamples=100,
                  gamma=0.95,
-                 init_value_lower_bound=True,
+                 init_qvalue_lower_bound=True,
                  **params):
         """
         Args:
@@ -40,7 +40,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         self.num_rsamples = num_rsamples
         self.gamma = gamma
         self.params = params
-        self.init_value_lower_bound = init_value_lower_bound
+        self.init_qvalue_lower_bound = init_qvalue_lower_bound
 
     def value_lower_bound(self, target_id, belief, reward_model):
         """Returns a lower bound on the value at the belief"""
@@ -117,7 +117,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                                                             tmp_agent.reward_model)
 
         for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
-            if self.init_value_lower_bound:
+            if self.init_qvalue_lower_bound:
                 if isinstance(action, UseDetector):
                     val_init = detector_valmap[action.detector_id]
                 else:
