@@ -16,9 +16,8 @@ HEURISTIC_ONLINE_PLANNER_CONFIG = {
     **POMCP_PLANNER_CONFIG,
     "k": 2,
     "num_zsamples": 30,
+    "num_rsamples": 30,
     "gamma": 0.95,
-    "ap_num_visits_init": 10,
-    "ap_val_init": 100,
     "num_visits_init": 0,
     "init_value_lower_bound": True
 }
