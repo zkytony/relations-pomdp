@@ -25,7 +25,17 @@ def parse_sensor(sensor_spec):
 def parse_domain(spec):
     """
     Parse the domain from the spec (dict).
-    Care about "objects", "detectors", "name", "bg", "dim"
+    Care about "objects", "detectors", "name", "bg", "dim".
+
+    In our domain, the agent can have multiple "detectors",
+    each corresponds to a DetectorModel that can induce a distribution
+    over all object observations. A DetectorModel can have multiple
+    underlying SENSORS, each with their geometry, properties, and
+    capabilities (i.e. which objects are detectable by the sensor).
+    These can all be specified by the spec in the "detectors" entry.
+    It should contain a list of detectors, and each detector contains
+    a mapping of sensors. See config/simple_config.yaml for an example.
+
     Args:
         spec (dict). Contains
     Return:
@@ -106,7 +116,23 @@ def parse_domain(spec):
                 locations=locations)
 
 def parse_dist(domain_info, spec):
-    """Build a joint distribution given spec (dict)"""
+    """Build a joint distribution given spec (dict)
+
+    The spec for distribution is a list of dictionaries,
+    where each specifies a factor either between objects
+    or at the class level. The factors at the class
+    level will be interpreted as factors between every
+    possible combination of the instances of the classes.
+    So each factor specification either specifies one
+    or multiple probability distributions between a
+    set of objects. The distribution is specified by "dist",
+    which is interpreted as a spatial relation (or, it could
+    be about a single object, such as 'uniform'). The string
+    of the spatial relation should correspond to one of the
+    functions in `spatial_relation.py`. The parameters to
+    initialize these distributions are given in `params`.
+    See config/simple_config.yaml for an example.
+    """
     factors = []
     variables = set()
     for i in range(len(spec["probability"])):
