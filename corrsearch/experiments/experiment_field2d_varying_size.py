@@ -28,9 +28,9 @@ from sciex import Experiment
 from datetime import datetime as dt
 from defaults import *
 
-ABS_PATH = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(ABS_PATH, "results", "field2d")
-RESOURCE_DIR = os.path.join(ABS_PATH, "resources", "field2d")
+# Use relative paths
+OUTPUT_DIR = os.path.join("results", "field2d")
+RESOURCE_DIR = os.path.join("resources", "field2d")
 
 # Shared configurations
 NUM_TRIALS = 150  # number of trials for each data point
@@ -85,11 +85,12 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
         # We parse the domain file once PER DOMAIN SIZE, parse the joint distribution,
         # and then specify the path to that problem .pkl file.
         problem = problem_parser(spec_)
-        os.makedirs(os.path.join(RESOURCE_DIR, exp_name), exist_ok=True)
-        joint_dist_path = os.path.join(RESOURCE_DIR, exp_name,
-                                       "joint_dist_{}_2obj.pkl".format(",".join(map(str,dim))))
-        with open(joint_dist_path, "wb") as f:
+        os.makedirs(os.path.join(OUTPUT_DIR, exp_name, "resources"), exist_ok=True)
+        joint_dist_file = "joint_dist_{}_{}obj.pkl".format(",".join(map(str,dim)), nobj)
+        with open(os.path.join(OUTPUT_DIR, exp_name, "resources", joint_dist_file), "wb") as f:
             pickle.dump(problem.joint_dist, f)
+        # Relative path to resources, with respect to experiment root
+        joint_dist_path = os.path.join("resources", joint_dist_file)
 
         for seed in seeds:
             # Add sensors, with randomized config. Target sensor range always 0.
@@ -142,4 +143,4 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
     print("Find multiple computers to run these experiments.")
 
 if __name__ == "__main__":
-    EXPERIMENT_varysize(split=5, num_trials=NUM_TRIALS)
+    EXPERIMENT_varysize(split=10, num_trials=NUM_TRIALS)

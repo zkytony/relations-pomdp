@@ -117,24 +117,24 @@ class RewardsResult(YamlResult):
                     hue="baseline", ax=ax, data=df, ci=95)
 
         xvals = df[x].unique()
-        if add_stat_annot:
-            boxpairs = []
-            for xval in xvals:
-                pair1 = ((xval, "corr"), (xval, "target-only"))
-                pair2 = ((xval, "heuristic"), (xval, "entropymin"))
-                pair1 = ((xval, "heuristic"), (xval, "corr"))
-                pair1 = ((xval, "heuristic"), (xval, "target-only"))
-                boxpairs.extend([pair1,pair2])
+        # if add_stat_annot:
+        #     boxpairs = []
+        #     # for xval in xvals:
+        #     #     pair1 = ((xval, "corr"), (xval, "target-only"))
+        #     #     pair2 = ((xval, "heuristic"), (xval, "entropymin"))
+        #     #     pair1 = ((xval, "heuristic"), (xval, "corr"))
+        #     #     pair1 = ((xval, "heuristic"), (xval, "target-only"))
+        #     #     boxpairs.extend([pair1,pair2])
 
-            add_stat_annotation(ax, plot="barplot", data=df,
-                                x=x, y=y, hue="baseline",
-                                box_pairs=boxpairs,
-                                loc="inside",
-                                test="t-test_ind",
-                                line_offset_to_box=0.05,
-                                line_offset=0.02,
-                                offset_basis="ymean",
-                                verbose=2)
+        #     add_stat_annotation(ax, plot="barplot", data=df,
+        #                         x=x, y=y, hue="baseline",
+        #                         box_pairs=boxpairs,
+        #                         loc="inside",
+        #                         test="t-test_ind",
+        #                         line_offset_to_box=0.05,
+        #                         line_offset=0.02,
+        #                         offset_basis="ymean",
+        #                         verbose=2)
 
         ax.set_ylabel(title)
         ax.set_xlabel(xlabel)

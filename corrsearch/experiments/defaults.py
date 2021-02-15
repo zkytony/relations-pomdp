@@ -26,6 +26,8 @@ HEURISTIC_ONLINE_PLANNER_CONFIG = {
     "init_qvalue_lower_bound": True
 }
 
+
+########## FUNCTIONS FOR FIELD2D SPEC BUILDING ###########
 def detid(objid):
     return objid*100
 
