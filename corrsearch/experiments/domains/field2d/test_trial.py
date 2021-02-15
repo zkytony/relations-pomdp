@@ -5,6 +5,7 @@ function and a make_config(...) function."""
 
 import pomdp_py
 import random
+import yaml
 from corrsearch.experiments.domains.field2d.problem import *
 from corrsearch.experiments.domains.field2d.parser import *
 from corrsearch.experiments.trial import SearchTrial
@@ -111,7 +112,15 @@ if __name__ == "__main__":
                          # planner_config=dict(num_sims=1500),
                          # planner_config=dict(num_samples=100,
                          #                     entropy_improvement_threshold=1e-3),
+                         seed=100,
                          planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
-                         init_belief="prior")
+                         init_belief="informed")
+
+    # with open("configs/fromexp/3by3_1.yaml") as f:
+    #     config = yaml.load(f, Loader=yaml.Loader)
+    # config["visualize"] = True
+    # config["instance_config"]["init_robot_setting"] = ((0,0,0), 0.0)
+    # config["instance_config"]["init_belief"] = "informed"
+
     trial = make_trial(config)
     trial.run()

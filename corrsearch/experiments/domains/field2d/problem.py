@@ -143,6 +143,17 @@ class Field2D(SearchProblem):
                                       self.target_class,
                                       {"loc": loc})
                 belief_hist[starget] = prior.prob({svar(self.target_id):starget})
+        # elif init_belief == "false":
+        #     # Assign probability to an incorrect location
+        #     epsilon = kwargs.get("epsilon", 1e-12)
+        #     for loc in self.locations:
+        #         starget = LocObjState(self.target_id,
+        #                               self.target_class,
+        #                               {"loc": loc})
+        #         if loc == init_locs[self.target_id]:
+        #             belief_hist[starget] = 1 - epsilon
+        #         else:
+        #             belief_hist[starget] = epsilon
         else:
             raise ValueError("Unsupported initial belief type %s" % init_belief)
 

@@ -68,9 +68,6 @@ class BasicPolicyModel(pomdp_py.UniformPolicyModel):
         declare_actions = set(a for a in actions if isinstance(a, Declare))
         return move_actions, detect_actions, declare_actions
 
-    def sample(self, state, **kwargs):
-        return random.sample(self.get_all_actions(state=state, **kwargs), 1)[0]
-
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
 
@@ -89,4 +86,10 @@ class BasicPolicyModel(pomdp_py.UniformPolicyModel):
         if state is None:
             return self.actions
         else:
-            return self.valid_moves(state) | self.detect_actions | self.declare_actions
+            # Only declare if the last one was a UseDetector
+            if history is None or len(history) == 0:
+                return self.valid_moves(state) | self.detect_actions
+            elif isinstance(history[-1][0], UseDetector):
+                return self.valid_moves(state) | self.detect_actions | self.declare_actions
+            else:
+                return self.valid_moves(state) | self.detect_actions

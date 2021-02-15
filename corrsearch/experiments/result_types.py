@@ -112,29 +112,28 @@ class RewardsResult(YamlResult):
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
                       invert_x, add_stat_annot=True):
-        fig, ax = plt.subplots(figsize=(5.5,4))
+        fig, ax = plt.subplots(figsize=(7.7,4))
         sns.barplot(x=x, y=y,
                     hue="baseline", ax=ax, data=df, ci=95)
 
         xvals = df[x].unique()
-        # if add_stat_annot:
-        #     boxpairs = []
-        #     # for xval in xvals:
-        #     #     pair1 = ((xval, "corr"), (xval, "target-only"))
-        #     #     pair2 = ((xval, "heuristic"), (xval, "entropymin"))
-        #     #     pair1 = ((xval, "heuristic"), (xval, "corr"))
-        #     #     pair1 = ((xval, "heuristic"), (xval, "target-only"))
-        #     #     boxpairs.extend([pair1,pair2])
+        if add_stat_annot:
+            boxpairs = []
+            for xval in xvals:
+                pair1 = ((xval, "heuristic#noprune#iq"), (xval, "corr-pouct"))
+                pair2 = ((xval, "heuristic#noprune#iq"), (xval, "entropymin"))
+                pair3 = ((xval, "corr-pouct"), (xval, "target-only-pouct"))
+                boxpairs.extend([pair1,pair2,pair3])
 
-        #     add_stat_annotation(ax, plot="barplot", data=df,
-        #                         x=x, y=y, hue="baseline",
-        #                         box_pairs=boxpairs,
-        #                         loc="inside",
-        #                         test="t-test_ind",
-        #                         line_offset_to_box=0.05,
-        #                         line_offset=0.02,
-        #                         offset_basis="ymean",
-        #                         verbose=2)
+            add_stat_annotation(ax, plot="barplot", data=df,
+                                x=x, y=y, hue="baseline",
+                                box_pairs=boxpairs,
+                                loc="inside",
+                                test="t-test_ind",
+                                line_offset_to_box=0.05,
+                                line_offset=0.02,
+                                offset_basis="ymean",
+                                verbose=2)
 
         ax.set_ylabel(title)
         ax.set_xlabel(xlabel)

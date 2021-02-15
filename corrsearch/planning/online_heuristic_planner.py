@@ -41,6 +41,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         self.gamma = gamma
         self.params = params
         self.init_qvalue_lower_bound = init_qvalue_lower_bound
+        self._last_action_observation = None
 
     def value_lower_bound(self, target_id, belief, reward_model):
         """Returns a lower bound on the value at the belief"""
@@ -116,7 +117,8 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         cur_belief_val_lower_bound = self.value_lower_bound(target_id, tmp_agent.belief,
                                                             tmp_agent.reward_model)
 
-        for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe()):
+        for action in tmp_agent.valid_actions(state=tmp_agent.belief.mpe(),
+                                              history=self._last_action_observation):
             if self.init_qvalue_lower_bound:
                 if isinstance(action, UseDetector):
                     val_init = detector_valmap[action.detector_id]
@@ -140,7 +142,8 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         agent.tree = tmp_agent.tree
         return action
 
-    # def update(agent, real_action,
+    def update(self, agent, real_action, real_observation):
+        self._last_action_observation = [(real_action, real_observation)]
 
 
 class HeuristicRollout(BasicPolicyModel):
@@ -162,8 +165,9 @@ class HeuristicRollout(BasicPolicyModel):
     def rollout(self, state, history):
         """For rollout, use a policy from an action prior"""
         # Obtain preference and returns the action in it.
-        if state in self._cache:
-            candidates = self._cache[state]
+        key_ = (state, history[-1])
+        if key_ in self._cache:
+            candidates = self._cache[key_]
         else:
             candidates = []
             move_actions = self.valid_moves(state)
@@ -178,10 +182,12 @@ class HeuristicRollout(BasicPolicyModel):
                     if not isinstance(z[objid], NullObz):
                         candidates.append(detect_action)
                         break
+            # if isinstance(history[-1][0], UseDetector):
+            # Declare follows detect; This is what is done in the basic rollout policy too.
             if Declare(state[self.target_id]) in self.declare_actions:
                 candidates.append(Declare(state[self.target_id]))
             else:
                 if state[self.robot_id]["loc"] == state[self.target_id]["loc"]:
                     candidates.append(Declare())
-            self._cache[state] = candidates
+            self._cache[key_] = candidates
         return random.sample(candidates, 1)[0]
