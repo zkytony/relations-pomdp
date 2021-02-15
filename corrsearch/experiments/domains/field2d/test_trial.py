@@ -105,22 +105,20 @@ def make_trial(config, trial_name="test_trial"):
     return trial
 
 if __name__ == "__main__":
-    config = make_config("./configs/simple_config.yaml",
-                         # planner="EntropyMinimizationPlanner",
-                         planner="HeuristicSequentialPlanner",
-                         # planner="pomdp_py.POUCT",
-                         # planner_config=dict(num_sims=1500),
-                         # planner_config=dict(num_samples=100,
-                         #                     entropy_improvement_threshold=1e-3),
-                         seed=100,
-                         planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
-                         init_belief="informed")
+    # config = make_config("./configs/simple_config.yaml",
+    #                      # planner="EntropyMinimizationPlanner",
+    #                      planner="HeuristicSequentialPlanner",
+    #                      # planner="pomdp_py.POUCT",
+    #                      # planner_config=dict(num_sims=1500),
+    #                      # planner_config=dict(num_samples=100,
+    #                      #                     entropy_improvement_threshold=1e-3),
+    #                      seed=100,
+    #                      planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
+    #                      init_belief="informed")
 
-    # with open("configs/fromexp/3by3_1.yaml") as f:
-    #     config = yaml.load(f, Loader=yaml.Loader)
-    # config["visualize"] = True
-    # config["instance_config"]["init_robot_setting"] = ((0,0,0), 0.0)
-    # config["instance_config"]["init_belief"] = "informed"
-
+    with open("configs/fromexp/3by3_1.yaml") as f:
+        config = yaml.load(f, Loader=yaml.Loader)
+    config["visualize"] = True
+    config["instance_config"]["init_robot_setting"] = ((0,0,0), 0.0)
     trial = make_trial(config)
     trial.run()

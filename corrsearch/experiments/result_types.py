@@ -92,7 +92,7 @@ class RewardsResult(YamlResult):
                 size = global_name.split("-")[1]
                 prepend.append(int(size.split(",")[0]))
                 prepend_header = ["size"]
-                xlabel = "Size"
+                xlabel = "Search Space Size"
                 invert_x = False
                 # Order the baselines
                 baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
@@ -140,16 +140,18 @@ class RewardsResult(YamlResult):
 
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
-                      invert_x, add_stat_annot=True, plot_type="point"):
+                      invert_x, add_stat_annot=True, plot_type="bar"):
         sns.set(style="whitegrid")
         fig, ax = plt.subplots(figsize=(7,5))
+        xvals = df[x].unique()
+        ax.set_xticks(sorted(xvals))
         if plot_type == "point":
             g = sns.pointplot(x=x, y=y,
                               hue="baseline", ax=ax, data=df, ci=95, capsize=.15,
                               palette="muted")
         elif plot_type == "bar":
             g = sns.barplot(x=x, y=y,
-                              hue="baseline", ax=ax, data=df, ci=95, capsize=.15,
+                              hue="baseline", ax=ax, data=df, ci=95, capsize=.08,
                               palette="muted")
             if add_stat_annot:
                 boxpairs = []
@@ -169,18 +171,15 @@ class RewardsResult(YamlResult):
                                     offset_basis="ymean",
                                     verbose=2)
 
+        ax.set_xticklabels(["{}x{}".format(x, x) for x in sorted(xvals)])
         l = ax.legend()
         l.set_title("")
-        ax.set_ylabel(title)
+        ax.set_ylabel(ylabel)
         ax.set_xlabel(xlabel)
         if invert_x:
             ax.invert_xaxis()
         plt.tight_layout()
         plt.savefig(filename)
-
-        #os.path.join(path, "rewards.png"))
-
-
 
 
 class StatesResult(PklResult):
