@@ -179,4 +179,4 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     print("Find multiple computers to run these experiments.")
 
 if __name__ == "__main__":
-    EXPERIMENT_varynobj(split=5, num_trials=NUM_TRIALS)
+    EXPERIMENT_varynobj(split=400, num_trials=NUM_TRIALS)
