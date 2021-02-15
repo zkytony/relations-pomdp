@@ -9,7 +9,33 @@ import copy
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from corrsearch.utils import hex_to_rgb
 from statannot import add_stat_annotation
+
+
+method_to_name = {
+    "heuristic#noprune#iq"  : "Corr+Heuristic",
+    "corr-pouct"            : "Corr",
+    "target-only-pouct"     : "Target",
+    "entropymin"            : "Greedy",
+    "random"                : "Random",
+    "heuristic#k=2#iq"      : "Corr+Heuristic(k=2)",
+    "heuristic#k=2#noiq"    : "Corr+Heuristic(k=2, NoIQ)",
+}
+
+name_to_color = {
+    "Corr+Heuristic(k=2, NoIQ)" :  np.array(hex_to_rgb("#77a16c")) / 255.,
+    "Corr+Heuristic(k=2)"       :  np.array(hex_to_rgb("#8bbd28")) / 255.,
+    "Corr+Heuristic"            :  np.array(hex_to_rgb("#21db65")) / 255.,
+    "Corr"                      :  np.array(hex_to_rgb("#80ad91")) / 255.,
+    "Target"                    :  np.array(hex_to_rgb("#d9cc6c")) / 255.,
+    "Greedy"                    :  np.array(hex_to_rgb("#66a7e8")) / 255.,
+    "Random"                    :  np.array(hex_to_rgb("#d15f4b")) / 255.,
+}
+
+# Order the baselines
+baselines = ["Random", "Greedy", "Target", "Corr",
+             "Corr+Heuristic", "Corr+Heuristic(k=2)", "Corr+Heuristic(k=2, NoIQ)"]
 
 
 #### Actual results for experiments ####
@@ -69,17 +95,31 @@ class RewardsResult(YamlResult):
                 prepend_header = ["noise"]
                 xlabel = "Target detector True Positive Rate"
                 invert_x = True
+                # Order the baselines
+                baselines = ["Random", "Greedy", "Target", "Corr",
+                             "Corr+Heuristic"]# "Corr+Heuristic(k=2)", "Corr+Heuristic(k=2, NoIQ)"]
             elif global_name.startswith("varysize"):
                 size = global_name.split("-")[1]
                 prepend.append(int(size.split(",")[0]))
                 prepend_header = ["size"]
                 xlabel = "Size"
                 invert_x = False
+                # Order the baselines
+                baselines = ["Random", "Greedy", "Target", "Corr",
+                             "Corr+Heuristic"]
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
+
         df = pd.DataFrame(all_rows,
                           columns=prepend_header + ["baseline", "seed", "disc_reward", "success", "fail"])
+
+        df["baseline"] = df["baseline"].replace(method_to_name)
+        df = df.loc[df["baseline"].isin(set(baselines))]
+        # Sort data frame based on the order given in baselines
+        df = df.sort_values(by="baseline",
+                            key=lambda col: pd.Series(baselines.index(col[i])
+                                                      for i in range(len(col))))
         df.to_csv(os.path.join(path, "rewards.csv"))
 
         # plotting reward
@@ -112,9 +152,11 @@ class RewardsResult(YamlResult):
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
                       invert_x, add_stat_annot=True):
-        fig, ax = plt.subplots(figsize=(7.7,4))
+        fig, ax = plt.subplots(figsize=(7,5))
         sns.barplot(x=x, y=y,
-                    hue="baseline", ax=ax, data=df, ci=95)
+                    hue="baseline", ax=ax, data=df, ci=95,
+                    palette=name_to_color,
+                    alpha=0.7)
 
         xvals = df[x].unique()
         if add_stat_annot:
@@ -139,6 +181,8 @@ class RewardsResult(YamlResult):
         ax.set_xlabel(xlabel)
         if invert_x:
             ax.invert_xaxis()
+        plt.tight_layout()
+        plt.grid()
         plt.savefig(filename)
 
         #os.path.join(path, "rewards.png"))
