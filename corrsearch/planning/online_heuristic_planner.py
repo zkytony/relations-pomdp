@@ -182,12 +182,12 @@ class HeuristicRollout(BasicPolicyModel):
                     if not isinstance(z[objid], NullObz):
                         candidates.append(detect_action)
                         break
-            # if isinstance(history[-1][0], UseDetector):
-            # Declare follows detect; This is what is done in the basic rollout policy too.
-            if Declare(state[self.target_id]) in self.declare_actions:
-                candidates.append(Declare(state[self.target_id]))
-            else:
-                if state[self.robot_id]["loc"] == state[self.target_id]["loc"]:
-                    candidates.append(Declare())
+            if isinstance(history[-1][0], UseDetector):
+                # Declare follows detect; This is what is done in the basic rollout policy too
+                if Declare(state[self.target_id]) in self.declare_actions:
+                    candidates.append(Declare(state[self.target_id]))
+                else:
+                    if state[self.robot_id]["loc"] == state[self.target_id]["loc"]:
+                        candidates.append(Declare())
             self._cache[key_] = candidates
         return random.sample(candidates, 1)[0]

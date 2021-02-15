@@ -138,9 +138,9 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
     random.shuffle(all_trials)
     exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
                      add_timestamp=False)
-    exp.generate_trial_scripts(split=split)
+    exp.generate_trial_scripts(split=split, evenly=True)
     print("Trials generated at %s/%s" % (exp._outdir, exp.name))
     print("Find multiple computers to run these experiments.")
 
 if __name__ == "__main__":
-    EXPERIMENT_varysize(split=400, num_trials=NUM_TRIALS)
+    EXPERIMENT_varysize(split=10, num_trials=NUM_TRIALS)
