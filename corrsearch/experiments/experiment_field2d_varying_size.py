@@ -86,7 +86,7 @@ def EXPERIMENT_varysize(split=8, num_trials=NUM_TRIALS):
         # and then specify the path to that problem .pkl file.
         problem = problem_parser(spec_)
         os.makedirs(os.path.join(OUTPUT_DIR, exp_name, "resources"), exist_ok=True)
-        joint_dist_file = "joint_dist_{}_{}obj.pkl".format(",".join(map(str,dim)), nobj)
+        joint_dist_file = "joint_dist_{}_2obj.pkl".format(",".join(map(str,dim)))
         with open(os.path.join(OUTPUT_DIR, exp_name, "resources", joint_dist_file), "wb") as f:
             pickle.dump(problem.joint_dist, f)
         # Relative path to resources, with respect to experiment root
