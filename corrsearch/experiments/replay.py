@@ -11,9 +11,9 @@ class PlaybackPlanner(pomdp_py.Planner):
         self.history = history
 
     def plan(self, agent):
-        action = self.history[self._step][0]
+        action, observation = self.history[self._step]
         self._step += 1
-        return action
+        return action, observation
 
 def main():
     parser = argparse.ArgumentParser(description="replay a trial")

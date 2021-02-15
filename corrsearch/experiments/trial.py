@@ -68,11 +68,14 @@ class SearchTrial(Trial):
 
         max_steps = self.config["exec_config"].get("max_steps", 100)
         for step in range(max_steps):
-            action = planner.plan(agent, **self.config["planner_exec_config"])
-            if self.config["exec_config"].get("debugging", False):
-                agent.tree.print_children_value()
+            if self.config["planner"] == "PlaybackPlanner":
+                action, observation = planner.plan(agent, **self.config["planner_exec_config"])
+            else:
+                action = planner.plan(agent, **self.config["planner_exec_config"])
+                observation = env.provide_observation(agent.observation_model, action)
+                if self.config["exec_config"].get("debugging", False):
+                    agent.tree.print_children_value()
             reward = env.state_transition(action, execute=True)
-            observation = env.provide_observation(agent.observation_model, action)
             agent.set_belief(agent.belief.update(agent, observation, action))
             planner.update(agent, action, observation)
 
