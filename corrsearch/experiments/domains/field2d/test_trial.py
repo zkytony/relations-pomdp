@@ -23,6 +23,7 @@ def make_config(domain_file_or_spec,
                 max_steps=100,
                 visualize=True,
                 seed=None,
+                step_delay=0.1,
                 viz_res=30):
     """
     Set `init_locs` to be random_SEED for deterministic instance generation
@@ -73,7 +74,7 @@ def make_config(domain_file_or_spec,
 
     exec_config = dict(
         max_steps=max_steps,
-        step_delay=0.5,
+        step_delay=step_delay,
     )
     discount_factor = planner_config.get("discount_factor", 0.95)
 
