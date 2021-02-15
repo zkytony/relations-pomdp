@@ -23,16 +23,6 @@ method_to_name = {
     "heuristic#k=2#noiq"    : "Corr+Heuristic(k=2, NoIQ)",
 }
 
-name_to_color = {
-    "Corr+Heuristic(k=2, NoIQ)" :  np.array(hex_to_rgb("#77a16c")) / 255.,
-    "Corr+Heuristic(k=2)"       :  np.array(hex_to_rgb("#8bbd28")) / 255.,
-    "Corr+Heuristic"            :  np.array(hex_to_rgb("#21db65")) / 255.,
-    "Corr"                      :  np.array(hex_to_rgb("#80ad91")) / 255.,
-    "Target"                    :  np.array(hex_to_rgb("#d9cc6c")) / 255.,
-    "Greedy"                    :  np.array(hex_to_rgb("#66a7e8")) / 255.,
-    "Random"                    :  np.array(hex_to_rgb("#d15f4b")) / 255.,
-}
-
 # Order the baselines
 baselines = ["Random", "Greedy", "Target", "Corr",
              "Corr+Heuristic", "Corr+Heuristic(k=2)", "Corr+Heuristic(k=2, NoIQ)"]
@@ -105,8 +95,7 @@ class RewardsResult(YamlResult):
                 xlabel = "Size"
                 invert_x = False
                 # Order the baselines
-                baselines = ["Random", "Greedy", "Target", "Corr",
-                             "Corr+Heuristic"]
+                baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
@@ -151,38 +140,42 @@ class RewardsResult(YamlResult):
 
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
-                      invert_x, add_stat_annot=True):
+                      invert_x, add_stat_annot=True, plot_type="point"):
+        sns.set(style="whitegrid")
         fig, ax = plt.subplots(figsize=(7,5))
-        sns.barplot(x=x, y=y,
-                    hue="baseline", ax=ax, data=df, ci=95,
-                    palette=name_to_color,
-                    alpha=0.7)
+        if plot_type == "point":
+            g = sns.pointplot(x=x, y=y,
+                              hue="baseline", ax=ax, data=df, ci=95, capsize=.15,
+                              palette="muted")
+        elif plot_type == "bar":
+            g = sns.barplot(x=x, y=y,
+                              hue="baseline", ax=ax, data=df, ci=95, capsize=.15,
+                              palette="muted")
+            if add_stat_annot:
+                boxpairs = []
+                for xval in xvals:
+                    pair1 = ((xval, "Corr+Heuristic"), (xval, "Corr"))
+                    pair2 = ((xval, "Corr+Heuristic"), (xval, "Greedy"))
+                    pair3 = ((xval, "Corr"), (xval, "Target"))
+                    boxpairs.extend([pair3,pair2,pair1])
 
-        xvals = df[x].unique()
-        if add_stat_annot:
-            boxpairs = []
-            for xval in xvals:
-                pair1 = ((xval, "heuristic#noprune#iq"), (xval, "corr-pouct"))
-                pair2 = ((xval, "heuristic#noprune#iq"), (xval, "entropymin"))
-                pair3 = ((xval, "corr-pouct"), (xval, "target-only-pouct"))
-                boxpairs.extend([pair1,pair2,pair3])
+                add_stat_annotation(ax, plot="barplot", data=df,
+                                    x=x, y=y, hue="baseline",
+                                    box_pairs=boxpairs,
+                                    loc="inside",
+                                    test="t-test_ind",
+                                    line_offset_to_box=0.05,
+                                    line_offset=0.02,
+                                    offset_basis="ymean",
+                                    verbose=2)
 
-            add_stat_annotation(ax, plot="barplot", data=df,
-                                x=x, y=y, hue="baseline",
-                                box_pairs=boxpairs,
-                                loc="inside",
-                                test="t-test_ind",
-                                line_offset_to_box=0.05,
-                                line_offset=0.02,
-                                offset_basis="ymean",
-                                verbose=2)
-
+        l = ax.legend()
+        l.set_title("")
         ax.set_ylabel(title)
         ax.set_xlabel(xlabel)
         if invert_x:
             ax.invert_xaxis()
         plt.tight_layout()
-        plt.grid()
         plt.savefig(filename)
 
         #os.path.join(path, "rewards.png"))
