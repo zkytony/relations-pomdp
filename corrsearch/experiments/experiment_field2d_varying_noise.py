@@ -54,12 +54,14 @@ def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
     other_obj = (2, "red-cube", [232, 55, 35])
     robot = (0, "robot", [10, 190, 10])
     add_object(spec, *target_obj, dim=[1,1])
+    add_object(spec, *other_obj, dim=[1,1])
     add_object(spec, *robot, dim=[1,1])
 
     # add target and target detector (SENSOR NOT ADDED)
     target_id = target_obj[0]
     set_target(spec, target_id)
-    add_detector(spec, "blue-detector", 100, "loc", energy_cost=0.0)
+    add_detector(spec, "blue-detector", detid(target_id), "loc", energy_cost=0.0)
+    add_detector(spec, "red-detector", detid(other_obj[0]), "loc", energy_cost=0.0)
 
     # add robot
     add_robot_simple2d(spec)
@@ -73,7 +75,7 @@ def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
 
     # We parse the domain file ONCE because it's not affected by sensor noise,
     # parse the joint distribution, and then specify the path to that problem .pkl file.
-    problem = problem_parser(spec_)
+    problem = problem_parser(spec)
     os.makedirs(os.path.join(OUTPUT_DIR, exp_name, "resources"), exist_ok=True)
     joint_dist_file = "joint_dist_varynoise.pkl"
     with open(os.path.join(OUTPUT_DIR, exp_name, "resources", joint_dist_file), "wb") as f:
@@ -111,7 +113,7 @@ def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
                 spec_targetonly = copy.deepcopy(spec_)
                 remove_detector(spec_targetonly, detid(other_obj[0]))  # remove detector for the other object
 
-                name_prefix = "varynobj-t{}_o{}".format(truepos_target_obj, truepos_other_obj)
+                name_prefix = "varynoise-t{}-o{}_{}".format(truepos_target_obj, truepos_other_obj, seed)
 
                 # Random trial. Correlation used.
                 all_trials.append(random_trial(spec_corr, joint_dist_path, seed,
@@ -143,4 +145,4 @@ def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
     print("Find multiple computers to run these experiments.")
 
 if __name__ == "__main__":
-    EXPERIMENT_varynobj(split=400, num_trials=NUM_TRIALS)
+    EXPERIMENT_varynoise(split=400, num_trials=NUM_TRIALS)
