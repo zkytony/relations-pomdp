@@ -33,7 +33,7 @@ OUTPUT_DIR = os.path.join("results", "field2d")
 RESOURCE_DIR = os.path.join("resources", "field2d")
 
 # Shared configurations
-NUM_TRIALS = 150  # number of trials for each data point
+NUM_TRIALS = 40  # number of trials for each data point
 
 # Making trials for experiments
 def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
@@ -89,7 +89,7 @@ def EXPERIMENT_varynoise(split=8, num_trials=NUM_TRIALS):
     seeds = rnd.sample([i for i in range(1000, 10000)], num_trials)
 
     all_trials = []
-    TRUEPOS = [0.3, 0.6, 0.9]
+    TRUEPOS = [0.45, 0.65, 0.9]
     for truepos_target_obj in TRUEPOS:
         for truepos_other_obj in TRUEPOS:
             print("case {}, {}".format(truepos_target_obj, truepos_other_obj))
