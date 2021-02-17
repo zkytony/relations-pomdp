@@ -96,6 +96,15 @@ class RewardsResult(YamlResult):
                 invert_x = False
                 # Order the baselines
                 baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
+            elif global_name.startswith("varynobj"):
+                nobj = global_name.split("-")[1]
+                prepend.append(int(nobj))
+                prepend_header = ["nobj"]
+                xlabel = "Number of Objects"
+                invert_x = False
+                # Order the baselines
+                baselines = [ #"Corr+Heuristic(k=2, NoIQ)",
+                              "Corr+Heuristic", "Corr",  "Target", "Greedy", "Random", "Corr+Heuristic(k=2)"]
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
@@ -170,8 +179,8 @@ class RewardsResult(YamlResult):
                                     line_offset=0.02,
                                     offset_basis="ymean",
                                     verbose=2)
-
-        ax.set_xticklabels(["{}x{}".format(x, x) for x in sorted(xvals)])
+        if x == "size":
+            ax.set_xticklabels(["{}x{}".format(x, x) for x in sorted(xvals)])
         l = ax.legend()
         l.set_title("")
         ax.set_ylabel(ylabel)
