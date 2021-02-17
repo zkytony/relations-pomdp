@@ -40,10 +40,10 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
     """
     2. Fix size, randomize detector noise, vary the number of objects
 
-    Will test 2, 3, 4, 5 objects on 5x5 domain.
+    Will test 2, 3, 4, 5 objects on 5x5 domain. Also test on 4x4
     """
     # Experiment name. Experiment will store at OUTPUT_DIR/exp_name
-    dim = [5,5]
+    dim = [4,4]
     exp_name = "Field2D-VaryingNumObj-{}x{}".format(dim[0], dim[1])
     start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     exp_name += "_" + start_time_str
@@ -165,11 +165,11 @@ def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):
                                                          name_prefix, k=2,
                                                          init_qvalue_lower_bound=True))
 
-            # Correlation heuristic planner. (Pruned. k=2, Not using qvalue init by lower bound)
-            all_trials.append(corr_heuristic_pouct_trial(spec_corr,
-                                                         joint_dist_path, seed,
-                                                         name_prefix, k=2,
-                                                         init_qvalue_lower_bound=False))
+            # # Correlation heuristic planner. (Pruned. k=2, Not using qvalue init by lower bound)
+            # all_trials.append(corr_heuristic_pouct_trial(spec_corr,
+            #                                              joint_dist_path, seed,
+            #                                              name_prefix, k=2,
+            #                                              init_qvalue_lower_bound=False))
 
     random.shuffle(all_trials)
     exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
