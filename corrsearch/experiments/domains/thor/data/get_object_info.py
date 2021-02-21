@@ -41,16 +41,17 @@ def process_all():
               "size_x", "size_y", "size_z"]
     all_rows = []
     # training
-    for i in range(1, 12):
-        for j in range(1, 5):
+    for i in range(1, 13):
+        for j in range(1,6):
             scene = "FloorPlan_Train{}_{}".format(i, j)
+            print(scene)
             try:
                 rows = gather_object_info(scene)
                 all_rows.extend(rows)
             except Exception as ex:
                 print("Error for scene {}: {}".format(scene, ex))
     df = pd.DataFrame(all_rows, columns=header)
-    df.to_csv("robothor_object_stats.csv", sep=",")
+    df.to_csv("robothor_object_stats-2.csv", sep=",")
 
 
 if __name__ == "__main__":
