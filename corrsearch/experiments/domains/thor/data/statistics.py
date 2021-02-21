@@ -44,12 +44,13 @@ def process_all():
     for i in range(1, 12):
         for j in range(1, 5):
             scene = "FloorPlan_Train{}_{}".format(i, j)
-            rows = gather_object_info(scene)
-            all_rows.extend(rows)
-            break
-        break
+            try:
+                rows = gather_object_info(scene)
+                all_rows.extend(rows)
+            except Exception as ex:
+                print("Error for scene {}: {}".format(scene, ex))
     df = pd.DataFrame(all_rows, columns=header)
-    df.to_csv("robothor_object_stats.csv")
+    df.to_csv("robothor_object_stats.csv", sep=",")
 
 
 if __name__ == "__main__":
