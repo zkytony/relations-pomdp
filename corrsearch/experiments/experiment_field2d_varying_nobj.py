@@ -33,7 +33,7 @@ OUTPUT_DIR = os.path.join("results", "field2d")
 RESOURCE_DIR = os.path.join("resources", "field2d")
 
 # Shared configurations
-NUM_TRIALS = 150  # number of trials for each data point
+NUM_TRIALS = 40  # number of trials for each data point
 
 # Making trials for experiments
 def EXPERIMENT_varynobj(split=8, num_trials=NUM_TRIALS):

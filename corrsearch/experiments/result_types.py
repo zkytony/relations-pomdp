@@ -70,7 +70,7 @@ class RewardsResult(YamlResult):
                         success = 1  # means found and correct
                     elif r == -100.0:
                         fail = 1  # means found, but wrong
-                rows.append([baseline, int(seed), cum_reward, success, fail])
+                rows.append([baseline, seed, cum_reward, success, fail])
         return rows
 
     @classmethod
@@ -79,16 +79,8 @@ class RewardsResult(YamlResult):
         prepend_header = []
         for global_name in gathered_results:
             prepend = []
-            if global_name.startswith("varynoise"):
-                noise = float(global_name.split("-")[1])
-                prepend.append(noise)
-                prepend_header = ["noise"]
-                xlabel = "Target detector True Positive Rate"
-                invert_x = True
-                # Order the baselines
-                baselines = ["Random", "Greedy", "Target", "Corr",
-                             "Corr+Heuristic"]# "Corr+Heuristic(k=2)", "Corr+Heuristic(k=2, NoIQ)"]
-            elif global_name.startswith("varysize"):
+            ylim = None
+            if global_name.startswith("varysize"):
                 size = global_name.split("-")[1]
                 prepend.append(int(size.split(",")[0]))
                 prepend_header = ["size"]
@@ -96,6 +88,7 @@ class RewardsResult(YamlResult):
                 invert_x = False
                 # Order the baselines
                 baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
+                additional_x = None
             elif global_name.startswith("varynobj"):
                 nobj = global_name.split("-")[1]
                 prepend.append(int(nobj))
@@ -105,6 +98,18 @@ class RewardsResult(YamlResult):
                 # Order the baselines
                 baselines = [ #"Corr+Heuristic(k=2, NoIQ)",
                               "Corr+Heuristic", "Corr",  "Target", "Greedy", "Random", "Corr+Heuristic(k=2)"]
+                additional_x = None
+                ylim = (-20, 60)
+            elif global_name.startswith("varynoise"):
+                target_tp = float(global_name.split("-")[1][1:])
+                other_tp = float(global_name.split("-")[2][1:])
+                prepend.append(target_tp)  # tp = true positive
+                prepend.append(other_tp)
+                prepend_header = ["target_tp", "other_tp"]
+                xlabel = "Target detector true positive rate"
+                baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
+                invert_x = False
+                additional_x = 1
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
@@ -121,35 +126,46 @@ class RewardsResult(YamlResult):
         df.to_csv(os.path.join(path, "rewards.csv"))
 
         # plotting reward
-        cls._plot_summary(df, x=prepend_header[0], y="disc_reward",
+        cls.plot_and_save(path, df, prepend_header[0], xlabel, invert_x)
+        if additional_x is not None:
+            cls.plot_and_save(path, df, prepend_header[additional_x], xlabel, invert_x,
+                              suffix="_otherobj", ylim=ylim)
+
+
+    @classmethod
+    def plot_and_save(cls, path, df, x, xlabel, invert_x, suffix="", ylim=None):
+        cls._plot_summary(df, x=x, y="disc_reward",
                           title="Discounted Return",
                           xlabel=xlabel,
                           ylabel="Discounted Cumulative Reward",
-                          filename=os.path.join(path, "rewards.png"),
+                          filename=os.path.join(path, "rewards%s.png" % suffix),
                           invert_x=invert_x,
-                          add_stat_annot=True)
+                          add_stat_annot=True,
+                          ylim=ylim)
 
         # success rate
-        cls._plot_summary(df, x=prepend_header[0], y="success",
+        cls._plot_summary(df, x=x, y="success",
                           title="Success Rate",
                           xlabel=xlabel,
                           ylabel="Success Rate",
-                          filename=os.path.join(path, "outcome_success.png"),
+                          filename=os.path.join(path, "outcome_success%s.png" % suffix),
                           invert_x=invert_x,
-                          add_stat_annot=True)
+                          add_stat_annot=True,
+                          ylim=(0,1.0))
 
         # failure rate
-        cls._plot_summary(df, x=prepend_header[0], y="fail",
+        cls._plot_summary(df, x=x, y="fail",
                           title="Incorrect Declaration Rate",
                           xlabel=xlabel,
                           ylabel="Incorrect Declaration Rate",
-                          filename=os.path.join(path, "outcome_fail.png"),
+                          filename=os.path.join(path, "outcome_fail%s.png" % suffix),
                           invert_x=invert_x,
-                          add_stat_annot=True)
+                          add_stat_annot=True,
+                          ylim=None)
 
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
-                      invert_x, add_stat_annot=True, plot_type="bar"):
+                      invert_x, ylim=None, add_stat_annot=True, plot_type="bar"):
         sns.set(style="whitegrid")
         fig, ax = plt.subplots(figsize=(7,5))
         xvals = df[x].unique()
@@ -187,7 +203,7 @@ class RewardsResult(YamlResult):
         ax.set_xlabel(xlabel)
         if invert_x:
             ax.invert_xaxis()
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(filename)
 
 
