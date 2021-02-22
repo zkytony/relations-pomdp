@@ -85,6 +85,17 @@ class TestRangeDetector(unittest.TestCase):
                          thor_pose2d)
 
 
+
+    def check_pose(self, grid_map_pose, grid_map, controller, grid_size):
+        next_thor_robot_pose = grid_map.to_thor_pose(*grid_map_pose,
+                                                     grid_size=grid_size)
+        thor_apply_pose(controller, next_thor_robot_pose)
+
+        actual_thor_pose = thor_agent_pose2d(controller)
+        for i in range(len(actual_thor_pose)):
+            self.assertAlmostEqual(actual_thor_pose[i], next_thor_robot_pose[i], places=4)
+
+
     # @unittest.SkipTest
     def test_thor_moving(self):
         controller, grid_map, config =\
@@ -129,44 +140,28 @@ class TestRangeDetector(unittest.TestCase):
         print("Pose before move", thor_agent_pose2d(controller))
         next_state = JointState({robot_id: trans_model.sample(state, forward)})
         self.assertEqual(next_state[robot_id].pose, state[robot_id].pose)
-        next_thor_robot_pose = grid_map.to_thor_pose(*next_state[robot_id].pose,
-                                                     grid_size=config["grid_size"])
-        thor_apply_pose(controller, next_thor_robot_pose)
-        self.assertEqual(thor_agent_pose2d(controller), next_thor_robot_pose)
         print("Pose After move", thor_agent_pose2d(controller))
 
         # backward
         next_state = JointState({robot_id: trans_model.sample(state, backward)})
         self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
-        next_thor_robot_pose = grid_map.to_thor_pose(*next_state[robot_id].pose,
-                                                     grid_size=config["grid_size"])
-        thor_apply_pose(controller, next_thor_robot_pose)
-        self.assertEqual(thor_agent_pose2d(controller), next_thor_robot_pose)
+        self.check_pose(next_state[robot_id].pose, grid_map, controller, config["grid_size"])
         viz.visualize(next_state)
         time.sleep(2)
 
+        # Left
+        next_state = JointState({robot_id: trans_model.sample(state, left)})
+        self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
+        self.check_pose(next_state[robot_id].pose, grid_map, controller, config["grid_size"])
+        viz.visualize(next_state)
+        time.sleep(2)
 
-        # next_state = JointState({robot_id: trans_model.sample(state, backward)})
-        # self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
-        # thor_apply_pose(controller, next_state[robot_id].pose)
-        # self.assertEqual(thor_agent_pose2d(controller), next_state[robot_id].pose)
-        # viz.visualize(state)
-        # time.sleep(2)
-
-        # next_state = JointState({robot_id: trans_model.sample(state, left)})
-        # self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
-        # thor_apply_pose(controller, next_state[robot_id].pose)
-        # self.assertEqual(thor_agent_pose2d(controller), next_state[robot_id].pose)
-        # viz.visualize(state)
-        # time.sleep(2)
-
-        # next_state = JointState({robot_id: trans_model.sample(state, right)})
-        # self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
-        # thor_apply_pose(controller, next_state[robot_id].pose)
-        # self.assertEqual(thor_agent_pose2d(controller), next_state[robot_id].pose)
-        # viz.visualize(state)
-        # time.sleep(2)
-        # controller.stop()
+        # Right
+        next_state = JointState({robot_id: trans_model.sample(state, right)})
+        self.assertNotEqual(next_state[robot_id].pose, state[robot_id].pose)
+        self.check_pose(next_state[robot_id].pose, grid_map, controller, config["grid_size"])
+        viz.visualize(next_state)
+        time.sleep(2)
 
 
 def test_teleport():

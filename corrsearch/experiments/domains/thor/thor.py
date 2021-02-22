@@ -66,6 +66,8 @@ def thor_apply_pose(controller, pose):
     """Given a 2d pose (x,y,th), teleport the agent to that pose"""
     pos, rot = thor_agent_pose(controller)
     x, z, th = pose
-    controller.step("Teleport",
+    # if th != 0.0:
+    #     import pdb; pdb.set_trace()
+    controller.step("TeleportFull",
                     x=x, y=pos["y"], z=z,
                     rotation=dict(y=th))
