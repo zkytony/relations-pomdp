@@ -4,7 +4,7 @@ Functions related to THOR simulation
 import numpy as np
 from ai2thor.controller import Controller
 
-def reachable_thor_pos2d(controller):
+def reachable_thor_loc2d(controller):
     """
     Returns a tuple (x, z) where x and z are lists corresponding to x/z coordinates.
     You can obtain a set of 2d positions tuples by:
@@ -28,3 +28,30 @@ def launch_controller(config):
                             renderClassImage=config.get("render_class", True),
                             renderObjectImage=config.get("render_object", True))
     return controller
+
+
+def thor_get(controller, *keys):
+    """Get the true environment state, which is the metadata returned
+    by the controller. If you would like a particular state variable's value,
+    pass in a sequence of string keys to retrieve that value.
+    For example, to get agent pose, you call:
+
+    env.state("agent", "position")"""
+    event = controller.step(action="Pass")
+    if len(keys) > 0:
+        d = event.metadata
+        for k in keys:
+            d = d[k]
+        return d
+    else:
+        return event.metadata
+
+def thor_agent_pose2d(controller):
+    """Returns a tuple (pos, rot),
+    where
+    pos = (x, z) is the agent position (2D), and
+    rot = ry is the rotation (2D)
+    """
+    position = thor_get(controller, "agent", "position")
+    rotation = thor_get(controller, "agent", "rotation")
+    return position["x"], position["z"], rotation["y"]

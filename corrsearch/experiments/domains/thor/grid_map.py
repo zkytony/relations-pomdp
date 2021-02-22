@@ -47,14 +47,35 @@ class GridMap:
         for the corresponding coordinate.
         """
         # Note that y is z in Unity
-        thor_gx_range = self.ranges_in_thor[0]
-        thor_gy_range = self.ranges_in_thor[1]
-        thor_gx = remap(x, 0, self.width, thor_gx_range[0], thor_gx_range[1])
-        thor_gy = remap(y, 0, self.width, thor_gy_range[0], thor_gy_range[1])
+        thor_gx_min, thor_gx_max = self.ranges_in_thor[0]
+        thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
+        thor_gx = remap(x, 0, self.width, thor_gx_min, thor_gx_max)
+        thor_gy = remap(y, 0, self.width, thor_gy_min, thor_gy_max)
         if grid_size is not None:
             return (thor_gx * grid_size, thor_gy * grid_size)
         else:
             return (thor_gx, thor_gy)
+
+    def to_grid_pos(self, thor_x, thor_z, grid_size=None):
+        """
+        Convert thor location to grid map location. If grid_size is specified,
+        then will regard thor_x, thor_z as the original Unity coordinates.
+        If not, then will regard them as grid indices but with origin not at (0,0).
+        """
+        if grid_size is not None:
+            thor_gx = thor_x // grid_size
+            thor_gy = thor_z // grid_size
+        else:
+            thor_gx = thor_x
+            thor_gy = thor_z
+
+        # remap coordinates to be nonnegative (origin AT (0,0))
+        thor_gx_min, thor_gx_max = self.ranges_in_thor[0]
+        thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
+        gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width))
+        gy = int(remap(thor_gy, thor_gx_min, thor_gy_max, 0, self.length))
+        return gx, gy
+
 
     def free_region(self, x, y):
         """Given (x,y) location, return a set of locations

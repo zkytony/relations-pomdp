@@ -9,5 +9,8 @@ from corrsearch.utils import *
 
 class ThorSearch(SearchProblem):
 
-    def __init__(self):
-        pass
+    def __init__(self, robot_id):
+        self.robot_id = robot_id
+
+    def obj(self, objid):
+        return {}

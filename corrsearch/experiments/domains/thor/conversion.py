@@ -7,7 +7,7 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.utils import remap
 
 def convert_scene_to_grid_map(controller, scene_name, grid_size):
-    x, z = reachable_thor_pos2d(controller)
+    x, z = reachable_thor_loc2d(controller)
 
     # obtain grid indices for coordinates  (origin NOT at (0,0))
     thor_gx = (x // grid_size).astype(int)

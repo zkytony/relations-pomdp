@@ -61,10 +61,19 @@ class ThorViz(Visualizer):
 
     def visualize(self, state, belief=None, action=None):
         img = self._make_gridworld_image(self._res)
+
+        # Draw robot
+        x, y, th = state[self.problem.robot_id]["pose"]
+        color = self.get_color(self.problem.robot_id)
+        img = self.draw_robot(img, x, y, th,
+                              color=color)
+
         self._show_img(img)
         return img
 
     def highlight(self, locations, color=(53, 190, 232)):
+        """Color the grid cells of the given locations.
+        TODO: Doesn't render anything else right now"""
         r = self._res
         img = self._make_gridworld_image(r)
         for x, y in locations:
@@ -76,7 +85,29 @@ class ThorViz(Visualizer):
         self._show_img(img)
         return img
 
+    def get_color(self, objid, default=(128, 128, 128, 255), alpha=1.0):
+        color = self.problem.obj(objid).get("color", default)
+        if len(color) == 3:
+            color = color + [int(round(alpha*255))]
+        color = tuple(color)
+        return color
+
     def _show_img(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+        img = cv2.flip(img, 1)  # flip horizontally
         pygame.surfarray.blit_array(self._display_surf, img)
         pygame.display.flip()
+
+    def draw_robot(self, img, x, y, th, color=(255, 150, 0)):
+        size = self._res
+        x *= self._res
+        y *= self._res
+
+        radius = int(round(size / 2))
+        shift = int(round(self._res / 2))
+        cv2.circle(img, (y+shift, x+shift), radius, color, thickness=2)
+
+        endpoint = (y+shift + int(round(shift*math.sin(th))),
+                    x+shift + int(round(shift*math.cos(th))))
+        cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
+        return img
