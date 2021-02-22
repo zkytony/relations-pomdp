@@ -15,12 +15,14 @@ class DetRobotTrans(RobotTransModel):
         self.schema = schema
 
     def move_by(self, robot_pose, action):
+        """Note: agent by default (0 angle) looks in the +z direction in Unity,
+        which corresponds to +y here.That's why I'm multiplying y with cos."""
         rx, ry, rth = robot_pose
         if self.schema == "vw":
             forward, angle = action.delta
             new_rth = rth + angle  # angle (radian)
-            new_rx = int(round(rx + forward*math.cos(new_rth)))
-            new_ry = int(round(ry + forward*math.sin(new_rth)))
+            new_rx = int(round(rx + forward*math.sin(new_rth)))
+            new_ry = int(round(ry + forward*math.cos(new_rth)))
             new_rth = new_rth % (2*math.pi)
         return (new_rx, new_ry, new_rth)
 

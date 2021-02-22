@@ -22,10 +22,10 @@ def setUp():
     controller = launch_controller(config)
     grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
     controller.grid_size = config["grid_size"]
-    return controller, grid_map
+    return controller, grid_map, config
 
 def test_thor_visualize():
-    controller, grid_map = setUp()
+    controller, grid_map, config = setUp()
     robot_id = 0
     init_robot_pose = (*random.sample(grid_map.free_locations, 1)[0], 0.0)
     state = JointState({robot_id: RobotState(robot_id, {"pose": init_robot_pose,
@@ -57,23 +57,36 @@ def test_thor_viz_highlight():
 
 
 def test_thor_moving():
-    controller, grid_map = setUp()
-    controller.step("ToggleMapView")
+    controller, grid_map, config = setUp()
 
     robot_id = 0
     problem = ThorSearch(robot_id)
     problem.grid_map = grid_map
 
+    pos, rot = thor_agent_pose(controller)
+
+    # This tells me that 0 degree is facing up (positive z direction)
+    for i, angle in enumerate([0, 15, 30, 45, 60, 75, 90]):
+        controller.step('TeleportFull',
+                        x=pos["x"], y=pos["y"], z=pos["z"],
+                        rotation=dict(y=angle))
+        time.sleep(0.5)
+    controller.step('TeleportFull',
+                    x=pos["x"], y=pos["y"], z=pos["z"],
+                    rotation=dict(y=0.0))
+    # controller.step("ToggleMapView")
+
     thor_pose2d = thor_agent_pose2d(controller)
     print(thor_pose2d)
     grid_loc2d = grid_map.to_grid_pos(thor_pose2d[0], thor_pose2d[1],
-                                          grid_size=controller.grid_size)
+                                          grid_size=config["grid_size"])
     init_robot_pose = (*grid_loc2d, to_rad(thor_pose2d[2]))
     print(init_robot_pose)
     state = JointState({robot_id: RobotState(robot_id, {"pose": init_robot_pose,
                                                         "energy":0.0})})
     viz = ThorViz(problem)
     viz.visualize(state)
+    import pdb; pdb.set_trace()
     time.sleep(10)
 
     trans_model = DetRobotTrans(robot_id, grid_map)
@@ -85,6 +98,25 @@ def test_thor_moving():
     next_state = JointState({robot_id: trans_model.sample(state, forward)})
     viz.visualize(state)
     time.sleep(10)
+
+
+def test_teleport():
+    controller, grid_map, config = setUp()
+
+    # Initial pose
+    event = controller.step("Pass")
+    print("position1:", event.metadata["agent"]["position"])
+    print("rotation1:", event.metadata["agent"]["rotation"])
+
+    # I want the agent to teleport to:
+    #   x=3.25, z=-1.5, rotation_y=270.0
+    # without changing other coordinates
+    event = controller.step('TeleportFull',
+                            x=3.25, z=-1.5,
+                            rotation=dict(y=270.0))
+    print("position2:", event.metadata["agent"]["position"])
+    print("rotation2:", event.metadata["agent"]["rotation"])
+
 
 
 if __name__ == "__main__":

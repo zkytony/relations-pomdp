@@ -93,12 +93,20 @@ class ThorViz(Visualizer):
         return color
 
     def _show_img(self, img):
+        """
+        Internally, the img origin (0,0) is top-left (that is the opencv image),
+        so +x is right, +z is down.
+        But when displaying, to match the THOR unity's orientation, the image
+        is flipped, so that in the displayed image, +x is right, +z is up.
+        """
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
         img = cv2.flip(img, 1)  # flip horizontally
         pygame.surfarray.blit_array(self._display_surf, img)
         pygame.display.flip()
 
     def draw_robot(self, img, x, y, th, color=(255, 150, 0)):
+        """Note: agent by default (0 angle) looks in the +z direction in Unity,
+        which corresponds to +y here. That's why I'm multiplying y with cos."""
         size = self._res
         x *= self._res
         y *= self._res
@@ -107,7 +115,7 @@ class ThorViz(Visualizer):
         shift = int(round(self._res / 2))
         cv2.circle(img, (y+shift, x+shift), radius, color, thickness=2)
 
-        endpoint = (y+shift + int(round(shift*math.sin(th))),
-                    x+shift + int(round(shift*math.cos(th))))
+        endpoint = (y+shift + int(round(shift*math.cos(th))),
+                    x+shift + int(round(shift*math.sin(th))))
         cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
         return img

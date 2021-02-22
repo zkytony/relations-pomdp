@@ -47,11 +47,17 @@ def thor_get(controller, *keys):
         return event.metadata
 
 def thor_agent_pose2d(controller):
-    """Returns a tuple (pos, rot),
-    where
-    pos = (x, z) is the agent position (2D), and
-    rot = ry is the rotation (2D)
+    """Returns a tuple (x, y, th), a 2D pose
     """
     position = thor_get(controller, "agent", "position")
     rotation = thor_get(controller, "agent", "rotation")
     return position["x"], position["z"], rotation["y"]
+
+def thor_agent_pose(controller):
+    """Returns a tuple (pos, rot),
+    pos: dict (x=, y=, z=)
+    rot: dict (x=, y=, z=)
+    """
+    position = thor_get(controller, "agent", "position")
+    rotation = thor_get(controller, "agent", "rotation")
+    return position, rotation
