@@ -10,10 +10,10 @@ def test_thor_visualize():
         "scene_name": "FloorPlan_Train1_1",
         "width": 400,
         "height": 400,
-        "grid_size": 0.5
+        "grid_size": 0.25
     }
     controller = launch_controller(config)
-    grid_map = convert_scene_to_grid_map(controller, config["grid_size"])
+    grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
     problem = ThorSearch()
     problem.grid_map = grid_map
 

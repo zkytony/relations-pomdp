@@ -4,6 +4,7 @@ import math
 import json
 import sys
 from corrsearch.objects import *
+from corrsearch.utils import remap
 
 class Wall(ObjectState):
     def __init__(self, id, pose, direction):
@@ -56,12 +57,23 @@ class GridMap:
     """
     A grid map is a collection of locations, walls, and some locations have obstacles.
     The coordinate convention differs from THOR. Horizontal axis is x, vertical axis is y.
+
+    Note that the coordinates in grid map starts from (0,0) to (width-1,length-1).
+    This differs from THOR which could have negative coordinates
     """
 
-    def __init__(self, width, length, walls, obstacles, name="grid_map"):
+    def __init__(self, width, length, walls, obstacles, name="grid_map",
+                 ranges_in_thor=None):
         """
+        xpos (list): list of x coordinates for free cells
+        ypos (list): list of y coordinates for free cells
         walls (dict): Map from objid to WallState.
         obstacles (set): a set of locations for the obstacles
+        ranges_in_thor (tuple): A tuple (thor_gx_range, thor_gy_range)
+            where thor_gx_range are the min max range for grid x coordiates in thor
+            where thor_gy_range are the min max range for grid y coordiates in thor
+            Note that thor grid coordinates do not originate in (0,0) but at some other
+                point determined by Unity.
         """
         self.width = width
         self.length = length
@@ -73,6 +85,7 @@ class GridMap:
                                if (x,y) not in obstacles}
 
         self.name = name
+        self.ranges_in_thor = ranges_in_thor
 
     def within_bounds(self, position):
         if not (position[0] >= 0 and position[0] < self.width\
@@ -137,3 +150,21 @@ class GridMap:
             for y in range(self.length):
                 legal_actions[(x,y)] = self.legal_motions_at(x, y, all_motion_actions)
         return legal_actions
+
+
+    def to_thor_pos(self, x, y, grid_size=None):
+        """
+        Given a point (x,y) in the grid map, convert it to (x,z) in
+        the THOR coordinte system (grid size is accounted for).
+        If grid_size is None, will return the integers
+        for the corresponding coordinate.
+        """
+        # Note that y is z in Unity
+        thor_gx_range = self.ranges_in_thor[0]
+        thor_gy_range = self.ranges_in_thor[1]
+        thor_gx = remap(x, 0, self.width, thor_gx_range[0], thor_gx_range[1])
+        thor_gy = remap(y, 0, self.width, thor_gy_range[0], thor_gy_range[1])
+        if grid_size is not None:
+            return (thor_gx * grid_size, thor_gy * grid_size)
+        else:
+            return (thor_gx, thor_gy)
