@@ -169,3 +169,5 @@ plot*.png
 
 corrsearch/experiments/domains/**/imgs
 corrsearch/experiments/results
+corrsearch/experiments/domains/thor/**/*.csv
+corrsearch/experiments/domains/thor/old
