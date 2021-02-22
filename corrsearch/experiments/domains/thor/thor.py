@@ -61,3 +61,11 @@ def thor_agent_pose(controller):
     position = thor_get(controller, "agent", "position")
     rotation = thor_get(controller, "agent", "rotation")
     return position, rotation
+
+def thor_apply_pose(controller, pose):
+    """Given a 2d pose (x,y,th), teleport the agent to that pose"""
+    pos, rot = thor_agent_pose(controller)
+    x, z, th = pose
+    controller.step("Teleport",
+                    x=x, y=pos["y"], z=z,
+                    rotation=dict(y=th))

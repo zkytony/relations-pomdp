@@ -5,7 +5,7 @@ import json
 import sys
 from collections import deque
 from corrsearch.objects import *
-from corrsearch.utils import remap
+from corrsearch.utils import remap, to_degrees
 
 class GridMap:
     """
@@ -39,6 +39,9 @@ class GridMap:
         self.name = name
         self.ranges_in_thor = ranges_in_thor
 
+    def to_thor_pose(self, x, y, th, grid_size=None):
+        return (*self.to_thor_pos(x, y, grid_size=grid_size), to_degrees(th))
+
     def to_thor_pos(self, x, y, grid_size=None):
         """
         Given a point (x,y) in the grid map, convert it to (x,z) in
@@ -50,9 +53,11 @@ class GridMap:
         thor_gx_min, thor_gx_max = self.ranges_in_thor[0]
         thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
         thor_gx = remap(x, 0, self.width, thor_gx_min, thor_gx_max)
-        thor_gy = remap(y, 0, self.width, thor_gy_min, thor_gy_max)
+        thor_gy = remap(y, 0, self.length, thor_gy_min, thor_gy_max)
         if grid_size is not None:
-            return (thor_gx * grid_size, thor_gy * grid_size)
+            # Snap to grid
+            return (grid_size * round((thor_gx * grid_size) / grid_size),
+                    grid_size * round((thor_gy * grid_size) / grid_size))
         else:
             return (thor_gx, thor_gy)
 
