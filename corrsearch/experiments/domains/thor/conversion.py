@@ -41,7 +41,7 @@ def convert_scene_to_grid_map(controller, scene_name, grid_size):
                  for y in gy
                  if (x,y) not in positions}
 
-    grid_map = GridMap(width, length, {}, obstacles,
+    grid_map = GridMap(width, length, obstacles,
                        name=scene_name,
                        ranges_in_thor=(thor_gx_range, thor_gy_range))
 

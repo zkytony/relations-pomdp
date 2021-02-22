@@ -19,7 +19,7 @@ class ThorViz(Visualizer):
         self._linewidth = config.get("linewidth", 1)
         self.on_init()
 
-    def _make_gridworld_image(self, r, state):
+    def _make_gridworld_image(self, r):
         # Preparing 2d array
         grid_map = self.problem.grid_map
         w, l = grid_map.width, grid_map.length
@@ -34,24 +34,7 @@ class ThorViz(Visualizer):
                 # Draw boundary
                 cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (0, 0, 0), self._linewidth)
-        self._render_walls(grid_map.walls, img, r)
         return img
-
-    def _render_walls(self, walls, img, r, wall_color=(0,0,0,255)):
-        """r == resolution"""
-        # Draw walls
-        walls_at_pose = {}
-        for objid in walls:
-            wall = walls[objid]
-            x, y = wall["pose"]
-            if wall.direction == "H":
-                # draw a line on the top side of the square
-                cv2.line(img, (y*r+r, x*r), (y*r+r, x*r+r),
-                         wall_color, 6)
-            else:
-                # draw a line on the right side of the square
-                cv2.line(img, (y*r, x*r+r), (y*r+r, x*r+r),
-                         wall_color, 6)
 
     @property
     def img_width(self):
@@ -77,16 +60,23 @@ class ThorViz(Visualizer):
         self._running = True
 
     def visualize(self, state, belief=None, action=None):
-        img = self._make_gridworld_image(self._res, state)
-
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
-        # import pdb; pdb.set_trace()
-        pygame.surfarray.blit_array(self._display_surf, img)
-
-        # rx, ry, th = state[self.problem.robot_id]["pose"]
-        # fps_text = "FPS: {0:.2f}".format(self._clock.get_fps())
-        # pygame.display.set_caption("robot_pose(%.2f,%.2f,%.2f) | %s" %
-        #                            (rx, ry, th,
-        #                             fps_text))
-        pygame.display.flip()
+        img = self._make_gridworld_image(self._res)
+        self._show_img(img)
         return img
+
+    def highlight(self, locations, color=(53, 190, 232)):
+        r = self._res
+        img = self._make_gridworld_image(r)
+        for x, y in locations:
+            cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
+                          color, -1)
+            # Draw boundary
+            cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
+                          (0, 0, 0), self._linewidth)
+        self._show_img(img)
+        return img
+
+    def _show_img(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+        pygame.surfarray.blit_array(self._display_surf, img)
+        pygame.display.flip()
