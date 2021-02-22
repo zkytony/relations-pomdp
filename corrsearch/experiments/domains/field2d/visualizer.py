@@ -108,8 +108,6 @@ class Field2DViz(Visualizer):
                                         loc[0]*self._res+radius), size,
                                        (190, 190, 20), thickness=-1, alpha=0.7)
 
-        # Render; Need to rotate and flip so that pygame displays
-        # the image in the same way as opencv where (0,0) is top left.
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
         pygame.surfarray.blit_array(self._display_surf, img)
 
@@ -129,7 +127,7 @@ class Field2DViz(Visualizer):
         w, l = self.problem.dim
 
         # Make an image of grids
-        img = np.full((l*r, w*r, 4), 255, dtype=np.uint8)
+        img = np.full((w*r, l*r, 4), 255, dtype=np.uint8)
         if self._bg_path is not None:
             bgimg = cv2.imread(self._bg_path, cv2.IMREAD_UNCHANGED)
             bgimg = cv2.resize(bgimg, (w*r, l*r))
@@ -138,7 +136,7 @@ class Field2DViz(Visualizer):
         for x in range(w):
             for y in range(l):
                 # Draw boundary
-                cv2.rectangle(img, (x*r, y*r), (x*r+r, y*r+r),
+                cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                               (0, 0, 0), self._linewidth)
 
         return img
