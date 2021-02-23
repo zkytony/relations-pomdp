@@ -5,6 +5,7 @@ import math
 from corrsearch.models import *
 from corrsearch.utils import *
 from corrsearch.objects import ObjectState, JointState
+from corrsearch.objects.template import Object
 from corrsearch.experiments.domains.thor.problem import *
 from corrsearch.experiments.domains.thor.grid_map import *
 from corrsearch.experiments.domains.thor.thor import *
@@ -257,6 +258,7 @@ class TestThorDetector(unittest.TestCase):
         time.sleep(2)
 
 
+@unittest.SkipTest
 class TestThorEnv(unittest.TestCase):
 
     def test_env_basic(self):
@@ -310,6 +312,30 @@ class TestThorEnv(unittest.TestCase):
             time.sleep(1)
 
 
+class TestThorProblem(unittest.TestCase):
+
+    def test_problem_basic(self):
+        scene_name = "FloorPlan_Train1_1"
+        grid_size = 0.25
+        robot_id = 0
+        target_object = (100, "Laptop")
+        objects = [Object(100, "Laptop"),
+                   Object(200, "DiningTable"),
+                   Object(300, "Apple")]
+
+        forward = Move((1.0, 0.0), "forward")
+        backward = Move((-1.0, 0.0), "backward")
+        left = Move((0.0, -math.pi/4), "left")
+        right = Move((0.0, math.pi/4), "right")
+        actions = [forward, backward, left, right]
+
+        problem = ThorSearch(robot_id,
+                             target_object,
+                             scene_name,
+                             objects,
+                             actions,
+                             grid_size=0.25)
+        problem.instantiate(init_belief="uniform")
 
 
 
