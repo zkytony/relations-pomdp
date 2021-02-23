@@ -22,7 +22,7 @@ class DummyProblem(SearchProblem):
         return {}
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorTransition(unittest.TestCase):
 
     @classmethod
@@ -182,7 +182,7 @@ class TestThorTransition(unittest.TestCase):
         time.sleep(2)
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
@@ -272,7 +272,7 @@ class TestThorEnv(unittest.TestCase):
 
         # Problem is still dummy now
         problem = DummyProblem(robot_id)
-        problem.grid_map = cls.grid_map
+        problem.grid_map = env.grid_map
 
         viz = ThorViz(problem)
         viz.visualize(env.state)

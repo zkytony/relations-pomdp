@@ -12,5 +12,10 @@ class ThorSearch(SearchProblem):
     def __init__(self, robot_id):
         self.robot_id = robot_id
 
+    def instantiate(self, **kwargs):
+        """
+        Instantiate an instance of the search problem in a Thor scene.
+        """
+
     def obj(self, objid):
         return {}

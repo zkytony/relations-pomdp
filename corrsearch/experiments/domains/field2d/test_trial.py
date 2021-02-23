@@ -114,7 +114,7 @@ if __name__ == "__main__":
                          #                     entropy_improvement_threshold=1e-3),
                          seed=100,
                          planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
-                         init_belief="informed")
+                         init_belief="prior")
 
     # # EXAMPLE OF RUNNING TRIAL BASED ON EXPERIMENT TRIAL CONFIG FILE
     # with open("configs/fromexp/3by3_1.yaml") as f:
