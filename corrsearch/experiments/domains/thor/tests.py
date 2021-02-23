@@ -14,6 +14,14 @@ from corrsearch.experiments.domains.thor.transition import *
 import matplotlib.pyplot as plt
 
 
+class DummyProblem(SearchProblem):
+    def __init__(self, robot_id):
+        self.robot_id = robot_id
+
+    def obj(self, objid):
+        return {}
+
+
 # @unittest.SkipTest
 class TestThorTransition(unittest.TestCase):
 
@@ -33,7 +41,7 @@ class TestThorTransition(unittest.TestCase):
         cls.grid_map = grid_map
         cls.config = config
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_thor_visualize(self):
         cls = TestThorTransition
         controller, grid_map, config =\
@@ -44,7 +52,7 @@ class TestThorTransition(unittest.TestCase):
                                                             "energy":0.0})})
         region = grid_map.free_region(*init_robot_pose[:2])
 
-        problem = ThorSearch(robot_id)
+        problem = DummyProblem(robot_id)
         problem.grid_map = grid_map
 
         viz = ThorViz(problem)
@@ -63,7 +71,7 @@ class TestThorTransition(unittest.TestCase):
         region = grid_map.free_region(*init_robot_pose[:2])
         boundary = grid_map.boundary_cells(thickness=2)
 
-        problem = ThorSearch(robot_id)
+        problem = DummyProblem(robot_id)
         problem.grid_map = grid_map
 
         viz = ThorViz(problem)
@@ -105,13 +113,14 @@ class TestThorTransition(unittest.TestCase):
             self.assertAlmostEqual(actual_thor_pose[i], next_thor_robot_pose[i], places=4)
 
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_thor_moving(self):
+        cls = TestThorTransition
         controller, grid_map, config =\
-            TestRangeDetector.controller, TestRangeDetector.grid_map, TestRangeDetector.config
+            cls.controller, cls.grid_map, cls.config
 
         robot_id = 0
-        problem = ThorSearch(robot_id)
+        problem = DummyProblem(robot_id)
         problem.grid_map = grid_map
 
         pos, rot = thor_agent_pose(controller)
@@ -121,7 +130,7 @@ class TestThorTransition(unittest.TestCase):
             controller.step('TeleportFull',
                             x=pos["x"], y=pos["y"], z=pos["z"],
                             rotation=dict(y=angle))
-            time.sleep(0.1)
+            time.sleep(0.05)
         controller.step('TeleportFull',
                         x=pos["x"], y=pos["y"], z=pos["z"],
                         rotation=dict(y=0.0))
@@ -173,7 +182,7 @@ class TestThorTransition(unittest.TestCase):
         time.sleep(2)
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
@@ -206,7 +215,7 @@ class TestThorDetector(unittest.TestCase):
         sensor = FanSensorThor(fov=75, min_range=0, max_range=4,
                                grid_map=cls.grid_map)
         robot_id = 0
-        problem = ThorSearch(robot_id)
+        problem = DummyProblem(robot_id)
         problem.grid_map = cls.grid_map
 
         init_robot_pose = self.robot_grid_pose()
@@ -245,6 +254,28 @@ class TestThorDetector(unittest.TestCase):
                                                                  "energy":0.0})})
 
         viz.visualize(next_state, sensor=sensor)
+        time.sleep(2)
+
+
+class TestThorEnv(unittest.TestCase):
+
+    def test_env_basic(self):
+        config = {
+            "scene_name": "FloorPlan_Train1_1",
+            "width": 400,
+            "height": 400,
+            "grid_size": 0.25
+        }
+        robot_id = 0
+        target_object = (100, "Laptop")
+        env = ThorEnv(robot_id, target_object, config)
+
+        # Problem is still dummy now
+        problem = DummyProblem(robot_id)
+        problem.grid_map = cls.grid_map
+
+        viz = ThorViz(problem)
+        viz.visualize(env.state)
         time.sleep(2)
 
 
