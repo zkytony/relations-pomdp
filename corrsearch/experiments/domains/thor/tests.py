@@ -35,8 +35,9 @@ class TestThorTransition(unittest.TestCase):
 
     @unittest.SkipTest
     def test_thor_visualize(self):
+        cls = TestThorTransition
         controller, grid_map, config =\
-            TestRangeDetector.controller, TestRangeDetector.grid_map, TestRangeDetector.config
+            cls.controller, cls.grid_map, cls.config
         robot_id = 0
         init_robot_pose = (*random.sample(grid_map.free_locations, 1)[0], 0.0)
         state = JointState({robot_id: RobotState(robot_id, {"pose": init_robot_pose,
@@ -53,7 +54,9 @@ class TestThorTransition(unittest.TestCase):
 
 
     def test_thor_viz_highlight(self):
-        controller, grid_map, config = self.controller, self.grid_map, self.config
+        cls = TestThorTransition
+        controller, grid_map, config =\
+            cls.controller, cls.grid_map, cls.config
 
         robot_id = 0
         init_robot_pose = (*random.sample(grid_map.free_locations, 1)[0], 0.0)
@@ -72,8 +75,9 @@ class TestThorTransition(unittest.TestCase):
 
     # @unittest.SkipTest
     def test_pose_conversion(self):
+        cls = TestThorTransition
         controller, grid_map, config =\
-            TestRangeDetector.controller, TestRangeDetector.grid_map, TestRangeDetector.config
+            cls.controller, cls.grid_map, cls.config
 
         # Get current thor pose
         thor_pose2d = thor_agent_pose2d(controller)
