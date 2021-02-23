@@ -278,6 +278,38 @@ class TestThorEnv(unittest.TestCase):
         viz.visualize(env.state)
         time.sleep(2)
 
+        forward = Move((1.0, 0.0), "forward")
+        backward = Move((-1.0, 0.0), "backward")
+        left = Move((0.0, -math.pi/4), "left")
+        right = Move((0.0, math.pi/4), "right")
+
+        action_sequence = [
+            (right, True),
+            (forward, False),
+            (left, True),
+            (forward, True),
+            (left, True),
+            (forward, True),
+            (forward, True),
+            (forward, True),
+            (forward, False),
+            (right, True),
+            (right, True),
+            (right, True),
+            (backward, False),
+            (left, True),
+            (left, True),
+            (backward, True)]
+        for action, changes_pose in action_sequence:
+            print("Taking action: {}".format(action))
+            prev_pose = env.state[robot_id].pose
+            env.state_transition(action, execute=True)
+            after_pose = env.state[robot_id].pose
+            self.assertEqual(prev_pose != after_pose, changes_pose)
+            viz.visualize(env.state)
+            time.sleep(1)
+
+
 
 
 

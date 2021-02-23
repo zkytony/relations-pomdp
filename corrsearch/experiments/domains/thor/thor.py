@@ -79,6 +79,7 @@ def thor_apply_pose(controller, pose):
     controller.step("TeleportFull",
                     x=x, y=pos["y"], z=z,
                     rotation=dict(y=th))
+    controller.step(action="Pass")  #https://github.com/allenai/ai2thor/issues/538
 
 def thor_object_poses(controller, object_type):
     """Returns a dictionary id->pose
@@ -170,7 +171,8 @@ class ThorEnv(pomdp_py.Environment):
         init_robot_loc = self.grid_map.to_grid_pos(*thor_init_robot_pose[:2], grid_size=self.grid_size)
         init_robot_pose = (*init_robot_loc, to_rad(thor_init_robot_pose[2]))
         init_robot_state = RobotState(self.robot_id, {"pose": init_robot_pose,
-                                                      "energy": 0.0})
+                                                      "energy": 0.0,
+                                                      "terminal": False})
 
         self._idt2g = {}  # maps between a thor object id to a integer object id in grid map
         self._idg2t = {}  # maps between a integer object id to a thor object id in grid map
@@ -196,9 +198,9 @@ class ThorEnv(pomdp_py.Environment):
         robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map, schema="vw")
         transition_model = SearchTransitionModel(self.robot_id, robot_trans_model)
 
-        reward_model = SearchRewardModel(self.robot_id, self.target_id,
-                                         rmax=params.get("rmax", 100),
-                                         rmin=params.get("rmin", -100))
+        reward_model = ThorSearchRewardModel(self.robot_id, self.target_id,
+                                             rmax=params.get("rmax", 100),
+                                             rmin=params.get("rmin", -100))
         super().__init__(init_state, transition_model, reward_model)
 
     @property
@@ -212,9 +214,10 @@ class ThorEnv(pomdp_py.Environment):
     def state_transition(self, action, execute=False):
         """When state transition is executed, the action
         is applied in the real world"""
-        next_state = self.transition_model.sample(action)
-        reward = self.reward_model.sample(state, action, next_state)
+        next_state = self.transition_model.sample(self.state, action)
+        reward = self.reward_model.sample(self.state, action, next_state)
         if execute:
+            self.apply_transition(next_state)
             if isinstance(action, Move):
                 thor_next_robot_pose = self.grid_map.to_thor_pose(*next_state[self.robot_id].pose,
                                                                   grid_size=self.grid_size)
@@ -224,3 +227,10 @@ class ThorEnv(pomdp_py.Environment):
     def provide_observation(self, observation_model, action):
         """When the environment provides an observation, """
         pass
+
+class ThorSearchRewardModel(SearchRewardModel):
+    def step_reward_func(self, state, action, next_state):
+        if next_state[self.robot_id]["energy"] < 0:
+            return self.rmin
+        else:
+            return -1
