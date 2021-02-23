@@ -5,15 +5,17 @@ import math
 from corrsearch.models import *
 from corrsearch.utils import *
 from corrsearch.objects import ObjectState, JointState
-from corrsearch.experiments.domains.thor.conversion import *
 from corrsearch.experiments.domains.thor.problem import *
 from corrsearch.experiments.domains.thor.grid_map import *
 from corrsearch.experiments.domains.thor.thor import *
+from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
+import matplotlib.pyplot as plt
 
 
-class TestRangeDetector(unittest.TestCase):
+@unittest.SkipTest
+class TestThorTransition(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -162,6 +164,83 @@ class TestRangeDetector(unittest.TestCase):
         self.check_pose(next_state[robot_id].pose, grid_map, controller, config["grid_size"])
         viz.visualize(next_state)
         time.sleep(2)
+
+
+
+class TestThorDetector(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "scene_name": "FloorPlan_Train1_1",
+            "width": 400,
+            "height": 400,
+            "grid_size": 0.25
+        }
+        controller = launch_controller(config)
+        grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
+        controller.grid_size = config["grid_size"]
+
+        cls.controller = controller
+        cls.grid_map = grid_map
+        cls.config = config
+
+    def robot_grid_pose(self):
+        cls = TestThorDetector
+        thor_pose2d = thor_agent_pose2d(cls.controller)
+        grid_loc2d = cls.grid_map.to_grid_pos(thor_pose2d[0], thor_pose2d[1],
+                                              grid_size=cls.config["grid_size"])
+        robot_pose = (*grid_loc2d, to_rad(thor_pose2d[2]))
+        return robot_pose
+
+
+    def test_laser_sensor_geometry(self):
+        cls = TestThorDetector
+        sensor = FanSensorThor(fov=75, min_range=0, max_range=4,
+                               grid_map=cls.grid_map)
+        robot_id = 0
+        problem = ThorSearch(robot_id)
+        problem.grid_map = cls.grid_map
+
+        init_robot_pose = self.robot_grid_pose()
+        state = JointState({robot_id: RobotState(robot_id, {"pose": init_robot_pose,
+                                                            "energy":0.0})})
+
+        viz = ThorViz(problem)
+        viz.visualize(state, sensor=sensor)
+        time.sleep(2)
+
+        next_thor_robot_pose = cls.grid_map.to_thor_pose(*(7, 12, 0.0),
+                                                         grid_size=cls.config["grid_size"])
+        thor_apply_pose(cls.controller, next_thor_robot_pose)
+        robot_pose = self.robot_grid_pose()
+        next_state = JointState({robot_id: RobotState(robot_id, {"pose": robot_pose,
+                                                                 "energy":0.0})})
+
+        viz.visualize(next_state, sensor=sensor)
+        time.sleep(2)
+
+        next_thor_robot_pose = cls.grid_map.to_thor_pose(*(7, 12, math.pi/2.0),
+                                                         grid_size=cls.config["grid_size"])
+        thor_apply_pose(cls.controller, next_thor_robot_pose)
+        robot_pose = self.robot_grid_pose()
+        next_state = JointState({robot_id: RobotState(robot_id, {"pose": robot_pose,
+                                                                 "energy":0.0})})
+
+        viz.visualize(next_state, sensor=sensor)
+        time.sleep(2)
+
+        next_thor_robot_pose = cls.grid_map.to_thor_pose(*(7, 12, math.pi),
+                                                         grid_size=cls.config["grid_size"])
+        thor_apply_pose(cls.controller, next_thor_robot_pose)
+        robot_pose = self.robot_grid_pose()
+        next_state = JointState({robot_id: RobotState(robot_id, {"pose": robot_pose,
+                                                                 "energy":0.0})})
+
+        viz.visualize(next_state, sensor=sensor)
+        time.sleep(2)
+
+
 
 
 def test_teleport():

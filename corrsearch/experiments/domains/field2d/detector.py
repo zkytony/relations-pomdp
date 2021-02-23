@@ -236,7 +236,7 @@ class FanSensor(Sensor):
         return self._sensing_region_size
 
     def in_range(self, point, robot_pose):
-        if robot_pose[0] == point and self.min_range == 0:
+        if robot_pose[:2] == point and self.min_range == 0:
             return True
 
         dist, bearing = self.shoot_beam(robot_pose, point)

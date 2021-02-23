@@ -9,7 +9,7 @@ import random
 import time
 import os
 from corrsearch.models.visualizer import Visualizer
-
+from corrsearch.utils import overlay, lighter, lighter_with_alpha, cv2shape
 
 class ThorViz(Visualizer):
 
@@ -59,11 +59,15 @@ class ThorViz(Visualizer):
         self._myfont = pygame.font.SysFont('Comic Sans MS', 30)
         self._running = True
 
-    def visualize(self, state, belief=None, action=None):
+    def visualize(self, state, belief=None, action=None, sensor=None):
         img = self._make_gridworld_image(self._res)
 
+        robot_pose = state[self.problem.robot_id]["pose"]
+        if sensor is not None:
+            img = self.draw_fov(img, robot_pose, sensor)
+
         # Draw robot
-        x, y, th = state[self.problem.robot_id]["pose"]
+        x, y, th = robot_pose
         color = self.get_color(self.problem.robot_id)
         img = self.draw_robot(img, x, y, th,
                               color=color)
@@ -83,6 +87,21 @@ class ThorViz(Visualizer):
             cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                           (0, 0, 0), self._linewidth)
         self._show_img(img)
+        return img
+
+    def draw_fov(self, img, robot_pose, sensor):
+        size = self._res
+        radius = int(round(size / 2))
+
+        # Draw FOV
+        grid_map = self.problem.grid_map
+        for x in range(self.problem.grid_map.width):
+            for y in range(self.problem.grid_map.length):
+                if sensor.in_range((x,y), robot_pose):
+                    img = cv2shape(img, cv2.circle,
+                                   (y*self._res+radius,
+                                    x*self._res+radius), radius,
+                                   (200, 200, 36), thickness=-1, alpha=0.75)
         return img
 
     def get_color(self, objid, default=(128, 128, 128, 255), alpha=1.0):
