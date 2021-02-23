@@ -1,6 +1,9 @@
 from corrsearch.experiments.domains.field2d.detector import *
 import numpy as np
 import math
+import yaml
+import pickle
+import os
 
 
 class FanSensorThor(FanSensor):
@@ -8,9 +11,7 @@ class FanSensorThor(FanSensor):
     def __init__(self, name="laser2d_sensor", **params):
         super().__init__(name=name, **params)
 
-        if "grid_map" not in params:
-            raise ValueError("Thor Fan Sensor needs grid map")
-        self.grid_map = params["grid_map"]
+        self.grid_map = params.get("grid_map", None)
         self._cache = {}
 
     def uniform_sample_sensor_region(self, robot_pose):
@@ -40,6 +41,11 @@ class FanSensorThor(FanSensor):
         if not super().in_range(point, robot_pose):
             result = False
         else:
+            if self.grid_map is None:
+                print("WARNING: grid_map not specified for this"\
+                      "sensor (%s)\n Obstacles ignored." % self.name)
+                return True
+
             # The point is within the fan shape. But, it may be
             # out of bound, or occluded by an obstacle. First, obtain
             # unit vector from robot to point
@@ -72,3 +78,55 @@ class FanSensorThor(FanSensor):
         dist = euclidean_dist(point, (rx,ry))
         bearing = (math.atan2(point[0] - rx, point[1] - ry) - rth) % (2*math.pi)  # bearing (i.e. orientation)
         return (dist, bearing)
+
+
+def parse_sensor(sensor_spec):
+    """Build sensor given sensor_space (dict)"""
+    if sensor_spec["type"] == "fan":
+        sensor = FanSensorThor(**sensor_spec["params"])
+    else:
+        raise ValueError("Unrecognized sensor type %s" % sensor_spec["type"])
+    return sensor
+
+def parse_detector(scene_name, filepath, robot_id):
+    with open(os.path.join("data", "{}-objects.pkl".format(scene_name)), "rb") as f:
+        scene_info = pickle.load(f)
+
+    with open(filepath) as f:
+        spec_detectors = yaml.load(f)
+
+    detectors = []
+    for dspec in spec_detectors:
+        sensors = {}
+        for ref in dspec["sensors"]:
+            assert type(ref) == str, "THOR sensors should be specified at type level"
+            objtype = ref
+            objid_for_type = min(scene_info[objtype])
+
+            sensor_spec = dspec["sensors"][ref]
+            sensors[objid_for_type] = parse_sensor(sensor_spec)
+
+        params = {}
+        for param_name in dspec["params"]:
+            pspec = dspec["params"][param_name]
+            params[param_name] = {}
+            if type(pspec) == dict:
+                for ref in pspec:
+                    assert type(ref) == str, "THOR detector params should be specified at type level"
+                    objtype = ref
+                    objid_for_type = min(scene_info[objtype])
+                    params[param_name][objid_for_type] = pspec[ref]
+        detector = RangeDetector(dspec["id"], robot_id,
+                                 dspec["type"], sensors,
+                                 energy_cost=dspec.get("energy_cost", 0),
+                                 name=dspec["name"],
+                                 **params)
+        detectors.append(detector)
+    return detectors
+
+
+if __name__ == "__main__":
+    # Little test for parsing detectors
+    robot_id = 0
+    detectors = parse_detector("FloorPlan_Train1_1", "./config/detectors_spec.yaml", robot_id)
+    print(detectors)

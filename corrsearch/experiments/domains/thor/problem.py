@@ -80,8 +80,12 @@ class ThorSearch(SearchProblem):
     def __init__(self, robot_id,
                  target_object,
                  scene_name,
-                 objects,
-                 actions,
+
+                 # object_types,
+                 # detector_by_type,
+
+
+                 # actions,
                  # joint_dist_spec=None,
                  # joint_dist_path=None,
                  # detectors_spec=None,
@@ -91,7 +95,10 @@ class ThorSearch(SearchProblem):
         Note: joint_dist should be grounded to the given scene already.
 
         Args:
-            objects (array-like): List of objects (Object)
+            # object_types (array-like) List of object types that the agent
+            #     cares about (i.e. can detect)
+
+            detector_by_type (dict) Maps from object type to a detector
         """
         self.robot_id = robot_id
         self.target_object = target_object

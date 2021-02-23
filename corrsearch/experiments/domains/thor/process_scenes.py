@@ -27,6 +27,7 @@ def process_scene(scene):
         objid = len(type_obj_map[objtype]) + type_id_map[objtype]
         type_obj_map[objtype][objid] = obj
 
+    controller.stop()
     return type_obj_map
 
 
