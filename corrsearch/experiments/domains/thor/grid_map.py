@@ -7,6 +7,10 @@ from collections import deque
 from corrsearch.objects import *
 from corrsearch.utils import remap, to_degrees
 
+def neighbors(x,y):
+    return [(x+1, y), (x-1,y),
+            (x,y+1), (x,y-1)]
+
 class GridMap:
     """
     A grid map is a collection of locations, walls, and some locations have obstacles.
@@ -85,9 +89,6 @@ class GridMap:
     def free_region(self, x, y):
         """Given (x,y) location, return a set of locations
         that are free and connected to (x,y)"""
-        def neighbors(x,y):
-            return [(x+1, y), (x-1,y),
-                    (x,y+1), (x,y-1)]
         region = set()
         q = deque()
         q.append((x,y))
@@ -101,3 +102,21 @@ class GridMap:
                         visited.add(nb_loc)
                         q.append(nb_loc)
         return region
+
+    def boundary_cells(self, thickness=1):
+        """
+        Returns a set of locations corresponding to
+        obstacles that lie between free space and occluded spaces.
+        These are usually locations where objects are placed.
+        """
+        last_boundary = set()
+        for i in range(thickness):
+            boundary = set()
+            for x, y in self.obstacles:
+                for nx, ny in neighbors(x, y):
+                    if (nx, ny) in self.free_locations\
+                       or (nx, ny) in last_boundary:
+                        boundary.add((x,y))
+                        break
+            last_boundary.update(boundary)
+        return last_boundary

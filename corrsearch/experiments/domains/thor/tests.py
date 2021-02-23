@@ -14,7 +14,7 @@ from corrsearch.experiments.domains.thor.transition import *
 import matplotlib.pyplot as plt
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorTransition(unittest.TestCase):
 
     @classmethod
@@ -51,19 +51,22 @@ class TestThorTransition(unittest.TestCase):
         time.sleep(3)
         controller.stop()
 
-    @unittest.SkipTest
+
     def test_thor_viz_highlight(self):
         controller, grid_map, config = self.controller, self.grid_map, self.config
 
         robot_id = 0
         init_robot_pose = (*random.sample(grid_map.free_locations, 1)[0], 0.0)
         region = grid_map.free_region(*init_robot_pose[:2])
+        boundary = grid_map.boundary_cells(thickness=2)
 
         problem = ThorSearch(robot_id)
         problem.grid_map = grid_map
 
         viz = ThorViz(problem)
         viz.highlight(region)
+        time.sleep(2)
+        viz.highlight(boundary)
         time.sleep(2)
         controller.stop()
 
@@ -98,7 +101,7 @@ class TestThorTransition(unittest.TestCase):
             self.assertAlmostEqual(actual_thor_pose[i], next_thor_robot_pose[i], places=4)
 
 
-    # @unittest.SkipTest
+    @unittest.SkipTest
     def test_thor_moving(self):
         controller, grid_map, config =\
             TestRangeDetector.controller, TestRangeDetector.grid_map, TestRangeDetector.config
@@ -166,7 +169,7 @@ class TestThorTransition(unittest.TestCase):
         time.sleep(2)
 
 
-
+@unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
