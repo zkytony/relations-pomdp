@@ -20,6 +20,26 @@
       Laptop: 0.1
 
 
+# - name: chair-detector
+#   id: 200
+#   type: "loc"
+#   energy_cost: 0.0
+#   sensors:
+#     Chair:
+#       type: "fan"
+#       params:
+#         fov: 90
+#         min_range: 0
+#         max_range: 3
+#   params:
+#     true_positive:
+#       Chair: 0.9
+#     false_positive:
+#       Chair: 0.00
+#     sigma:
+#       Chair: 0.1
+
+
 # - name: apple-detector
 #   id: 100
 #   type: "loc"

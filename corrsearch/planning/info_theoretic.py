@@ -55,8 +55,8 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
         and the action. Returns a list of tuples (detector_action, entropy)
         """
         result = []
-        robot_trans = agent.transition_model.robot_trans_model
-        for a in robot_trans.actions:
+        actions = agent.policy_model.actions
+        for a in actions:
             if isinstance(a, UseDetector):
                 next_belief = self.monte_carlo_next_belief(agent, a, self.num_samples)
                 entr = entropy([next_belief[s] for s in next_belief], base=2)

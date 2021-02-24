@@ -181,6 +181,7 @@ class ThorEnv(pomdp_py.Environment):
         init_robot_loc = self.grid_map.to_grid_pos(*thor_init_robot_pose[:2], grid_size=self.grid_size)
         init_robot_pose = (*init_robot_loc, to_rad(thor_init_robot_pose[2]))
         init_robot_state = RobotState(self.robot_id, {"pose": init_robot_pose,
+                                                      "loc": init_robot_pose[:2],
                                                       "energy": 0.0,
                                                       "terminal": False})
 
@@ -327,14 +328,23 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
             robot_loc = state[self.robot_id].loc
             target_loc = state[self.target_id].loc
 
-            # Closer than threshold
-            if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
-                # Not blocked by wall
-                if not self.grid_map.blocked(robot_loc, target_loc):
-                    # facing the object (not guaranteed to be visible)
-                    if self._facing(state[self.robot_id].pose, target_loc):
-                        return self.rmax
-            return self.rmin
+            # # Closer than threshold
+            # if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
+            #     # Not blocked by wall
+            #     if not self.grid_map.blocked(robot_loc, target_loc):
+            #         # facing the object (not guaranteed to be visible)
+            #         if self._facing(state[self.robot_id].pose, target_loc):
+            #             return self.rmax
+            if action.loc is None:
+                decloc = state[self.robot_id].loc
+            else:
+                decloc = action.loc
+            if decloc == state[self.target_id].loc:
+                return self.rmax
+            else:
+                return self.rmin
+
+            # return self.rmin
         else:
             return self.step_reward_func(state, action, next_state)
 

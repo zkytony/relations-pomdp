@@ -91,9 +91,12 @@ if __name__ == "__main__":
     config = make_config("FloorPlan_Train1_1",
                          "Laptop",
                          "./config/detectors_spec.yaml",
-                         planner="pomdp_py.POUCT",
-                         planner_config=POMCP_PLANNER_CONFIG,
+                         # planner="pomdp_py.POUCT",
+                         planner="RandomPlanner",#EntropyMinimizationPlanner", #HeuristicSequentialPlanner",
+                         grid_size=0.25,
+                         planner_config=RANDOM_PLANNER_CONFIG,
+                         #ENTROPY_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,
                          seed=100,
-                         init_belief="informed")
+                         init_belief="uniform")
     trial = make_trial(config)
     trial.run()

@@ -86,8 +86,8 @@ class GridMap:
         # remap coordinates to be nonnegative (origin AT (0,0))
         thor_gx_min, thor_gx_max = self.ranges_in_thor[0]
         thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
-        gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width))
-        gy = int(remap(thor_gy, thor_gy_min, thor_gy_max, 0, self.length))
+        gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width-1))
+        gy = int(remap(thor_gy, thor_gy_min, thor_gy_max, 0, self.length-1))
         return gx, gy
 
 
@@ -218,7 +218,7 @@ class GridMap:
         vec /= np.linalg.norm(vec)
 
         # Check points along the line from robot pose to the point
-        result = True
+        result = False
         nsteps = 20
         dist = euclidean_dist(loc1, loc2)
         step_size = dist / nsteps
@@ -226,7 +226,7 @@ class GridMap:
         while t < nsteps:
             line_point = tuple(np.round(loc1 + (t*step_size*vec)).astype(int))
             if line_point in self.obstacles:
-                result = False
+                result = True
                 break
             t += 1
         self._blocked_cache[_key] = result
