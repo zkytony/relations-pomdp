@@ -44,8 +44,9 @@ class GridMap:
         self.name = name
         self.ranges_in_thor = ranges_in_thor
 
-        # Caches the computations of geodesic distance
+        # Caches the computations
         self._geodesic_dist_cache = {}
+        self._blocked_cache = {}
 
     def to_thor_pose(self, x, y, th, grid_size=None):
         return (*self.to_thor_pos(x, y, grid_size=grid_size), to_degrees(th))
@@ -182,15 +183,16 @@ class GridMap:
         Args:
            loc1, loc2 (tuple) grid map coordinates
         """
-        if (loc1, loc2) in self._geodesic_dist_cache:
-            return self._geodesic_dist_cache[(loc1, loc2)]
+        _key = tuple(loc1), tuple(loc2)
+        if _key in self._geodesic_dist_cache:
+            return self._geodesic_dist_cache[_key]
         else:
             path = self.shortest_path(loc1, loc2)
             if path is not None:
                 dist = len(path)
             else:
                 dist = float("inf")
-            self._geodesic_dist_cache[(loc1, loc2)] = dist
+            self._geodesic_dist_cache[_key] = dist
             return dist
 
     def blocked(self, loc1, loc2, nsteps=40):
@@ -200,6 +202,13 @@ class GridMap:
         a straightline from loc1 to loc2 and check if any step on the line
         is at an obstacle.
         """
+        if loc1 == loc2:
+            return False
+
+        _key = tuple(loc1), tuple(loc2)
+        if _key in self._blocked_cache:
+            return self._blocked_cache[_key]
+
         # vec = np.array([px - rx, py - ry]).astype(float)
         # vec /= np.linalg.norm(vec)
         loc1 = np.asarray(loc1)
@@ -220,4 +229,5 @@ class GridMap:
                 result = False
                 break
             t += 1
+        self._blocked_cache[_key] = result
         return result

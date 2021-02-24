@@ -244,8 +244,9 @@ class ThorEnv(pomdp_py.Environment):
         Return: JointObz
         """
         # Detectable objects
-        objects = set().union(*[detector.detectable_objects
-                                for detector in observation_model.detectors])
+        detectors = observation_model.detectors
+        objects = set().union(*[detectors[did].detectable_objects
+                                for did in detectors])
 
         robot_pose = self.state[self.robot_id].pose
 

@@ -12,7 +12,6 @@ def make_config(scene_name,
                 target_type,
                 detector_spec_path,
                 move_actions=MOVE_ACTIONS,
-                boundary_thickness=1,
                 grid_size=0.25,
                 init_belief="uniform",
                 planner_config={},
@@ -34,7 +33,6 @@ def make_config(scene_name,
         scene_name=scene_name,
         scene_info=scene_info,
         detectors_spec_path=detector_spec_path,
-        boundary_thickness=boundary_thickness,
         grid_size=grid_size
     )
     planner_exec_config = dict()

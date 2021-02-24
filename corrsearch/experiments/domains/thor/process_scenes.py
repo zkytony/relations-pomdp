@@ -64,7 +64,7 @@ def load_scene_info(scene_name, data_path="data"):
     """Returns scene info, which is a mapping:
     A mapping {object_type -> {objid (pomdp) -> obj_dict}}"""
     with open(os.path.join(
-            data_path, "{}-objects.pkl".format(self.config["scene_name"])), "rb") as f:
+            data_path, "{}-objects.pkl".format(scene_name)), "rb") as f:
         type_obj_map = pickle.load(f)
     return SceneInfo(scene_name, type_obj_map)
 
