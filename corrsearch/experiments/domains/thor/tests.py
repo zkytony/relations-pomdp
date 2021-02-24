@@ -12,6 +12,7 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
+from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
 import matplotlib.pyplot as plt
 
 
@@ -301,7 +302,7 @@ class TestThorDetector(unittest.TestCase):
         time.sleep(2)
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorEnv(unittest.TestCase):
 
     def test_env_basic(self):
@@ -313,11 +314,13 @@ class TestThorEnv(unittest.TestCase):
         }
         robot_id = 0
         target_object = (100, "Laptop")
-        env = ThorEnv(robot_id, target_object, config)
+        scene_info = load_scene_info(config["scene_name"])
+        env = ThorEnv(robot_id, target_object, config, scene_info)
 
         # Problem is still dummy now
         problem = DummyProblem(robot_id)
         problem.grid_map = env.grid_map
+        problem.target_id = 100
 
         viz = ThorViz(problem)
         viz.visualize(env.state)
@@ -330,9 +333,10 @@ class TestThorEnv(unittest.TestCase):
 
         action_sequence = [
             (right, True),
+            (forward, True),
+            (left, True),
             (forward, False),
             (left, True),
-            (forward, True),
             (left, True),
             (forward, True),
             (forward, True),
@@ -345,6 +349,7 @@ class TestThorEnv(unittest.TestCase):
             (left, True),
             (left, True),
             (backward, True)]
+        # env.controller.step("ToggleMapView")
         for action, changes_pose in action_sequence:
             print("Taking action: {}".format(action))
             prev_pose = env.state[robot_id].pose
@@ -355,7 +360,7 @@ class TestThorEnv(unittest.TestCase):
             time.sleep(1)
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorProblem(unittest.TestCase):
 
     def test_problem_basic(self):
