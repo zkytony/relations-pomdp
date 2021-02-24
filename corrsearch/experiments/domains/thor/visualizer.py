@@ -66,6 +66,13 @@ class ThorViz(Visualizer):
         if sensor is not None:
             img = self.draw_fov(img, robot_pose, sensor)
 
+        # Draw belief (only about target)
+        if belief is not None:
+            target_id = self.problem.target_id
+            target_color = self.get_color(target_id, alpha=0.8)
+            img = self.draw_object_belief(img, belief.obj(target_id),
+                                          target_color)
+
         # Draw robot
         x, y, th = robot_pose
         color = self.get_color(self.problem.robot_id)
@@ -104,7 +111,7 @@ class ThorViz(Visualizer):
                                    (200, 200, 36), thickness=-1, alpha=0.75)
         return img
 
-    def get_color(self, objid, default=(128, 128, 128, 255), alpha=1.0):
+    def get_color(self, objid, default=(220, 150, 10, 255), alpha=1.0):
         color = self.problem.obj(objid).get("color", default)
         if len(color) == 3:
             color = color + [int(round(alpha*255))]
@@ -137,4 +144,40 @@ class ThorViz(Visualizer):
         endpoint = (y+shift + int(round(shift*math.cos(th))),
                     x+shift + int(round(shift*math.sin(th))))
         cv2.line(img, (y+shift,x+shift), endpoint, color, 2)
+        return img
+
+    def draw_object_belief(self, img, belief, color,
+                           circle_drawn=None):
+        """
+        circle_drawn: map from pose to number of times drawn;
+            Used to determine size of circle to draw at a location
+        """
+        if circle_drawn is None:
+            circle_drawn = {}
+        radius = int(round(self._res / 2))
+        size = self._res // 3
+        last_val = -1
+        hist = belief.get_histogram()
+        for state in reversed(sorted(hist, key=hist.get)):
+            if last_val != -1:
+                color = lighter_with_alpha(color, 1-hist[state]/last_val)
+
+            if len(color) == 4:
+                stop = color[3]/255 < 0.1
+            else:
+                stop = np.mean(np.array(color[:3]) / np.array([255, 255, 255])) < 0.999
+
+            if not stop:
+                tx, ty = state['loc']
+                if (tx,ty) not in circle_drawn:
+                    circle_drawn[(tx,ty)] = 0
+                circle_drawn[(tx,ty)] += 1
+
+                img = cv2shape(img, cv2.circle,
+                               (ty*self._res+radius,
+                                tx*self._res+radius), size//circle_drawn[(tx,ty)],
+                               color, thickness=-1, alpha=color[3]/255)
+                last_val = hist[state]
+                if last_val <= 0:
+                    break
         return img

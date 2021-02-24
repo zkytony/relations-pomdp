@@ -57,6 +57,7 @@ class ThorSearch(SearchProblem):
             "Scene name {} does not match what is in scene_info: {}"\
             .format(scene_name, scene_info["scene_name"])
         self.scene_name = scene_name
+        self.scene_info = scene_info
 
         config = {
             "scene_name": scene_name,
@@ -81,10 +82,11 @@ class ThorSearch(SearchProblem):
 
         # Obtain objects: List of object ids in the detector sensors;
         # Also, given the sensors access to the grid map.
-        objects = set()
+        objects = {self.robot_id: Object(self.robot_id,
+                                         {"class":"robot", "color": [30, 30, 200]})}
         for detector in detectors:
             for objid in detector.detectable_objects:
-                objects.add(objid)
+                objects[objid] = Object(objid, self.scene_info.obj(objid))
                 detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.
@@ -173,7 +175,7 @@ class ThorSearch(SearchProblem):
         return ThorViz(self, **kwargs)
 
     def obj(self, objid):
-        return {}
+        return self._objects[objid]
 
     @property
     def grid_map(self):

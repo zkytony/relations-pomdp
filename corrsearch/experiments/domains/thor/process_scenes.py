@@ -4,6 +4,7 @@ in the scene.
 """
 import os
 import pickle
+import yaml
 from corrsearch.experiments.domains.thor.thor import *
 
 class SceneInfo:
@@ -33,6 +34,10 @@ class SceneInfo:
 
     def obj_type(self, objid):
         return self._idp2t[objid]["objectType"]
+
+    @property
+    def objects(self):
+        return self._idp2t
 
 
 def process_scene(scene):
@@ -66,7 +71,14 @@ def load_scene_info(scene_name, data_path="data"):
     with open(os.path.join(
             data_path, "{}-objects.pkl".format(scene_name)), "rb") as f:
         type_obj_map = pickle.load(f)
-    return SceneInfo(scene_name, type_obj_map)
+    with open(os.path.join("config", "colors.yaml")) as f:
+        colors = yaml.load(f)
+    scene_info = SceneInfo(scene_name, type_obj_map)
+    for objid in scene_info.objects:
+        obj = scene_info.objects[objid]
+        obj["color"] = colors.get(obj["objectType"], (128, 128, 128))
+        obj["class"] = obj["objectType"]
+    return scene_info
 
 
 def main():
