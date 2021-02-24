@@ -7,7 +7,7 @@ import math
 from ai2thor.controller import Controller
 from corrsearch.experiments.domains.thor.grid_map import GridMap
 from corrsearch.experiments.domains.thor.transition import DetRobotTrans
-from corrsearch.utils import remap, to_rad
+from corrsearch.utils import remap, to_rad, euclidean_dist
 from corrsearch.models.transition import *
 from corrsearch.models.robot_model import *
 from corrsearch.models.problem import *
@@ -32,6 +32,7 @@ def launch_controller(config):
                             agentMode=config.get("agent_mode", "bot"),
                             width=config.get("width", 300),
                             height=config.get("height", 300),
+                            visibilityDistance=config.get("visibility_distance", 1.5),
                             gridSize=config.get("grid_size", 0.25),
                             renderDepthImage=config.get("render_depth", True),
                             renderClassImage=config.get("render_class", True),
@@ -94,6 +95,12 @@ def thor_object_poses(controller, object_type):
             objposes[obj["objectId"]] = pose
     return objposes
 
+def thor_visible_objects(controller):
+    thor_objects = thor_get(controller, "objects")
+    for obj in thor_objects:
+        if obj["visible"]:
+            result.append(obj)
+    return result
 
 def convert_scene_to_grid_map(controller, scene_name, grid_size):
     """Converts an Ai2Thor scene to a GridMap"""
@@ -144,11 +151,12 @@ class ThorEnv(pomdp_py.Environment):
     Whenever "state" is used as part of a variable, then that
     variable refers to some information in the POMDP world (e.g.
     locations in the grid map)"""
-    def __init__(self, robot_id, target_object, thor_config, **params):
+    def __init__(self, robot_id, target_object, thor_config, scene_info, **params):
         """
         robot_id (int) ID for robot
         target_object (tuple) A tuple of (target_id, target_class)
         thor_config (dict) configuration for starting thor controller
+        scene_info (dict) see load_scene_info in process_scenes.py
         params (dict) Additional parameters (e.g. rmax, rmin for reward model).
         """
         self.target_object = target_object
@@ -156,6 +164,7 @@ class ThorEnv(pomdp_py.Environment):
 
         assert "scene_name" in thor_config, "Scene name required in config."
         self.config = thor_config
+        self.scene_info = scene_info
         self.grid_size = thor_config.get("grid_size", 0.25)
         self.controller = launch_controller(thor_config)
 
@@ -175,8 +184,6 @@ class ThorEnv(pomdp_py.Environment):
                                                       "energy": 0.0,
                                                       "terminal": False})
 
-        self._idt2g = {}  # maps between a thor object id to a integer object id in grid map
-        self._idg2t = {}  # maps between a integer object id to a thor object id in grid map
         target_id, target_type = target_object
         thor_objposes = thor_object_poses(self.controller, target_type)
         if len(thor_objposes) == 0:
@@ -185,8 +192,6 @@ class ThorEnv(pomdp_py.Environment):
         object_states = {self.robot_id: init_robot_state}
         for i, thor_objid in enumerate(thor_objposes):
             objid = target_id + i
-            self._idt2g[thor_objid] = objid
-            self._idg2t[objid] = thor_objid
 
             thor_x, thor_y, thor_z = thor_objposes[thor_objid]
             objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
@@ -226,8 +231,48 @@ class ThorEnv(pomdp_py.Environment):
         return reward
 
     def provide_observation(self, observation_model, action):
-        """When the environment provides an observation, """
-        pass
+        """Provides an observation based on the THOR simulator.
+
+        Note that an object visible in THOR may not be actually detectable
+        in our framework because the agent's detector may have a shorter range
+        for that object.
+
+        Args:
+            observation_model (MultiDetectorModel)
+            action
+
+        Return: JointObz
+        """
+        # Detectable objects
+        objects = set().union(*[detector.detectable_objects
+                                for detector in observation_model.detectors])
+
+        robot_pose = self.state[self.robot_id].pose
+
+        # For each object type, get the thor pose of its instances. The robot
+        # will receive an observation with respect to the closest instance to
+        # the robot. The observed location (in POMDP perspective) will be the
+        # closest __reachable__ location in the grid map. This is done by
+        # constructing an object state with that location.
+        object_states = {}
+        for objid in objects:
+            object_type = self.scene_info.obj_type(objid)
+            thor_instance_poses = thor_object_poses(self.controller, object_type)
+            instance_poses = set()  # no need for a mapping here because we will just pick one
+            for thor_objid in thor_instance_poses:
+                thor_x, thor_y, thor_z = thor_instance_poses[thor_objid]
+                objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
+                                                   grid_size=self.grid_size)
+                objloc = self.grid_map.snap_to_grid(objloc)
+                instance_poses.add(objloc)
+            # Selecting the instance with closest geodesic dist;
+            closest_instance_pose = min(instance_poses,
+                key=lambda objloc: self.grid_map.geodesic_distance(robot_pose[:2], objloc))
+            sobj = LocObjState(objid, object_type, {"loc": closest_instance_pose})
+            object_states[objid] = sobj
+        env_state = JointState({self.robot_id: self.state[self.robot_id], **object_states})
+        return observation_model.sample(env_state, action)
+
 
 
 class ThorSearchRewardModel(pomdp_py.RewardModel):

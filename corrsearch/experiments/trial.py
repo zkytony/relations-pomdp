@@ -68,6 +68,7 @@ class SearchTrial(Trial):
 
         max_steps = self.config["exec_config"].get("max_steps", 100)
         for step in range(max_steps):
+            import pdb; pdb.set_trace()
             if self.config["planner"] == "PlaybackPlanner":
                 action, observation = planner.plan(agent, **self.config["planner_exec_config"])
                 reward = env.state_transition(action, execute=True)

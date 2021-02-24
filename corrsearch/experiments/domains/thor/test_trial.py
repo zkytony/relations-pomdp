@@ -2,6 +2,7 @@ import pomdp_py
 import random
 import yaml
 from corrsearch.experiments.domains.thor.problem import *
+from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
 from corrsearch.experiments.trial import SearchTrial
 from corrsearch.experiments.defaults import *
 from corrsearch.models import *
@@ -22,17 +23,16 @@ def make_config(scene_name,
                 step_delay=0.1,
                 viz_res=30):
 
-    with open(os.path.join("data", "{}-objects.pkl".format(scene_name)), "rb") as f:
-        scene_info = pickle.load(f)
-
+    scene_info = load_scene_info(scene_name)
     robot_id = 0
-    target_id = min(scene_info[target_type])
+    target_id = min(scene_info.pomdp_objids(target_type))
 
     problem_creator = "ThorSearch"
     problem_config = dict(
         robot_id=robot_id,
         target_object=(target_id, target_type),
         scene_name=scene_name,
+        scene_info=scene_info,
         detectors_spec_path=detector_spec_path,
         boundary_thickness=boundary_thickness,
         grid_size=grid_size

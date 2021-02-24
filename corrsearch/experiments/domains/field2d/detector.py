@@ -50,6 +50,10 @@ class RangeDetector(DetectorModel):
     def detectable(self, objid):
         return objid in self.sensors
 
+    @property
+    def detectable_objects(self):
+        return set(self.sensors.keys())
+
     def sensor_region_size(self, objid, robot_state):
         return self.sensors[objid].sensor_region_size
 

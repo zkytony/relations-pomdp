@@ -125,10 +125,10 @@ class GridMap:
             last_boundary.update(boundary)
         return last_boundary
 
-    def closest_free_cell(self, loc):
+    def snap_to_grid(self, loc):
+        """Snaps given loc (x,y) to the closest grid cell"""
         return min(self.free_locations,
                    key=lambda l: euclidean_dist(l, loc))
-
 
     def shortest_path(self, loc1, loc2):
         """
@@ -143,8 +143,8 @@ class GridMap:
                 path.append(v)
             return path
 
-        gloc1 = self.closest_free_cell(loc1)
-        gloc2 = self.closest_free_cell(loc2)
+        gloc1 = self.snap_to_grid(loc1)
+        gloc2 = self.snap_to_grid(loc2)
 
         # BFS; because no edge weight
         visited = set()

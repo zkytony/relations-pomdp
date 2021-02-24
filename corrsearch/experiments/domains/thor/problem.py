@@ -35,32 +35,27 @@ class ThorSearch(SearchProblem):
     def __init__(self, robot_id,
                  target_object,
                  scene_name,
+                 scene_info,
                  detectors=None,
                  detectors_spec_path=None,
                  move_actions=MOVE_ACTIONS,
-                 # object_types,
-                 # detector_by_type,
-
-
-                 # actions,
-                 # joint_dist_spec=None,
-                 # joint_dist_path=None,
-                 # detectors_spec=None,
-                 # detectors=None,
-                 boundary_thickness=1,
                  grid_size=0.25):
         """
         Note: joint_dist should be grounded to the given scene already.
 
         Args:
-            # object_types (array-like) List of object types that the agent
-            #     cares about (i.e. can detect)
-
-            detector_by_type (dict) Maps from object type to a detector
+            scene_name (str): Name of scene
+            scene_info (dict): Info of the scene. Currently,
+                a mapping {object_type -> {objid (pomdp) -> obj_dict}}
+            detectors_spec_path (str or dict):
+                Path to the .yaml file that specifies the detectors,
+                or a dictionary spec.
         """
         self.robot_id = robot_id
         self.target_object = target_object
-        # self.id2objects = {obj.id : obj for obj in objects}
+        assert scene_name == scene_info.scene_name,\
+            "Scene name {} does not match what is in scene_info: {}"\
+            .format(scene_name, scene_info["scene_name"])
         self.scene_name = scene_name
 
         config = {
@@ -69,13 +64,13 @@ class ThorSearch(SearchProblem):
             "height": 400,
             "grid_size": grid_size
         }
-        self.env = ThorEnv(robot_id, target_object, config)
+        self.env = ThorEnv(robot_id, target_object, config, scene_info)
 
         # Build detectors, actions, robot transition model, robot model
         if detectors is None and detectors_spec_path is None:
             raise ValueError("Either `detectors` or `detectors_spec_path` must be specified.")
         if detectors is None:
-            detectors = parse_detector(self.scene_name, detectors_spec_path, self.robot_id)
+            detectors = parse_detector(scene_info, detectors_spec_path, self.robot_id)
         actions = set(move_actions) | {Declare()}
         actions |= set(UseDetector(detector.id,
                                    name=detector.name,
@@ -88,13 +83,16 @@ class ThorSearch(SearchProblem):
         # Also, given the sensors access to the grid map.
         objects = set()
         for detector in detectors:
-            for objid in detector.sensors:
+            for objid in detector.detectable_objects:
                 objects.add(objid)
                 detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.
-        boundary = self.env.grid_map.boundary_cells(thickness=boundary_thickness)
-        locations = self.env.grid_map.free_locations | boundary
+        # (We will snap object locations to reachable locations; This still works
+        #  in the THOR task because task success depends on distance from the robot
+        #  to the object, and it will be valid if the robot makes the declaration
+        #  at a close enough reachable location)
+        locations = self.env.grid_map.free_locations
 
         joint_dist = None
         super().__init__(
