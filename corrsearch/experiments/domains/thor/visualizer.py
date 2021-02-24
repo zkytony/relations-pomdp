@@ -66,9 +66,16 @@ class ThorViz(Visualizer):
         if sensor is not None:
             img = self.draw_fov(img, robot_pose, sensor)
 
+        # Draw where the target is
+        target_id = self.problem.target_id
+        target_x, target_y = state[target_id].loc
+        r = self._res
+        cv2.rectangle(img, (target_y*r, target_x*r),
+                      (target_y*r+r, target_x*r+r),
+                      lighter(self.get_color(target_id)[:3], 0.5), -1)
+
         # Draw belief (only about target)
         if belief is not None:
-            target_id = self.problem.target_id
             target_color = self.get_color(target_id, alpha=0.8)
             img = self.draw_object_belief(img, belief.obj(target_id),
                                           target_color)

@@ -39,6 +39,11 @@ class SceneInfo:
     def objects(self):
         return self._idp2t
 
+    def thor_obj_pose2d(self, objid):
+        obj = self.obj(objid)
+        thor_pose = obj["position"]["x"], obj["position"]["z"]
+        return thor_pose
+
 
 def process_scene(scene):
     """Returns a mapping from object type to {objid -> objinfo}

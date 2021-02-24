@@ -94,6 +94,6 @@ if __name__ == "__main__":
                          planner="pomdp_py.POUCT",
                          planner_config=POMCP_PLANNER_CONFIG,
                          seed=100,
-                         init_belief="uniform")
+                         init_belief="informed")
     trial = make_trial(config)
     trial.run()

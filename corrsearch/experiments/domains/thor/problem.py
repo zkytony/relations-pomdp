@@ -90,11 +90,14 @@ class ThorSearch(SearchProblem):
                 detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.
-        # (We will snap object locations to reachable locations; This still works
-        #  in the THOR task because task success depends on distance from the robot
-        #  to the object, and it will be valid if the robot makes the declaration
-        #  at a close enough reachable location)
+        # This is the union of the reachable locations and the locations of all objects.
+        # Note that we do not want it to be the entire widthxlength grids because some
+        # may be outside of the possible sensing region.
         locations = self.env.grid_map.free_locations
+        # for objid in self.scene_info.objects:
+        #     thor_x, thor_z = self.scene_info.thor_obj_pose2d(objid)
+        #     objloc = self.grid_map.to_grid_pos(thor_x, thor_z, grid_size=grid_size)
+        #     locations.add(objloc)
 
         joint_dist = None
         super().__init__(

@@ -196,6 +196,7 @@ class ThorEnv(pomdp_py.Environment):
             thor_x, thor_y, thor_z = thor_objposes[thor_objid]
             objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
                                                grid_size=self.grid_size)
+            objloc = self.grid_map.snap_to_grid(objloc)
             objstate = LocObjState(objid, target_type, {"loc": objloc})
             object_states[objid] = objstate
 
@@ -204,7 +205,7 @@ class ThorEnv(pomdp_py.Environment):
         robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map, schema="vw")
         transition_model = SearchTransitionModel(self.robot_id, robot_trans_model)
 
-        reward_model = ThorSearchRewardModel(self.robot_id, self.target_id,
+        reward_model = ThorSearchRewardModel(self.robot_id, self.target_id, self.grid_map,
                                              rmax=params.get("rmax", 100),
                                              rmin=params.get("rmin", -100))
         super().__init__(init_state, transition_model, reward_model)
@@ -324,7 +325,7 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
 
         if isinstance(action, Declare):
             robot_loc = state[self.robot_id].loc
-            target_loc = state[self.targte_id].loc
+            target_loc = state[self.target_id].loc
 
             # Closer than threshold
             if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
@@ -333,14 +334,10 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
                     # facing the object (not guaranteed to be visible)
                     if self._facing(state[self.robot_id].pose, target_loc):
                         return self.rmax
-            return rmin
+            return self.rmin
         else:
             return self.step_reward_func(state, action, next_state)
 
-    def step_reward_func(self, state, action, next_state):
-        raise NotImplementedError
-
-class ThorSearchRewardModel(SearchRewardModel):
     def step_reward_func(self, state, action, next_state):
         if next_state[self.robot_id]["energy"] < 0:
             return self.rmin
