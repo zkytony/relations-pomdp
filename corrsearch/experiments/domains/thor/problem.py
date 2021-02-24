@@ -9,6 +9,7 @@ from corrsearch.utils import *
 from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.belief import *
+from corrsearch.experiments.domains.thor.visualizer import *
 
 MOVE_ACTIONS=dict(
     forward = Move((1.0, 0.0), "forward"),
@@ -83,11 +84,13 @@ class ThorSearch(SearchProblem):
         robot_trans_model = self.env.transition_model.robot_trans_model
         robot_model = RobotModel(detectors, actions, robot_trans_model)
 
-        # Obtain objects: List of object ids in the detector sensors
+        # Obtain objects: List of object ids in the detector sensors;
+        # Also, given the sensors access to the grid map.
         objects = set()
         for detector in detectors:
             for objid in detector.sensors:
                 objects.add(objid)
+                detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.
         boundary = self.env.grid_map.boundary_cells(thickness=boundary_thickness)
@@ -151,7 +154,8 @@ class ThorSearch(SearchProblem):
             corr_detector = CorrDetectorModel(self.target_id,
                                               self._objects,
                                               detector,
-                                              self.joint_dist)
+                                              self.joint_dist,
+                                              compute_conditions=False)
             detectors.append(corr_detector)
         observation_model = MultiDetectorModel(detectors)
 
@@ -167,6 +171,12 @@ class ThorSearch(SearchProblem):
 
         return self.env, agent
 
+    def visualizer(self, **kwargs):
+        return ThorViz(self, **kwargs)
 
     def obj(self, objid):
         return {}
+
+    @property
+    def grid_map(self):
+        return self.env.grid_map
