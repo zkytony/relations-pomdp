@@ -93,7 +93,8 @@ class ThorSearch(SearchProblem):
         # This is the union of the reachable locations and the locations of all objects.
         # Note that we do not want it to be the entire widthxlength grids because some
         # may be outside of the possible sensing region.
-        locations = self.env.grid_map.free_locations
+        locations = copy.deepcopy(self.env.grid_map.free_locations)
+        locations |= self.env.grid_map.boundary_cells(thickness=2)
         # for objid in self.scene_info.objects:
         #     thor_x, thor_z = self.scene_info.thor_obj_pose2d(objid)
         #     objloc = self.grid_map.to_grid_pos(thor_x, thor_z, grid_size=grid_size)
