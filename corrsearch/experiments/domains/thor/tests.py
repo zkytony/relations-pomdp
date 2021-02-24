@@ -82,6 +82,7 @@ class TestThorTransition(unittest.TestCase):
         time.sleep(2)
         controller.stop()
 
+
     # @unittest.SkipTest
     def test_pose_conversion(self):
         cls = TestThorTransition
@@ -181,6 +182,46 @@ class TestThorTransition(unittest.TestCase):
         self.check_pose(next_state[robot_id].pose, grid_map, controller, config["grid_size"])
         viz.visualize(next_state)
         time.sleep(2)
+
+class TestGridMap(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "scene_name": "FloorPlan_Train1_1",
+            "width": 400,
+            "height": 400,
+            "grid_size": 0.25
+        }
+        controller = launch_controller(config)
+        grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
+        controller.grid_size = config["grid_size"]
+
+        cls.controller = controller
+        cls.grid_map = grid_map
+        cls.config = config
+
+
+    def test_geodesic_distance(self):
+        cls = TestGridMap
+        controller, grid_map, config =\
+            cls.controller, cls.grid_map, cls.config
+
+        robot_id = 0
+        init_robot_pose = (*random.sample(grid_map.free_locations, 1)[0], 0.0)
+        problem = DummyProblem(robot_id)
+        problem.grid_map = grid_map
+
+        point1 = init_robot_pose[:2]
+        point2 = random.sample(grid_map.free_locations, 1)[0]
+        path = grid_map.shortest_path(point1, point2)
+        self.assertGreaterEqual(len(path), euclidean_dist(point1, point2))
+
+        viz = ThorViz(problem)
+        viz.highlight(path)
+        time.sleep(2)
+        controller.stop()
+
 
 
 @unittest.SkipTest
@@ -312,6 +353,7 @@ class TestThorEnv(unittest.TestCase):
             time.sleep(1)
 
 
+@unittest.SkipTest
 class TestThorProblem(unittest.TestCase):
 
     def test_problem_basic(self):

@@ -5,7 +5,7 @@ import json
 import sys
 from collections import deque
 from corrsearch.objects import *
-from corrsearch.utils import remap, to_degrees
+from corrsearch.utils import remap, to_degrees, euclidean_dist
 
 def neighbors(x,y):
     return [(x+1, y), (x-1,y),
@@ -42,6 +42,9 @@ class GridMap:
 
         self.name = name
         self.ranges_in_thor = ranges_in_thor
+
+        # Caches the computations of geodesic distance
+        self._geodesic_dist_cache = {}
 
     def to_thor_pose(self, x, y, th, grid_size=None):
         return (*self.to_thor_pos(x, y, grid_size=grid_size), to_degrees(th))
@@ -120,3 +123,70 @@ class GridMap:
                         break
             last_boundary.update(boundary)
         return last_boundary
+
+    def closest_free_cell(self, loc):
+        return min(self.free_locations,
+                   key=lambda l: euclidean_dist(l, loc))
+
+
+    def shortest_path(self, loc1, loc2):
+        """
+        Computes the shortest distance between two locations.
+        The two locations will be snapped to the closest free cell.
+        """
+        def get_path(s, t, prev):
+            v = t
+            path = [t]
+            while v != s:
+                v = prev[v]
+                path.append(v)
+            return path
+
+        gloc1 = self.closest_free_cell(loc1)
+        gloc2 = self.closest_free_cell(loc2)
+
+        # BFS; because no edge weight
+        visited = set()
+        q = deque()
+        q.append(gloc1)
+        prev = {gloc1:None}
+        while len(q) > 0:
+            loc = q.popleft()
+            if loc == gloc2:
+                return get_path(gloc1, gloc2, prev)
+            for nb_loc in neighbors(*loc):
+                if nb_loc in self.free_locations:
+                    if nb_loc not in visited:
+                        q.append(nb_loc)
+                        visited.add(nb_loc)
+                        prev[nb_loc] = loc
+        return None
+
+    def geodesic_distance(self, loc1, loc2):
+        """Reference: https://arxiv.org/pdf/1807.06757.pdf
+        The geodesic distance is the shortest path distance
+        in the environment.
+
+        Geodesic distance: the distance between two vertices
+        in a graph is the number of edges in a shortest path.
+
+        NOTE: This is NOT the real geodesic distance in
+        the THOR environment, but an approximation for
+        POMDP agent's behavior. The Unit here is No.GridCells
+
+        This is computed by first snapping loc1, loc2
+        to the closest free grid cell then find the
+        shortest path on the grid between them.
+
+        Args:
+           loc1, loc2 (tuple) grid map coordinates
+        """
+        if (loc1, loc2) in self._geodesic_dist_cache:
+            return self._geodesic_dist_cache[(loc1, loc2)]
+        else:
+            path = self.shortest_path(loc1, loc2)
+            if path is not None:
+                dist = len(path)
+            else:
+                dist = float("inf")
+            self._geodesic_dist_cache[(loc1, loc2)] = len(path)

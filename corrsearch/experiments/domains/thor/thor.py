@@ -228,6 +228,56 @@ class ThorEnv(pomdp_py.Environment):
         """When the environment provides an observation, """
         pass
 
+
+class ThorSearchRewardModel(pomdp_py.RewardModel):
+    """
+    Quote from: https://ai2thor.allenai.org/robothor/cvpr-2021-challenge/
+    A navigation episode is considered successful if both of the following criteria are met:
+
+        The specified object category is within 1 meter (geodesic distance) from
+        the agent's camera, and the agent issues the STOP action, which
+        indicates the termination of the episode.  The object is visible from in
+        the final action's frame.
+    """
+    def __init__(self, robot_id, target_id,
+                 grid_size=0.25, rmax=100, rmin=-100):
+        self.rmax = rmax
+        self.rmin = rmin
+        self.robot_id = robot_id
+        self.target_id = target_id
+
+        # Number of grids away that the agent can validly declare
+        self.declare_dist_grids = 1.0 / grid_size
+
+    def sample(self, state, action, next_state):
+        if state[self.robot_id].terminal:
+            return 0
+
+        if isinstance(action, Declare):
+            # If Declare is called, first check the distance between
+            # robot and the object (geodesic distance)
+
+
+
+
+
+
+
+
+            if action.loc is None:
+                decloc = state[self.robot_id].loc
+            else:
+                decloc = action.loc
+            if decloc == state[self.target_id].loc:
+                return self.rmax
+            else:
+                return self.rmin
+        else:
+            return self.step_reward_func(state, action, next_state)
+
+    def step_reward_func(self, state, action, next_state):
+        raise NotImplementedError
+
 class ThorSearchRewardModel(SearchRewardModel):
     def step_reward_func(self, state, action, next_state):
         if next_state[self.robot_id]["energy"] < 0:

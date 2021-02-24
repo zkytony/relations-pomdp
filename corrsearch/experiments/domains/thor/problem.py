@@ -7,80 +7,36 @@ from corrsearch.models import *
 from corrsearch.objects import *
 from corrsearch.utils import *
 from corrsearch.experiments.domains.thor.thor import *
+from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.belief import *
 
-# def build_robot_model():
-#     pass
-
-# def parse_joint_dist():
-#     pass
-
-# def parse_detectors(detectors_spec):
-#     detectors = []
-#     for i in range(len(spec["detectors"])):
-#         # Build a RangeDetector
-#         dspec = spec["detectors"][i]
-#         sensors = {}
-#         for ref in dspec["sensors"]:
-#             # ref can be either an object id or a classname.
-#             # If classname, then all objects with that class will
-#             # be paired with this sensor.
-#             if type(ref) == int:
-#                 objids = [ref]
-#             else:
-#                 # ref is taken as object class
-#                 objids = idbyclass[ref]
-#             for objid in objids:
-#                 sensor_spec = dspec["sensors"][ref]
-#                 sensors[objid] = parse_sensor(sensor_spec)
-
-#         params = {}
-#         for param_name in dspec["params"]:
-#             pspec = dspec["params"][param_name]
-#             params[param_name] = {}
-#             if type(pspec) == dict:
-#                 for ref in pspec:
-#                     if type(ref) == int:
-#                         objids = [ref]
-#                     else:
-#                         objids = idbyclass[ref]
-#                     for objid in objids:
-#                         if objid not in pspec:
-#                             print("Warning: Parameter %s unspecified for object %d"\
-#                                   % (param_name, objid))
-#                             continue
-#                         params[param_name][objid] = pspec[ref]
-#         detectors.append(RangeDetector(dspec["id"], robot_id,
-#                                        dspec["type"], sensors,
-#                                        energy_cost=dspec.get("energy_cost", 0),
-#                                        name=dspec["name"],
-#                                        locations=locations,
-#                                        objects=objects,
-#                                        **params))
-
-
-# def parse_sensor(sensor_spec):
-#     """Build sensor given sensor_space (dict)"""
-#     if sensor_spec["type"] == "fan":
-#         sensor = FanSensor(**sensor_spec["params"])
-#     elif sensor_spec["type"] == "disk":
-#         sensor = DiskSensor(**sensor_spec["params"])
-#     else:
-#         raise ValueError("Unrecognized sensor type %s" % sensor_spec["type"])
-#     return sensor
-
+MOVE_ACTIONS=dict(
+    forward = Move((1.0, 0.0), "forward"),
+    backward = Move((-1.0, 0.0), "backward"),
+    left = Move((0.0, -math.pi/4), "left"),
+    right = Move((0.0, math.pi/4), "right")
+)
 
 class ThorSearch(SearchProblem):
-    """
-    Different from Field2D, the specification of domain highly depends on
+    """Different from Field2D, the specification of domain highly depends on
     starting the controller of the scene so that information can be obtained.
     So for this domain, the environment is built when the problem is initialized.
+
+    Quote from: https://ai2thor.allenai.org/robothor/cvpr-2021-challenge/
+    A navigation episode is considered successful if both of the following criteria are met:
+
+        The specified object category is within 1 meter (geodesic distance) from
+        the agent's camera, and the agent issues the STOP action, which
+        indicates the termination of the episode.  The object is visible from in
+        the final action's frame.
     """
 
     def __init__(self, robot_id,
                  target_object,
                  scene_name,
-
+                 detectors=None,
+                 detectors_spec_path=None,
+                 move_actions=MOVE_ACTIONS,
                  # object_types,
                  # detector_by_type,
 
@@ -112,6 +68,24 @@ class ThorSearch(SearchProblem):
             "grid_size": grid_size
         }
         self.env = ThorEnv(robot_id, target_object, config)
+
+        # Build detectors, actions, robot transition model
+        if detectors is None and detectors_spec_path is None:
+            raise ValueError("Either `detectors` or `detectors_spec_path` must be specified.")
+        if detectors is None:
+            detectors = parse_detector(self.scene_name, detectors_spec_path, self.robot_id)
+
+        actions = set(move_actions)
+        for detector in detectors:
+            actions.add(UseDetector(detector.id,
+                                    name=detector.name,
+                                    energy_cost=detector.energy_cost))
+        actions.add(Declare())
+
+        robot_trans_model = self.env.transition_model.robot_trans_model
+
+
+
 
         # # Locations where object can be.
         boundary = self.env.grid_map.boundary_cells(thickness=1)
