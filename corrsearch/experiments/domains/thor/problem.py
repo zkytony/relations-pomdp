@@ -72,8 +72,8 @@ class ThorSearch(SearchProblem):
             raise ValueError("Either `detectors` or `detectors_spec_path` must be specified.")
         if detectors is None:
             detectors = parse_detector(scene_info, detectors_spec_path, self.robot_id)
-        actions = set(move_actions) | {Declare()}
-        actions |= set(UseDetector(detector.id,
+        # actions = set(move_actions) | {Declare()}
+        actions = set(UseDetector(detector.id,
                                    name=detector.name,
                                    energy_cost=detector.energy_cost)
                        for detector in detectors)

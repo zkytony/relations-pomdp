@@ -49,7 +49,7 @@ class FanSensorThor(FanSensor):
             # The point is within the fan shape. But, it may be
             # out of bound, or occluded by an obstacle. First, obtain
             # unit vector from robot to point
-            result = self.grid_map.blocked(robot_pose[:2], point)
+            result = not self.grid_map.blocked(robot_pose[:2], point)
 
         self._cache[(point, robot_pose)] = result
         return result
