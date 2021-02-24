@@ -46,6 +46,7 @@ class ThorSearch(SearchProblem):
                  # joint_dist_path=None,
                  # detectors_spec=None,
                  # detectors=None,
+                 boundary_thickness=1,
                  grid_size=0.25):
         """
         Note: joint_dist should be grounded to the given scene already.
@@ -58,7 +59,7 @@ class ThorSearch(SearchProblem):
         """
         self.robot_id = robot_id
         self.target_object = target_object
-        self.id2objects = {obj.id : obj for obj in objects}
+        # self.id2objects = {obj.id : obj for obj in objects}
         self.scene_name = scene_name
 
         config = {
@@ -69,30 +70,30 @@ class ThorSearch(SearchProblem):
         }
         self.env = ThorEnv(robot_id, target_object, config)
 
-        # Build detectors, actions, robot transition model
+        # Build detectors, actions, robot transition model, robot model
         if detectors is None and detectors_spec_path is None:
             raise ValueError("Either `detectors` or `detectors_spec_path` must be specified.")
         if detectors is None:
             detectors = parse_detector(self.scene_name, detectors_spec_path, self.robot_id)
-
-        actions = set(move_actions)
-        for detector in detectors:
-            actions.add(UseDetector(detector.id,
-                                    name=detector.name,
-                                    energy_cost=detector.energy_cost))
-        actions.add(Declare())
-
+        actions = set(move_actions) | {Declare()}
+        actions |= set(UseDetector(detector.id,
+                                   name=detector.name,
+                                   energy_cost=detector.energy_cost)
+                       for detector in detectors)
         robot_trans_model = self.env.transition_model.robot_trans_model
+        robot_model = RobotModel(detectors, actions, robot_trans_model)
 
+        # Obtain objects: List of object ids in the detector sensors
+        objects = set()
+        for detector in detectors:
+            for objid in detector.sensors:
+                objects.add(objid)
 
-
-
-        # # Locations where object can be.
-        boundary = self.env.grid_map.boundary_cells(thickness=1)
+        # Locations where object can be.
+        boundary = self.env.grid_map.boundary_cells(thickness=boundary_thickness)
         locations = self.env.grid_map.free_locations | boundary
 
         joint_dist = None
-        robot_model = None#self.env.transition_model.robot_trans_model
         super().__init__(
             locations, objects, joint_dist,
             target_object, robot_model
@@ -134,9 +135,8 @@ class ThorSearch(SearchProblem):
             raise ValueError("Unsupported initial belief type %s" % init_belief)
 
         init_target_belief = pomdp_py.Histogram(belief_hist)
-        robot_trans_model = DetRobotTrans(self.robot_id, self.env.grid_map, schema="vw")
         transition_model = SearchTransitionModel(
-            self.robot_id, robot_trans_model)
+            self.robot_id, self.robot_model.trans_model)
 
         robot_state = copy.deepcopy(self.env.state[self.robot_id])
         init_robot_belief = pomdp_py.Histogram({robot_state:1.0})
@@ -144,19 +144,28 @@ class ThorSearch(SearchProblem):
                                  self.target_id, init_target_belief)
         reward_model = copy.deepcopy(self.env.reward_model)
 
-        # # observation model. Multiple detectors.
-        # detectors = []
-        # for detector_id in self.robot_model.detectors:
-        #     detector = self.robot_model.detectors[detector_id]
-        #     corr_detector = CorrDetectorModel(self.target_id,
-        #                                       {obj.id : obj
-        #                                        for obj in self._objects},
-        #                                       detector,
-        #                                       self.joint_dist)
-        #     detectors.append(corr_detector)
-        # observation_model = MultiDetectorModel(detectors)
+        # observation model. Multiple detectors.
+        detectors = []
+        for detector_id in self.robot_model.detectors:
+            detector = self.robot_model.detectors[detector_id]
+            corr_detector = CorrDetectorModel(self.target_id,
+                                              self._objects,
+                                              detector,
+                                              self.joint_dist)
+            detectors.append(corr_detector)
+        observation_model = MultiDetectorModel(detectors)
 
-        print("YO")
+        # policy model. Default is uniform
+        policy_model = BasicPolicyModel(self.robot_model.actions,
+                                        self.robot_model.trans_model)
+
+        agent = pomdp_py.Agent(init_belief,
+                               policy_model,
+                               transition_model,
+                               observation_model,
+                               reward_model)
+
+        return self.env, agent
 
 
     def obj(self, objid):

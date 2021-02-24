@@ -3,6 +3,7 @@ Functions related to THOR simulation
 """
 import pomdp_py
 import numpy as np
+import math
 from ai2thor.controller import Controller
 from corrsearch.experiments.domains.thor.grid_map import GridMap
 from corrsearch.experiments.domains.thor.transition import DetRobotTrans
@@ -230,48 +231,63 @@ class ThorEnv(pomdp_py.Environment):
 
 
 class ThorSearchRewardModel(pomdp_py.RewardModel):
-    """
-    Quote from: https://ai2thor.allenai.org/robothor/cvpr-2021-challenge/
+    """Quote from: https://ai2thor.allenai.org/robothor/cvpr-2021-challenge/
     A navigation episode is considered successful if both of the following criteria are met:
 
         The specified object category is within 1 meter (geodesic distance) from
         the agent's camera, and the agent issues the STOP action, which
         indicates the termination of the episode.  The object is visible from in
         the final action's frame.
+
+    Matt Deike explained: Basically euclidean distance plus checking if wall blocking.
+
+        I will clarify the documentation on this, but we were using Geodesic
+        Distance to more or less mean Euclidean Distance without going through a
+        wall
+
+    In https://arxiv.org/pdf/1910.14442.pdf:
+
+        The agent has 1000 time steps to achieve this...
+    (I will do 200 or 500)
+
     """
-    def __init__(self, robot_id, target_id,
+    def __init__(self, robot_id, target_id, grid_map,
                  grid_size=0.25, rmax=100, rmin=-100):
         self.rmax = rmax
         self.rmin = rmin
         self.robot_id = robot_id
         self.target_id = target_id
+        self.grid_map = grid_map
 
         # Number of grids away that the agent can validly declare
         self.declare_dist_grids = 1.0 / grid_size
+
+    def _facing(self, robot_pose, point):
+        """Returns true if the robot pose is looking in the direction of point"""
+        rx, ry, th = robot_pose
+        # point in direction of robot facing
+        rx2 = rx + math.sin(th)
+        ry2 = ry + math.cos(th)
+        px, py = point
+        return np.dot(np.array([px - rx, py - ry]),
+                      np.array([rx2 - rx, ry2 - ry])) > 0
 
     def sample(self, state, action, next_state):
         if state[self.robot_id].terminal:
             return 0
 
         if isinstance(action, Declare):
-            # If Declare is called, first check the distance between
-            # robot and the object (geodesic distance)
+            robot_loc = state[self.robot_id].loc
+            target_loc = state[self.targte_id].loc
 
-
-
-
-
-
-
-
-            if action.loc is None:
-                decloc = state[self.robot_id].loc
-            else:
-                decloc = action.loc
-            if decloc == state[self.target_id].loc:
-                return self.rmax
-            else:
-                return self.rmin
+            # Closer than threshold
+            if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
+                # Not blocked by wall
+                if not self.grid_map.blocked(robot_loc, target_loc):
+                    # facing the object (not guaranteed to be visible)
+                    if self._facing(state[self.robot_id].pose, target_loc):
+                        return self.rmax
+            return rmin
         else:
             return self.step_reward_func(state, action, next_state)
 
