@@ -227,7 +227,7 @@ class TestGridMap(unittest.TestCase):
 
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
@@ -262,6 +262,7 @@ class TestThorDetector(unittest.TestCase):
         robot_id = 0
         problem = DummyProblem(robot_id)
         problem.grid_map = cls.grid_map
+        problem.target_id = None
 
         init_robot_pose = self.robot_grid_pose()
         state = JointState({robot_id: RobotState(robot_id, {"pose": init_robot_pose,
@@ -302,7 +303,7 @@ class TestThorDetector(unittest.TestCase):
         time.sleep(2)
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorEnv(unittest.TestCase):
 
     def test_env_basic(self):

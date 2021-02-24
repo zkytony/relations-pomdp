@@ -197,12 +197,19 @@ class GridMap:
 
     def blocked(self, loc1, loc2, nsteps=40):
         """
-        Returns True if the line segment between loc1 and loc2
-        intersects with an obstacle. This is checked by simulating
-        a straightline from loc1 to loc2 and check if any step on the line
-        is at an obstacle.
+        Returns True if:
+        - loc1 is a reachable location AND
+        - loc2 is a reachable location AND
+        - the line segment between loc1 and loc2 goes through
+          an obstacle (i.e. blocked by an obstacle)
+
+        This is checked by simulating a straightline from loc1 to loc2 and check
+        if any step on the line is at an obstacle.
         """
         if loc1 == loc2:
+            return False
+
+        if not (loc1 in self.free_locations and loc2 in self.free_locations):
             return False
 
         _key = tuple(loc1), tuple(loc2)
