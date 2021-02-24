@@ -183,6 +183,7 @@ class TestThorTransition(unittest.TestCase):
         viz.visualize(next_state)
         time.sleep(2)
 
+@unittest.SkipTest
 class TestGridMap(unittest.TestCase):
 
     @classmethod
@@ -225,7 +226,7 @@ class TestGridMap(unittest.TestCase):
 
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod

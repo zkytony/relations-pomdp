@@ -3,6 +3,7 @@ import copy
 import math
 import json
 import sys
+import numpy as np
 from collections import deque
 from corrsearch.objects import *
 from corrsearch.utils import remap, to_degrees, euclidean_dist
@@ -191,3 +192,32 @@ class GridMap:
                 dist = float("inf")
             self._geodesic_dist_cache[(loc1, loc2)] = dist
             return dist
+
+    def blocked(self, loc1, loc2, nsteps=40):
+        """
+        Returns True if the line segment between loc1 and loc2
+        intersects with an obstacle. This is checked by simulating
+        a straightline from loc1 to loc2 and check if any step on the line
+        is at an obstacle.
+        """
+        # vec = np.array([px - rx, py - ry]).astype(float)
+        # vec /= np.linalg.norm(vec)
+        loc1 = np.asarray(loc1)
+        x1, y1 = loc1
+        x2, y2 = loc2
+        vec = np.array([x2 - x1, y2 - y1]).astype(float)
+        vec /= np.linalg.norm(vec)
+
+        # Check points along the line from robot pose to the point
+        result = True
+        nsteps = 20
+        dist = euclidean_dist(loc1, loc2)
+        step_size = dist / nsteps
+        t = 0
+        while t < nsteps:
+            line_point = tuple(np.round(loc1 + (t*step_size*vec)).astype(int))
+            if line_point in self.obstacles:
+                result = False
+                break
+            t += 1
+        return result

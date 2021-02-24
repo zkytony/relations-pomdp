@@ -49,24 +49,7 @@ class FanSensorThor(FanSensor):
             # The point is within the fan shape. But, it may be
             # out of bound, or occluded by an obstacle. First, obtain
             # unit vector from robot to point
-            rp = np.array(robot_pose[:2])
-            rx, ry = rp
-            px, py = point
-            vec = np.array([px - rx, py - ry]).astype(float)
-            vec /= np.linalg.norm(vec)
-
-            # Check points along the line from robot pose to the point
-            result = True
-            nsteps = 20
-            dist = euclidean_dist(point, (rx,ry))
-            step_size = dist / nsteps
-            t = 0
-            while t < nsteps:
-                line_point = tuple(np.round(rp + (t*step_size*vec)).astype(int))
-                if line_point in self.grid_map.obstacles:
-                    result = False
-                    break
-                t += 1
+            result = self.grid_map.blocked(robot_pose[:2], point)
 
         self._cache[(point, robot_pose)] = result
         return result
