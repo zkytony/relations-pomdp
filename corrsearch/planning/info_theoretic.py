@@ -73,7 +73,7 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
 
         min_dist = float("inf")
         next_move_action = None
-        for a in robot_trans.actions:
+        for a in agent.policy_model.actions:
             if isinstance(a, Move):
                 next_belief = self.sample_next_belief(agent, a)
                 next_robot_pose = next_belief.mpe()[robot_id]["pose"]

@@ -88,14 +88,15 @@ def make_trial(config, trial_name="test_trial"):
 
 
 if __name__ == "__main__":
-    config = make_config("FloorPlan_Train1_1",
+    config = make_config("FloorPlan_Train1_2",
                          "Laptop",
                          "./config/detectors_spec.yaml",
                          # planner="pomdp_py.POUCT",
-                         planner="RandomPlanner",#EntropyMinimizationPlanner", #HeuristicSequentialPlanner",
-                         grid_size=0.25,
-                         planner_config=RANDOM_PLANNER_CONFIG,
-                         #ENTROPY_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,
+                         # "RandomPlanner",
+                         planner="HeuristicSequentialPlanner",#"EntropyMinimizationPlanner",
+                         grid_size=0.50,
+                         planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,
+                         #ENTROPY_PLANNER_CONFIG,#
                          seed=100,
                          init_belief="uniform")
     trial = make_trial(config)
