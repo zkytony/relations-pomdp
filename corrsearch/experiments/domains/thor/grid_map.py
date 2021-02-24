@@ -189,4 +189,5 @@ class GridMap:
                 dist = len(path)
             else:
                 dist = float("inf")
-            self._geodesic_dist_cache[(loc1, loc2)] = len(path)
+            self._geodesic_dist_cache[(loc1, loc2)] = dist
+            return dist

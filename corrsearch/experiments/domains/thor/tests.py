@@ -216,6 +216,7 @@ class TestGridMap(unittest.TestCase):
         point2 = random.sample(grid_map.free_locations, 1)[0]
         path = grid_map.shortest_path(point1, point2)
         self.assertGreaterEqual(len(path), euclidean_dist(point1, point2))
+        self.assertEqual(len(path), grid_map.geodesic_distance(point1, point2))
 
         viz = ThorViz(problem)
         viz.highlight(path)
