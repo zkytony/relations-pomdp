@@ -11,11 +11,11 @@ from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.belief import *
 from corrsearch.experiments.domains.thor.visualizer import *
 
-MOVE_ACTIONS=dict(
-    forward = Move((1.0, 0.0), "forward"),
-    backward = Move((-1.0, 0.0), "backward"),
-    left = Move((0.0, -math.pi/4), "left"),
-    right = Move((0.0, math.pi/4), "right")
+MOVE_ACTIONS=set(
+    [Move((1.0, 0.0), "forward"),
+     Move((-1.0, 0.0), "backward"),
+     Move((0.0, -math.pi/4), "left"),
+     Move((0.0, math.pi/4), "right")]
 )
 
 class ThorSearch(SearchProblem):
