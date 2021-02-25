@@ -102,8 +102,9 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         heuristic_policy_model = HeuristicRollout(
             robot_id, target_id,
             actions,
-            agent.transition_model.robot_trans_model,
-            agent.observation_model)
+            agent.transition_model,
+            agent.observation_model,
+            agent.reward_model)
         tmp_agent = pomdp_py.Agent(agent.belief,
                                    heuristic_policy_model,
                                    agent.transition_model,
@@ -154,13 +155,16 @@ class HeuristicRollout(BasicPolicyModel):
                  robot_id,
                  target_id,
                  actions,
-                 robot_trans_model,
-                 observation_model):
+                 transition_model,
+                 observation_model,
+                 reward_model):
         self.robot_id = robot_id
         self.target_id = target_id
         self.observation_model = observation_model
+        self.reward_model = reward_model
+        self.transition_model = transition_model
         self._cache = {}
-        super().__init__(actions, robot_trans_model)
+        super().__init__(actions, transition_model.robot_trans_model)
 
     def rollout(self, state, history):
         """For rollout, use a policy from an action prior"""
@@ -187,7 +191,9 @@ class HeuristicRollout(BasicPolicyModel):
                 if Declare(state[self.target_id]) in self.declare_actions:
                     candidates.append(Declare(state[self.target_id]))
                 else:
-                    if state[self.robot_id]["loc"] == state[self.target_id]["loc"]:
+                    next_state = self.transition_model.sample(state, Declare())
+                    if self.reward_model.sample(state, Declare(), next_state)\
+                       == self.reward_model.rmax:
                         candidates.append(Declare())
             self._cache[key_] = candidates
         return random.sample(candidates, 1)[0]
