@@ -137,7 +137,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
         self.cond_dists = {}
         if compute_conditions:
             # Compute conditional probabilities, for all objects
-            # conditioned on every possible value of the target location.
+            # conditioned on every possible value of the target location.x
             target_states = self.dist.valrange(svar(self.target_id))
             for var in self.dist.variables:  # variable is string like 's#'
                 if var != svar(self.target_id):

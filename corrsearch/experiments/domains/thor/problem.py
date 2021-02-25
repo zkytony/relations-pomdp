@@ -73,6 +73,7 @@ class ThorSearch(SearchProblem):
         target_object = (target_id, target_class)
         grid_size = spec["grid_size"]
         grid_size_dist = spec["grid_size_dist"]
+        assert grid_size_dist >= grid_size, "grid_size_dist must NOT be LESS THAN grid_size"
         boundary_thickness = spec["boundary_thickness"]
 
         config = {
@@ -108,9 +109,8 @@ class ThorSearch(SearchProblem):
 
         thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
                              for loc in locations)
-        joint_dist = None
-        # parse_dist(scene_info, env.grid_map, spec["probability"],
-        #                         grid_size_dist=grid_size_dist)
+        joint_dist = parse_dist(scene_info, env.grid_map, thor_locations, spec["probability"],
+                                grid_size_dist=grid_size_dist)
         return ThorSearch(robot_id, target_object, scene_info, env,
                           locations, objects, joint_dist, robot_model, grid_size)
 
@@ -166,8 +166,7 @@ class ThorSearch(SearchProblem):
             corr_detector = CorrDetectorModel(self.target_id,
                                               self._objects,
                                               detector,
-                                              self.joint_dist,
-                                              compute_conditions=False)
+                                              self.joint_dist)
             detectors.append(corr_detector)
         observation_model = MultiDetectorModel(detectors)
 

@@ -69,25 +69,31 @@ def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size_dist=0
     """
     factors = []
     variables = set()
-    for dist_spec in prob_spec:
+    for tt, dist_spec in enumerate(prob_spec):
         spatial_relation = eval(dist_spec["dist"])
         params = dist_spec.get("params", {})
+        print("Parsing distribution spec {}: {}, {}"\
+              .format(tt, dist_spec["classes"], dist_spec["dist"]))
 
         objids = []
         for cls in dist_spec["classes"]:
-            objids.append(scene_info.pomdp_objids[cls])
+            objids.append([scene_info.objid_for_type(cls)])
+            if len(scene_info.pomdp_objids(cls)) > 1:
+                print("WARNING: {} has multiple instances."\
+                      "Only one instance considered in the factor graph.".format(cls))
+
         # Obtain the cartesian product of the object ids of classes
         objid_combos = itertools.product(*objids)
         # Do a cartesian product of the locations for each object in combo
-        thor_locations_combos = itertools.product(*([thor_locations]*len(objids)))
+        thor_location_combos = itertools.product(*([thor_locations]*len(objids)))
 
         for combo in objid_combos:
             variables.update(set(svar(objid) for objid in combo))
             weights = []
             settings = set()
-            for thor_locations_combo in thor_location_combos:
+            for thor_location_combo in thor_location_combos:
                 setting = []
-                for i in range(len(thor_locations_combo)):
+                for i in range(len(thor_location_combo)):
                     objid = combo[i]
                     objclass = scene_info.obj_type(objid)
                     loc = grid_map.to_grid_pos(*thor_location_combo[i],
@@ -95,14 +101,18 @@ def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size_dist=0
                     objstate = LocObjState(objid, objclass, {"loc": loc})
                     setting.append((svar(objid), objstate))
                 if tuple(setting) not in settings:
-                    prob = spatial_relation(*thor_locations_combo, **params)
+                    prob = spatial_relation(*thor_location_combo, **params)
                     weights.append((setting, prob))
                     settings.add(tuple(setting))
             factor = TabularDistribution([svar(objid) for objid in combo],
                                          weights)
+            for var in factor.variables:
+                print("   {} valrange size: {}".format(var, len(factor.valrange(var))))
+
             factors.append(factor)
+
     factor_graph = FactorGraph(list(sorted(variables)),
-                               factors, compute_joint=False)
+                               factors)
     return factor_graph
 
 
@@ -122,7 +132,7 @@ def parse_move_actions(move_spec):
 
 
 def TEST():
-    with open("./config/config-FloorPlan_Train1_1-Laptop.yaml") as f:
+    with open("./config/config-FloorPlan_Train1_1-Laptop-simple.yaml") as f:
         spec = yaml.load(f, Loader=yaml.Loader)
 
     problem = ThorSearch.parse(spec)

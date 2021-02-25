@@ -10,10 +10,20 @@ from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
 from corrsearch.experiments.domains.thor.thor import robothor_scene_names
 from corrsearch.models import *
 from corrsearch.probability import *
-from corrsearch.utils import indicator
+from corrsearch.utils import indicator, euclidean_dist
 from pprint import pprint
 import itertools
 import random
+
+
+def uniform(*args):
+    return True
+
+def nearby(point1, point2, radius=2):
+    return euclidean_dist(point1, point2) <= radius
+
+def not_nearby(point1, point2, radius=2):
+    return not nearby(point1, point2, radius=radius)
 
 
 class SpatialJointDist(JointDist):

@@ -66,9 +66,14 @@ class FactorGraph(JointDist):
         self.bp = BeliefPropagation(self.fg)
 
         # For efficiency
-        if self.compute_joint:
+        self._ranges = all_state_names  # maps from variable name to ranges (list)
+        self.joint = None
+        if compute_joint:
+            self._compute_joint()
+
+    def _compute_joint(self):
+        if self.joint is None:
             print("Computing joint probability table..")
-            self._ranges = all_state_names  # maps from variable name to ranges (list)
             self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=True))
 
     def prob(self, setting):
@@ -77,9 +82,11 @@ class FactorGraph(JointDist):
             setting (dict): Mapping from variable to value.
                 Does not have to specify the value for every variable
         """
+        self._compute_joint()
         return self.joint.prob(setting)
 
     def sample(self, rnd=random):
+        self._compute_joint()
         return self.joint.sample(rnd=rnd)
 
     def marginal(self, variables, observation=None):
@@ -92,7 +99,7 @@ class FactorGraph(JointDist):
     def valrange(self, var):
         """Returns an enumerable that contains the possible values
         of the given variable var"""
-        return self.joint.valrange(var)
+        return self._ranges[var]
 
 
 class PGMFactorDist(JointDist):
