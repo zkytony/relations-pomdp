@@ -16,7 +16,8 @@ class FactorGraph(JointDist):
 
     def __init__(self,
                  variables,
-                 factors):
+                 factors,
+                 compute_joint=True):
         """
         Args:
             variables (list): List of variables
@@ -65,9 +66,10 @@ class FactorGraph(JointDist):
         self.bp = BeliefPropagation(self.fg)
 
         # For efficiency
-        print("Computing joint probability table..")
-        self._ranges = all_state_names  # maps from variable name to ranges (list)
-        self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=True))
+        if self.compute_joint:
+            print("Computing joint probability table..")
+            self._ranges = all_state_names  # maps from variable name to ranges (list)
+            self.joint = PGMFactorDist(self.bp.query(self.variables, show_progress=True))
 
     def prob(self, setting):
         """

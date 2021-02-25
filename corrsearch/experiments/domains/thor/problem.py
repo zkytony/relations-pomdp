@@ -10,6 +10,8 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.belief import *
 from corrsearch.experiments.domains.thor.visualizer import *
+from corrsearch.experiments.domains.thor.process_scenes import *
+from corrsearch.experiments.domains.thor.parser import *
 
 MOVE_ACTIONS=set(
     [Move((1.0, 0.0), "forward"),
@@ -32,35 +34,46 @@ class ThorSearch(SearchProblem):
         the final action's frame.
     """
 
-    def __init__(self, robot_id,
+    def __init__(self,
+                 robot_id,
                  target_object,
-                 scene_name,
                  scene_info,
-                 detectors=None,
-                 detectors_spec_path=None,
-                 move_actions=MOVE_ACTIONS,
-                 boundary_thickness=4,
-                 grid_size=0.25):
-        """
-        Note: joint_dist should be grounded to the given scene already.
+                 env,
+                 locations,
+                 objects,
+                 joint_dist,
+                 robot_model,
+                 grid_size):
 
-        Args:
-            scene_name (str): Name of scene
-            scene_info (dict): Info of the scene. Currently,
-                a mapping {object_type -> {objid (pomdp) -> obj_dict}}
-            detectors_spec_path (str or dict):
-                Path to the .yaml file that specifies the detectors,
-                or a dictionary spec.
-            boundary_thickness (int) How far extended into the unreachable
-                locations can an object be placed.
+        self.robot_id     = robot_id
+        self.scene_info   = scene_info
+        self.env          = env
+        self.grid_size    = grid_size
+        super().__init__(
+            locations, objects, joint_dist,
+            target_object, robot_model
+        )
+
+    @classmethod
+    def parse(cls, spec_or_path):
         """
-        self.robot_id = robot_id
-        self.target_object = target_object
-        assert scene_name == scene_info.scene_name,\
-            "Scene name {} does not match what is in scene_info: {}"\
-            .format(scene_name, scene_info["scene_name"])
-        self.scene_name = scene_name
-        self.scene_info = scene_info
+        Create a ThorSearch problem given spec (or path to .yaml file for spec)
+        """
+        if isinstance(spec_or_path, str):
+            with open(spec_or_path) as f:
+                spec = yaml.load(f, Loader=yaml.Loader)
+        else:
+            spec = spec_or_path
+
+        robot_id = spec["robot_id"]
+        scene_name = spec["scene_name"]
+        scene_info = load_scene_info(scene_name)
+        target_class = spec["target_class"]
+        target_id = scene_info.objid_for_type(target_class)
+        target_object = (target_id, target_class)
+        grid_size = spec["grid_size"]
+        grid_size_dist = spec["grid_size_dist"]
+        boundary_thickness = spec["boundary_thickness"]
 
         config = {
             "scene_name": scene_name,
@@ -68,39 +81,38 @@ class ThorSearch(SearchProblem):
             "height": 400,
             "grid_size": grid_size
         }
-        self.env = ThorEnv(robot_id, target_object, config, scene_info)
+        env = ThorEnv(robot_id, target_object, config, scene_info)
 
-        # Build detectors, actions, robot transition model, robot model
-        if detectors is None and detectors_spec_path is None:
-            raise ValueError("Either `detectors` or `detectors_spec_path` must be specified.")
-        if detectors is None:
-            detectors = parse_detector(scene_info, detectors_spec_path, self.robot_id)
-        actions = set(move_actions) | {Declare()}
+        detectors = parse_detectors(scene_info, spec["detectors"], robot_id)
+
+        actions = parse_move_actions(spec["move_actions"]) | {Declare()}
         actions |= set(UseDetector(detector.id,
                                    name=detector.name,
                                    energy_cost=detector.energy_cost)
                        for detector in detectors)
-        robot_trans_model = self.env.transition_model.robot_trans_model
+        robot_trans_model = env.transition_model.robot_trans_model
         robot_model = RobotModel(detectors, actions, robot_trans_model)
 
         # Obtain objects: List of object ids in the detector sensors;
         # Also, given the sensors access to the grid map.
-        objects = {self.robot_id: Object(self.robot_id,
-                                         {"class":"robot", "color": [30, 30, 200]})}
+        objects = {robot_id: Object(robot_id,
+                                    {"class":"robot", "color": [30, 30, 200]})}
         for detector in detectors:
             for objid in detector.detectable_objects:
-                objects[objid] = self.scene_info.obj(objid)
-                detector.sensors[objid].grid_map = self.grid_map
+                objects[objid] = scene_info.obj(objid)
+                detector.sensors[objid].grid_map = env.grid_map
 
         # Locations where object can be.
-        locations = copy.deepcopy(self.env.grid_map.free_locations)
-        locations |= self.env.grid_map.boundary_cells(thickness=4)
+        locations = copy.deepcopy(env.grid_map.free_locations)
+        locations |= env.grid_map.boundary_cells(thickness=boundary_thickness)
 
+        thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
+                             for loc in locations)
         joint_dist = None
-        super().__init__(
-            locations, objects, joint_dist,
-            target_object, robot_model
-        )
+        # parse_dist(scene_info, env.grid_map, spec["probability"],
+        #                         grid_size_dist=grid_size_dist)
+        return ThorSearch(robot_id, target_object, scene_info, env,
+                          locations, objects, joint_dist, robot_model, grid_size)
 
     @property
     def target_id(self):

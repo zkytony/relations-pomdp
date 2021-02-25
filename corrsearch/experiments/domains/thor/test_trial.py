@@ -8,11 +8,7 @@ from corrsearch.experiments.defaults import *
 from corrsearch.models import *
 from corrsearch.objects import *
 
-def make_config(scene_name,
-                target_type,
-                detector_spec_path,
-                move_actions=MOVE_ACTIONS,
-                grid_size=0.25,
+def make_config(spec_path,
                 init_belief="uniform",
                 planner_config={},
                 planner="pomdp_py.POUCT",
@@ -21,19 +17,11 @@ def make_config(scene_name,
                 seed=None,
                 step_delay=0.1,
                 viz_res=30):
-
-    scene_info = load_scene_info(scene_name)
-    robot_id = 0
-    target_id = min(scene_info.pomdp_objids(target_type))
-
-    problem_creator = "ThorSearch"
+    with open(spec_path) as f:
+        spec = yaml.load(f, Loader=yaml.Loader)
+    problem_creator = "ThorSearch.parse"
     problem_config = dict(
-        robot_id=robot_id,
-        target_object=(target_id, target_type),
-        scene_name=scene_name,
-        scene_info=scene_info,
-        detectors_spec_path=detector_spec_path,
-        grid_size=grid_size
+        spec_or_path=spec
     )
     planner_exec_config = dict()
 
@@ -89,13 +77,10 @@ def make_trial(config, trial_name="test_trial"):
 
 
 if __name__ == "__main__":
-    config = make_config("FloorPlan_Train1_1",
-                         "Apple",
-                         "./config/detectors_spec.yaml",
+    config = make_config("./config/config-FloorPlan_Train1_1-Laptop.yaml",
                          planner="pomdp_py.POUCT",
                          # "RandomPlanner",
                          # planner="HeuristicSequentialPlanner",#"EntropyMinimizationPlanner",
-                         grid_size=0.25,
                          planner_config=POMCP_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#,#RANDOM_PLANNER_CONFIG,
                          #ENTROPY_PLANNER_CONFIG,#
                          seed=100,

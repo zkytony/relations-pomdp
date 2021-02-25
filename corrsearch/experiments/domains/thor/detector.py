@@ -70,54 +70,6 @@ class FanSensorThor(FanSensor):
         return (dist, bearing)
 
 
-def parse_sensor(sensor_spec):
-    """Build sensor given sensor_space (dict)"""
-    if sensor_spec["type"] == "fan":
-        sensor = FanSensorThor(**sensor_spec["params"])
-    else:
-        raise ValueError("Unrecognized sensor type %s" % sensor_spec["type"])
-    return sensor
-
-def parse_detector(scene_info, spec_or_filepath, robot_id):
-    """
-    scene_info (dict) see load_scene_info in process_scenes.py
-    """
-    if type(spec_or_filepath) == str:
-        with open(spec_or_filepath) as f:
-            spec_detectors = yaml.load(f)
-    elif type(spec_or_filepath) == dict:
-        spec_detectors = spec_or_filepath
-    else:
-        raise TypeError("spec_or_filepath must be a string or a dict.")
-
-    detectors = []
-    for dspec in spec_detectors:
-        sensors = {}
-        for ref in dspec["sensors"]:
-            assert type(ref) == str, "THOR sensors should be specified at type level"
-            objtype = ref
-            objid_for_type = scene_info.objid_for_type(objtype)
-
-            sensor_spec = dspec["sensors"][ref]
-            sensors[objid_for_type] = parse_sensor(sensor_spec)
-
-        params = {}
-        for param_name in dspec["params"]:
-            pspec = dspec["params"][param_name]
-            params[param_name] = {}
-            if type(pspec) == dict:
-                for ref in pspec:
-                    assert type(ref) == str, "THOR detector params should be specified at type level"
-                    objtype = ref
-                    objid_for_type = scene_info.objid_for_type(objtype)
-                    params[param_name][objid_for_type] = pspec[ref]
-        detector = RangeDetector(dspec["id"], robot_id,
-                                 dspec["type"], sensors,
-                                 energy_cost=dspec.get("energy_cost", 0),
-                                 name=dspec["name"],
-                                 **params)
-        detectors.append(detector)
-    return detectors
 
 
 if __name__ == "__main__":

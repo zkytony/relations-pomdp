@@ -110,6 +110,7 @@ detectors:
 
 
 # define the probability
+grid_size_dist: 0.5  # grid size that the distributions are defined over
 probability:
   # The probability will be more coarse
   # - Laptop
@@ -118,11 +119,10 @@ probability:
   # - Painting
   # - Television
   # - Bed
-
-  - class: [DiningTable]
+  - classes: [DiningTable]
     dist: "uniform"
 
-  - class: [Laptop]
+  - classes: [Laptop]
     dist: "uniform"
 
   - classes: [Laptop, DiningTable]
@@ -152,12 +152,16 @@ probability:
 
 
 # defines robot moves
+robot_id: 0
 move_actions:
   - name: forward
-    delta: (1.0, 0.0)
+    delta: [1.0, 0.0]
+    energy_cost: 0.0
 
   - name: left
-    delta: (0.0, "-math.pi/4")
+    delta: [0.0, "-math.pi/4"]
+    energy_cost: 0.0
 
   - name: right
-    delta: (0.0, "math.pi/4")
+    delta: [0.0, "math.pi/4"]
+    energy_cost: 0.0

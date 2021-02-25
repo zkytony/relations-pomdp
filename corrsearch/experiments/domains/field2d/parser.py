@@ -135,8 +135,8 @@ def parse_dist(domain_info, spec):
     """
     factors = []
     variables = set()
-    for i in range(len(spec["probability"])):
-        dist_spec = spec["probability"][i]
+    for tt in range(len(spec["probability"])):
+        dist_spec = spec["probability"][tt]
         spatial_relation = eval(dist_spec["dist"])
         params = dist_spec.get("params", {})
         locations = domain_info["locations"]
