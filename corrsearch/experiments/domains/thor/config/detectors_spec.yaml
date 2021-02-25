@@ -1,23 +1,43 @@
 # detectors:
 
-- name: laptop-detector
-  id: 200
-  type: "loc"
-  energy_cost: 0.0
-  sensors:
-    Laptop:
-      type: "fan"
-      params:
-        fov: 90
-        min_range: 0
-        max_range: 3
-  params:
-    true_positive:
-      Laptop: 0.9
-    false_positive:
-      Laptop: 0.00
-    sigma:
-      Laptop: 0.1
+# - name: laptop-detector
+#   id: 200
+#   type: "loc"
+#   energy_cost: 0.0
+#   sensors:
+#     Laptop:
+#       type: "fan"
+#       params:
+#         fov: 90
+#         min_range: 0
+#         max_range: 3
+#   params:
+#     true_positive:
+#       Laptop: 0.9
+#     false_positive:
+#       Laptop: 0.00
+#     sigma:
+#       Laptop: 0.1
+
+
+# - name: box-detector
+#   id: 200
+#   type: "loc"
+#   energy_cost: 0.0
+#   sensors:
+#     Box:
+#       type: "fan"
+#       params:
+#         fov: 90
+#         min_range: 0
+#         max_range: 3
+#   params:
+#     true_positive:
+#       Box: 0.9
+#     false_positive:
+#       Box: 0.00
+#     sigma:
+#       Box: 0.1
 
 
 # - name: chair-detector
@@ -40,24 +60,24 @@
 #       Chair: 0.1
 
 
-# - name: apple-detector
-#   id: 100
-#   type: "loc"
-#   energy_cost: 0.0
-#   sensors:
-#     Apple:
-#       type: "fan"
-#       params:
-#         fov: 90
-#         min_range: 0
-#         max_range: 2
-#   params:
-#     true_positive:
-#       Apple: 0.9
-#     false_positive:
-#       Apple: 0.00
-#     sigma_positive:
-#       Apple: 0.1
+- name: apple-detector
+  id: 100
+  type: "loc"
+  energy_cost: 0.0
+  sensors:
+    Apple:
+      type: "fan"
+      params:
+        fov: 90
+        min_range: 0
+        max_range: 2
+  params:
+    true_positive:
+      Apple: 0.9
+    false_positive:
+      Apple: 0.00
+    sigma:
+      Apple: 0.1
 
 # - name: workstuff-detector
 #   id: 200
