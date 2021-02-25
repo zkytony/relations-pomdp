@@ -227,7 +227,7 @@ class TestGridMap(unittest.TestCase):
 
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
@@ -303,7 +303,7 @@ class TestThorDetector(unittest.TestCase):
         time.sleep(2)
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorEnv(unittest.TestCase):
 
     def test_env_basic(self):

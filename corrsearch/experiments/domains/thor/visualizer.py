@@ -68,11 +68,12 @@ class ThorViz(Visualizer):
 
         # Draw where the target is
         target_id = self.problem.target_id
-        target_x, target_y = state[target_id].loc
-        r = self._res
-        cv2.rectangle(img, (target_y*r, target_x*r),
-                      (target_y*r+r, target_x*r+r),
-                      lighter(self.get_color(target_id)[:3], 0.5), -1)
+        if target_id is not None:
+            target_x, target_y = state[target_id].loc
+            r = self._res
+            cv2.rectangle(img, (target_y*r, target_x*r),
+                          (target_y*r+r, target_x*r+r),
+                          lighter(self.get_color(target_id)[:3], 0.5), -1)
 
         # Draw belief (only about target)
         if belief is not None:
