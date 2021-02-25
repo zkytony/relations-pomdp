@@ -104,23 +104,26 @@ def thor_visible_objects(controller):
             result.append(obj)
     return result
 
-def robothor_scene_names(scene_type="Train"):
+def robothor_scene_names(scene_type="Train", levels=None, nums=None):
     scenes = []
     if scene_type == "Train":
-        imax = 13
-        jmax = 6
+        if levels is None:
+            levels = range(1, 13)
+        if nums is None:
+            nums = range(1, 6)
     elif scene_type == "Val":
-        imax = 4
-        jmax = 6
+        if levels is None:
+            levels = range(1, 4)
+        if nums is None:
+            nums = range(1, 6)
     else:
         raise ValueError("RoboThor has no scene type {}".format(scene_type))
 
-    for i in range(1, imax):
-        for j in range(1, jmax):
+    for i in levels:
+        for j in nums:
             scene = "FloorPlan_{}{}_{}".format(scene_type, i, j)
             scenes.append(scene)
     return scenes
-
 
 def convert_scene_to_grid_map(controller, scene_name, grid_size):
     """Converts an Ai2Thor scene to a GridMap"""

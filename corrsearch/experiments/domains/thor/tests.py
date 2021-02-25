@@ -13,7 +13,7 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
-from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
+from corrsearch.experiments.domains.thor.process_scenes import *
 from corrsearch.experiments.domains.thor.spatial_corr import *
 import matplotlib.pyplot as plt
 
@@ -397,6 +397,7 @@ class TestSpatialCorr(unittest.TestCase):
         plt.plot(*cond_loc, "bo")
         plt.show()
 
+    @unittest.SkipTest
     def test_spatial_corr_dist(self):
         scene_name = "FloorPlan_Train2_1"
         scene_info = load_scene_info(scene_name)
@@ -421,6 +422,10 @@ class TestSpatialCorr(unittest.TestCase):
         obz = {svar(problem.target_id) : starget}
         cond = dist.marginal([svar(obj.id)], observation=obz)
         self.plot_heatmap(problem, obj.id, cond, obz)
+
+    def test_shared_objects(self):
+        objects = shared_objects_in_scenes(robothor_scene_names("Train", levels=[1]))
+        print(objects)
 
 
 

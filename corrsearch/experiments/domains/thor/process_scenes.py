@@ -96,6 +96,17 @@ def load_scene_info(scene_name, data_path="data"):
     return scene_info
 
 
+def shared_objects_in_scenes(scenes):
+    objects = None
+    for scene in scenes:
+        scene_info = load_scene_info(scene)
+        if objects is None:
+            objects = scene_info.obj_types()
+        else:
+            objects = objects.intersection(scene_info.obj_types())
+    return objects
+
+
 def main():
     os.makedirs("data", exist_ok=True)
     for i in range(1, 13):
