@@ -381,54 +381,6 @@ class TestThorProblem(unittest.TestCase):
         problem.instantiate(init_belief="uniform")
 
 
-class TestSpatialCorr(unittest.TestCase):
-
-    def plot_heatmap(self, problem, objid, cond_dist, observation):
-        cond_loc = list(observation.items())[0][1].loc
-
-        grid_map = problem.grid_map
-        hm = np.full((grid_map.length, grid_map.width), 0.0)
-        for event in cond_dist.events:
-            x, y = event[svar(objid)].loc
-            hm[y,x] = cond_dist.prob(event)
-            print(hm[y,x])
-
-        heatmap(hm, np.arange(grid_map.length), np.arange(grid_map.width))
-        plt.plot(*cond_loc, "bo")
-        plt.show()
-
-    @unittest.SkipTest
-    def test_spatial_corr_dist(self):
-        scene_name = "FloorPlan_Train2_1"
-        scene_info = load_scene_info(scene_name)
-        grid_size = 0.25
-        robot_id = 0
-        target_class = "Laptop"
-        target_object = (scene_info.objid_for_type(target_class), target_class)
-        problem = ThorSearch(robot_id,
-                             target_object,
-                             scene_name,
-                             scene_info,
-                             detectors_spec_path="./config/detectors_spec.yaml",
-                             grid_size=0.25)
-        scale = 4
-        comatrix, occurs = cooccur_matrix_scene_counts(robothor_scene_names("Train"), scale=scale)
-        dist = SpatialCorrDist(scene_info, problem.locations,
-                               comatrix, occurs, problem.target_id, scale=scale)
-
-        obj = scene_info.obj(scene_info.objid_for_type("SideTable"))
-        starget = LocObjState(problem.target_id, problem.target_class,
-                              {"loc": random.sample(problem.locations, 1)[0]})
-        obz = {svar(problem.target_id) : starget}
-        cond = dist.marginal([svar(obj.id)], observation=obz)
-        self.plot_heatmap(problem, obj.id, cond, obz)
-
-    def test_shared_objects(self):
-        objects = shared_objects_in_scenes(robothor_scene_names("Train", levels=[1]))
-        print(objects)
-
-
-
 
 
 if __name__ == "__main__":
