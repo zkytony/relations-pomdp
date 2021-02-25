@@ -39,6 +39,7 @@ class ThorSearch(SearchProblem):
                  detectors=None,
                  detectors_spec_path=None,
                  move_actions=MOVE_ACTIONS,
+                 boundary_thickness=4,
                  grid_size=0.25):
         """
         Note: joint_dist should be grounded to the given scene already.
@@ -50,6 +51,8 @@ class ThorSearch(SearchProblem):
             detectors_spec_path (str or dict):
                 Path to the .yaml file that specifies the detectors,
                 or a dictionary spec.
+            boundary_thickness (int) How far extended into the unreachable
+                locations can an object be placed.
         """
         self.robot_id = robot_id
         self.target_object = target_object
@@ -90,15 +93,8 @@ class ThorSearch(SearchProblem):
                 detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.
-        # This is the union of the reachable locations and the locations of all objects.
-        # Note that we do not want it to be the entire widthxlength grids because some
-        # may be outside of the possible sensing region.
         locations = copy.deepcopy(self.env.grid_map.free_locations)
-        locations |= self.env.grid_map.boundary_cells(thickness=2)
-        # for objid in self.scene_info.objects:
-        #     thor_x, thor_z = self.scene_info.thor_obj_pose2d(objid)
-        #     objloc = self.grid_map.to_grid_pos(thor_x, thor_z, grid_size=grid_size)
-        #     locations.add(objloc)
+        locations |= self.env.grid_map.boundary_cells(thickness=4)
 
         joint_dist = None
         super().__init__(
