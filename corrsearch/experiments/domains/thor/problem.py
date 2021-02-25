@@ -86,8 +86,8 @@ class ThorSearch(SearchProblem):
 
         detectors = parse_detectors(scene_info, spec["detectors"], robot_id)
 
-        # actions = parse_move_actions(spec["move_actions"]) | {Declare()}
-        actions = set(UseDetector(detector.id,
+        actions = parse_move_actions(spec["move_actions"]) | {Declare()}
+        actions |= set(UseDetector(detector.id,
                                    name=detector.name,
                                    energy_cost=detector.energy_cost)
                        for detector in detectors)
