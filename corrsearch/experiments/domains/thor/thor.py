@@ -310,7 +310,7 @@ class ThorEnv(pomdp_py.Environment):
                              for obj in thor_visible_objects(self.controller))
         object_obzs = {}
         for objid in sim_obz:
-            if objid not in visible_objids:
+            if self.scene_info.to_thor_objid(objid) not in visible_objids:
                 object_obzs[objid] = NullObz(objid)
             else:
                 object_obzs[objid] = sim_obz[objid]
