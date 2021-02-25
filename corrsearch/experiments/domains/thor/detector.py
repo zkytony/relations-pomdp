@@ -8,8 +8,15 @@ import os
 
 class FanSensorThor(FanSensor):
 
-    def __init__(self, name="laser2d_sensor", **params):
-        super().__init__(name=name, **params)
+    def __init__(self, name="laser2d_sensor", grid_size=0.25, **params):
+        """
+        Will interpret min, max ranges in meters. Convert them
+        to grids using grid size
+        """
+        fov = params.get("fov", 90)
+        min_range = int(round(params.get("min_range", 0.0) / grid_size))
+        max_range = int(round(params.get("max_range", 1.5) / grid_size))
+        super().__init__(name=name, fov=fov, min_range=min_range, max_range=max_range)
 
         self.grid_map = params.get("grid_map", None)
         self._cache = {}
