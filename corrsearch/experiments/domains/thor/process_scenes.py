@@ -22,6 +22,9 @@ class SceneInfo:
                 thor_objid = self.type_obj_map[objtype][objid]["objectId"]
                 self._idt2p[thor_objid] = objid
 
+    def obj_types(self):
+        return set(self.type_obj_map.keys())
+
     def pomdp_objids(self, objtype):
         """Returns objids (pomdp) for the given object type"""
         return set(self.type_obj_map[objtype].keys())
