@@ -14,10 +14,13 @@ class SceneInfo:
 
         # Map from objid (pomdp) to thor object dict
         self._idp2t = {}
+        self._idt2p = {}
         for objtype in self.type_obj_map:
             for objid in self.type_obj_map[objtype]:
                 assert objid not in self._idp2t
                 self._idp2t[objid] = self.type_obj_map[objtype][objid]
+                thor_objid = self.type_obj_map[objtype][objid]["objectId"]
+                self._idt2p[thor_objid] = objid
 
     def pomdp_objids(self, objtype):
         """Returns objids (pomdp) for the given object type"""
@@ -43,6 +46,9 @@ class SceneInfo:
         obj = self.obj(objid)
         thor_pose = obj["position"]["x"], obj["position"]["z"]
         return thor_pose
+
+    def to_thor_objid(self, objid):
+        return self._idp2t[objid]["objectId"]
 
 
 def process_scene(scene):
@@ -81,7 +87,7 @@ def load_scene_info(scene_name, data_path="data"):
     scene_info = SceneInfo(scene_name, type_obj_map)
     for objid in scene_info.objects:
         obj = scene_info.objects[objid]
-        obj["color"] = colors.get(obj["objectType"], (128, 128, 128))
+        obj["color"] = colors.get(obj["objectType"], [128, 128, 128])
         obj["class"] = obj["objectType"]
     return scene_info
 
