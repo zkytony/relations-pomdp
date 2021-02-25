@@ -9,10 +9,10 @@ class DetRobotTrans(RobotTransModel):
     """Deterministic robot transition model
     Don't confuse this with RobotModel."""
 
-    def __init__(self, robot_id, grid_map, schema="vw"):
+    def __init__(self, robot_id, grid_map):
         self.robot_id = robot_id
         self.grid_map = grid_map
-        self.schema = schema
+        self.schema = None
 
     def move_by(self, robot_pose, action):
         """Note: agent by default (0 angle) looks in the +z direction in Unity,
@@ -24,6 +24,14 @@ class DetRobotTrans(RobotTransModel):
             new_rx = int(round(rx + forward*math.sin(new_rth)))
             new_ry = int(round(ry + forward*math.cos(new_rth)))
             new_rth = new_rth % (2*math.pi)
+        elif self.schema == "xy":
+            dx, dy, th = action.delta
+            rx, ry = robot_pose[:2]
+            new_rx = rx + dx
+            new_ry = ry + dy
+            new_rth = th
+        else:
+            raise ValueError("Invalid schema: ", self.schema)
         return (new_rx, new_ry, new_rth)
 
     def probability(self, next_robot_state, state, action, **kwargs):

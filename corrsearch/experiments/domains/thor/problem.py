@@ -92,6 +92,7 @@ class ThorSearch(SearchProblem):
                                    energy_cost=detector.energy_cost)
                        for detector in detectors)
         robot_trans_model = env.transition_model.robot_trans_model
+        robot_trans_model.schema = spec["move_schema"]
         robot_model = RobotModel(detectors, actions, robot_trans_model)
 
         # Obtain objects: List of object ids in the detector sensors;

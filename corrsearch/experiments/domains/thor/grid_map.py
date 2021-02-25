@@ -199,9 +199,9 @@ class GridMap:
         """
         Returns True if:
         - loc1 is a reachable location AND
-        - loc2 is a reachable location AND
         - the line segment between loc1 and loc2 goes through
-          an obstacle (i.e. blocked by an obstacle)
+          an obstacle, and then goes through a free cell
+          (i.e. blocked by an obstacle)
 
         This is checked by simulating a straightline from loc1 to loc2 and check
         if any step on the line is at an obstacle.
@@ -209,8 +209,9 @@ class GridMap:
         if loc1 == loc2:
             return False
 
-        if not (loc1 in self.free_locations and loc2 in self.free_locations):
-            return False
+        assert loc1 in self.free_locations, "in blocked: {} not free".format(loc1)
+        # if not (loc1 in self.free_locations and loc2 in self.free_locations):
+        #     return False
 
         _key = tuple(loc1), tuple(loc2)
         if _key in self._blocked_cache:
@@ -225,16 +226,19 @@ class GridMap:
         vec /= np.linalg.norm(vec)
 
         # Check points along the line from robot pose to the point
-        result = False
-        nsteps = 20
+        status = "start"
         dist = euclidean_dist(loc1, loc2)
         step_size = dist / nsteps
         t = 0
         while t < nsteps:
             line_point = tuple(np.round(loc1 + (t*step_size*vec)).astype(int))
             if line_point in self.obstacles:
-                result = True
-                break
+                status = "hits_obstacle"
+            elif line_point in self.free_locations:
+                if status == "hits_obstacle":
+                    status = "blocked"
+                    break
             t += 1
+        result = status == "blocked"
         self._blocked_cache[_key] = result
         return result

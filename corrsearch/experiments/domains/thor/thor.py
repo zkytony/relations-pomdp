@@ -230,7 +230,7 @@ class ThorEnv(pomdp_py.Environment):
 
         init_state = JointState(object_states)
 
-        robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map, schema="vw")
+        robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map)
         transition_model = SearchTransitionModel(self.robot_id, robot_trans_model)
 
         reward_model = ThorSearchRewardModel(self.robot_id, self.target_id, self.grid_map,

@@ -229,13 +229,13 @@ class TestGridMap(unittest.TestCase):
 
 
 
-@unittest.SkipTest
+# @unittest.SkipTest
 class TestThorDetector(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         config = {
-            "scene_name": "FloorPlan_Train1_1",
+            "scene_name": "FloorPlan_Train1_2",
             "width": 400,
             "height": 400,
             "grid_size": 0.25
@@ -259,7 +259,7 @@ class TestThorDetector(unittest.TestCase):
 
     def test_laser_sensor_geometry(self):
         cls = TestThorDetector
-        sensor = FanSensorThor(fov=75, min_range=0, max_range=4,
+        sensor = FanSensorThor(fov=75, min_range=0, max_range=2,
                                grid_map=cls.grid_map)
         robot_id = 0
         problem = DummyProblem(robot_id)
