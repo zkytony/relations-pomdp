@@ -2,6 +2,7 @@ import unittest
 import time
 import random
 import math
+import numpy as np
 from corrsearch.models import *
 from corrsearch.utils import *
 from corrsearch.objects import ObjectState, JointState
@@ -382,8 +383,23 @@ class TestThorProblem(unittest.TestCase):
 
 class TestSpatialCorr(unittest.TestCase):
 
+    def plot_heatmap(self, problem, objid, cond_objid, factor, observation):
+        cond_loc = observation[svar(cond_objid)].loc
+        cond_dist = factor.condition(observation)
+
+        grid_map = problem.grid_map
+        hm = np.full((grid_map.length, grid_map.width), 0.0)
+        for event in cond_dist.events:
+            x, y = event[svar(objid)].loc
+            hm[y,x] = cond_dist.prob(event)
+            print(hm[y,x])
+
+        heatmap(hm, np.arange(grid_map.length), np.arange(grid_map.width))
+        plt.plot(*cond_loc, "bo")
+        plt.show()
+
     def test_build_factor(self):
-        scene_name = "FloorPlan_Train1_1"
+        scene_name = "FloorPlan_Train2_1"
         scene_info = load_scene_info(scene_name)
         grid_size = 0.25
         robot_id = 0
@@ -394,16 +410,16 @@ class TestSpatialCorr(unittest.TestCase):
                              scene_info,
                              detectors_spec_path="./config/detectors_spec.yaml",
                              grid_size=0.25)
-        scale = 12
+        scale = 4
         comatrix = cooccur_matrix(robothor_scene_names("Train"), scale=scale)
 
-        obj1 = scene_info.obj(scene_info.objid_for_type("Laptop"))
-        obj2 = scene_info.obj(scene_info.objid_for_type("SideTable"))
+        obj1 = scene_info.obj(scene_info.objid_for_type("Book"))
+        obj2 = scene_info.obj(scene_info.objid_for_type("Laptop"))
         factor = build_factor(problem.locations, obj1, obj2, comatrix, scale=scale)
-        print(factor.random())
 
-
-
+        obz2 = factor.random()[svar(obj2.id)]
+        self.plot_heatmap(problem, obj1.id, obj2.id, factor,
+                          {svar(obj2.id) : obz2})
 
 
 

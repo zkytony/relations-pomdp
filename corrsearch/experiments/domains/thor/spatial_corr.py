@@ -12,6 +12,7 @@ from corrsearch.models import *
 from corrsearch.probability import *
 from corrsearch.utils import indicator
 from pprint import pprint
+import itertools
 
 def cooccur(grid_loc1, grid_loc2, scale=4):
     """Given two grid locations, return True if they fall in the same
@@ -32,24 +33,33 @@ def cooccur_matrix(scenes, grid_size=0.25, scale=4):
     matrix = {}
     scene_infos = {scene_name : load_scene_info(scene_name)
                    for scene_name in scenes}
-    for scene_name, scene_info in scene_infos.items():
-        for type1 in scene_info.obj_types():
-            for type2 in scene_info.obj_types():
-                if (type2, type1) in matrix:
-                    continue
+    for scene_name, scene_info in sorted(scene_infos.items()):
+        objtypes = sorted(scene_info.obj_types())
+        counts = {}
+        for type1, type2 in itertools.product(objtypes, objtypes):
+            if (type2, type1) in counts:
+                counts[(type1, type2)] = counts[(type2, type1)]
+                continue
+            counts[(type1, type2)] = [0,0]
+            for objid1 in scene_info.pomdp_objids(type1):
+                thor_pose1 = scene_info.thor_obj_pose2d(objid1)
+                grid_loc1 = (thor_pose1[0] // grid_size, thor_pose1[1] // grid_size)
+                for objid2 in scene_info.pomdp_objids(type2):
+                    if objid1 == objid2:
+                        continue
+                    thor_pose2 = scene_info.thor_obj_pose2d(objid2)
+                    grid_loc2 = (thor_pose2[0] // grid_size, thor_pose2[1] // grid_size)
+                    if cooccur(grid_loc1, grid_loc2, scale=scale):
+                        counts[(type1, type2)][0] += 1
+                    else:
+                        counts[(type1, type2)][1] += 1
+        for type1, type2 in counts:
+            if (type1, type2) not in matrix:
                 matrix[(type1, type2)] = [0,0]
-                for objid1 in scene_info.pomdp_objids(type1):
-                    thor_pose1 = scene_info.thor_obj_pose2d(objid1)
-                    grid_loc1 = (thor_pose1[0] // grid_size, thor_pose1[1] // grid_size)
-                    for objid2 in scene_info.pomdp_objids(type2):
-                        if objid1 == objid2:
-                            continue
-                        thor_pose2 = scene_info.thor_obj_pose2d(objid2)
-                        grid_loc2 = (thor_pose2[0] // grid_size, thor_pose2[1] // grid_size)
-                        if cooccur(grid_loc1, grid_loc2, scale=scale):
-                            matrix[(type1, type2)][0] += 1
-                        else:
-                            matrix[(type1, type2)][1] += 1
+                matrix[(type2, type1)] = [0,0]
+            no_cooccur, no_not_cooccur = counts[(type1, type2)]
+            matrix[(type1, type2)][0] += no_cooccur
+            matrix[(type1, type2)][1] += no_not_cooccur
     return matrix
 
 
@@ -116,7 +126,7 @@ def build_factor(locations, obj1, obj2, comatrix, scale=4):
 # A little test
 def test():
     matrix = cooccur_matrix(robothor_scene_names("Train"), scale=12)
-    pprint(["{}:{}".format(k,matrix[k]) for k in sorted(matrix, key=matrix.get)])
+    pprint(["{}:{}".format(k,matrix[k]) for k in sorted(matrix, key=lambda k: matrix[k][0])])
 
 
 if __name__ == "__main__":
