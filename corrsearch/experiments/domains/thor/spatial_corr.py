@@ -28,6 +28,8 @@ def cooccur_matrix(scenes, grid_size=0.25, scale=4):
                     grid_loc1 = (thor_pose1[0] // grid_size, thor_pose1[1] // grid_size)
                     supergrid_loc1 = grid_loc1[0] // scale, grid_loc1[1] // scale
                     for objid2 in scene_info.pomdp_objids(type2):
+                        if objid1 == objid2:
+                            continue
                         thor_pose2 = scene_info.thor_obj_pose2d(objid2)
                         grid_loc2 = (thor_pose2[0] // grid_size, thor_pose2[1] // grid_size)
                         supergrid_loc2 = grid_loc2[0] // scale, grid_loc2[1] // scale
@@ -41,5 +43,5 @@ if __name__ == "__main__":
         for j in range(1,6):
             scene = "FloorPlan_Train{}_{}".format(i, j)
             scenes.append(scene)
-    matrix = cooccur_matrix(scenes)
+    matrix = cooccur_matrix(scenes, scale=6)
     pprint(["{}:{}".format(k,matrix[k]) for k in sorted(matrix, key=matrix.get)])
