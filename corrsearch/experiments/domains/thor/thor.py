@@ -10,6 +10,7 @@ from corrsearch.experiments.domains.thor.transition import DetRobotTrans
 from corrsearch.utils import remap, to_rad, euclidean_dist
 from corrsearch.models.transition import *
 from corrsearch.models.robot_model import *
+from corrsearch.models.detector import *
 from corrsearch.models.problem import *
 from corrsearch.models.state import *
 
@@ -97,6 +98,7 @@ def thor_object_poses(controller, object_type):
 
 def thor_visible_objects(controller):
     thor_objects = thor_get(controller, "objects")
+    result = []
     for obj in thor_objects:
         if obj["visible"]:
             result.append(obj)
@@ -109,21 +111,24 @@ def convert_scene_to_grid_map(controller, scene_name, grid_size):
     # obtain grid indices for coordinates  (origin NOT at (0,0))
     thor_gx = (x // grid_size).astype(int)
     thor_gy = (z // grid_size).astype(int)
-    width = max(thor_gx) - min(thor_gx)
-    length = max(thor_gy) - min(thor_gy)
+    width = max(thor_gx) - min(thor_gx) + 1
+    length = max(thor_gy) - min(thor_gy) + 1
 
     # save these for later use
-    thor_gx_range = (min(thor_gx), max(thor_gx))
-    thor_gy_range = (min(thor_gy), max(thor_gy))
+    thor_gx_range = (min(thor_gx), max(thor_gx) + 1)
+    thor_gy_range = (min(thor_gy), max(thor_gy) + 1)
 
     # remap coordinates to be nonnegative (origin AT (0,0))
-    gx = remap(thor_gx, min(thor_gx), max(thor_gx), 0, width).astype(int)
-    gy = remap(thor_gy, min(thor_gy), max(thor_gy), 0, length).astype(int)
+    gx = remap(thor_gx, thor_gx_range[0], thor_gx_range[1], 0, width).astype(int)
+    gy = remap(thor_gy, thor_gy_range[0], thor_gy_range[1], 0, length).astype(int)
+
+    gx_range = (min(gx), max(gx)+1)
+    gy_range = (min(gy), max(gy)+1)
 
     # Little test: can convert back
     try:
-        assert all(remap(gx, min(gx), max(gx), thor_gx_range[0], thor_gx_range[1]).astype(int) == thor_gx)
-        assert all(remap(gy, min(gy), max(gy), thor_gy_range[0], thor_gy_range[1]).astype(int) == thor_gy)
+        assert all(remap(gx, gx_range[0], gx_range[1], thor_gx_range[0], thor_gx_range[1]).astype(int) == thor_gx)
+        assert all(remap(gy, gy_range[0], gy_range[1], thor_gy_range[0], thor_gy_range[1]).astype(int) == thor_gy)
     except AssertionError as ex:
         print("Unable to remap coordinates")
         raise ex
@@ -197,7 +202,7 @@ class ThorEnv(pomdp_py.Environment):
             thor_x, thor_y, thor_z = thor_objposes[thor_objid]
             objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
                                                grid_size=self.grid_size)
-            objloc = self.grid_map.snap_to_grid(objloc)
+            # objloc = self.grid_map.snap_to_grid(objloc)
             objstate = LocObjState(objid, target_type, {"loc": objloc})
             object_states[objid] = objstate
 
@@ -266,7 +271,7 @@ class ThorEnv(pomdp_py.Environment):
                 thor_x, thor_y, thor_z = thor_instance_poses[thor_objid]
                 objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
                                                    grid_size=self.grid_size)
-                objloc = self.grid_map.snap_to_grid(objloc)
+                # objloc = self.grid_map.snap_to_grid(objloc)
                 instance_poses.add(objloc)
             # Selecting the instance with closest geodesic dist;
             closest_instance_pose = min(instance_poses,
@@ -274,8 +279,19 @@ class ThorEnv(pomdp_py.Environment):
             sobj = LocObjState(objid, object_type, {"loc": closest_instance_pose})
             object_states[objid] = sobj
         env_state = JointState({self.robot_id: self.state[self.robot_id], **object_states})
-        return observation_model.sample(env_state, action)
 
+        # If an object is actually NOT observable in THOR, set the observation to be Null.
+        sim_obz = observation_model.sample(env_state, action)
+        visible_objids = set(obj["objectId"]
+                             for obj in thor_visible_objects(self.controller))
+        object_obzs = {}
+        for objid in sim_obz:
+            if objid not in visible_objids:
+                object_obzs[objid] = NullObz(objid)
+            else:
+                object_obzs[objid] = sim_obz[objid]
+        actual_obz = JointObz(object_obzs)
+        return actual_obz
 
 
 class ThorSearchRewardModel(pomdp_py.RewardModel):
@@ -328,23 +344,14 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
             robot_loc = state[self.robot_id].loc
             target_loc = state[self.target_id].loc
 
-            # # Closer than threshold
-            # if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
-            #     # Not blocked by wall
-            #     if not self.grid_map.blocked(robot_loc, target_loc):
-            #         # facing the object (not guaranteed to be visible)
-            #         if self._facing(state[self.robot_id].pose, target_loc):
-            #             return self.rmax
-            if action.loc is None:
-                decloc = state[self.robot_id].loc
-            else:
-                decloc = action.loc
-            if decloc == state[self.target_id].loc:
-                return self.rmax
-            else:
-                return self.rmin
-
-            # return self.rmin
+            # Closer than threshold
+            if euclidean_dist(robot_loc, target_loc) <= self.declare_dist_grids:
+                # Not blocked by wall
+                if not self.grid_map.blocked(robot_loc, target_loc):
+                    # facing the object (not guaranteed to be visible)
+                    if self._facing(state[self.robot_id].pose, target_loc):
+                        return self.rmax
+            return self.rmin
         else:
             return self.step_reward_func(state, action, next_state)
 
