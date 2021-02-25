@@ -13,6 +13,9 @@ def svar(objid):
     """Convention to name the state variable of an object"""
     return "s" + str(objid)
 
+def id_from_svar(var):
+    return int(var[1:])
+
 class DetectorModel(pomdp_py.ObservationModel):
     """Detector Model is the sensor model of the detector.
     The observation should be factored by objects,

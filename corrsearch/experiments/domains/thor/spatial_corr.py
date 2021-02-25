@@ -25,22 +25,18 @@ def cooccur_matrix(scenes, grid_size=0.25, scale=4):
     """
     Returns a cooccurrence matrix (mapping from [i,j] -> (#cooccur, #not-cooccur))
     for all pairs of object types in the scenes.
-
-    This actually differs from Kollar and Roy (2009); We explicitly count the
-    number of times two objects are NOT co-occurring too. That makes the factors
-    simpler. TBH the factors defined in Kollar and Roy (2009) are not understandable to me.
     """
     matrix = {}
     scene_infos = {scene_name : load_scene_info(scene_name)
                    for scene_name in scenes}
-    for scene_name, scene_info in sorted(scene_infos.items()):
-        objtypes = sorted(scene_info.obj_types())
+    for scene_name, scene_info in scene_infos.items():
+        objtypes = scene_info.obj_types()
         counts = {}
         for type1, type2 in itertools.product(objtypes, objtypes):
             if (type2, type1) in counts:
                 counts[(type1, type2)] = counts[(type2, type1)]
                 continue
-            counts[(type1, type2)] = [0,0]
+            counts[(type1, type2)] = 0
             for objid1 in scene_info.pomdp_objids(type1):
                 thor_pose1 = scene_info.thor_obj_pose2d(objid1)
                 grid_loc1 = (thor_pose1[0] // grid_size, thor_pose1[1] // grid_size)
@@ -50,83 +46,78 @@ def cooccur_matrix(scenes, grid_size=0.25, scale=4):
                     thor_pose2 = scene_info.thor_obj_pose2d(objid2)
                     grid_loc2 = (thor_pose2[0] // grid_size, thor_pose2[1] // grid_size)
                     if cooccur(grid_loc1, grid_loc2, scale=scale):
-                        counts[(type1, type2)][0] += 1
-                    else:
-                        counts[(type1, type2)][1] += 1
+                        counts[(type1, type2)] += 1
+
         for type1, type2 in counts:
             if (type1, type2) not in matrix:
-                matrix[(type1, type2)] = [0,0]
-                matrix[(type2, type1)] = [0,0]
-            no_cooccur, no_not_cooccur = counts[(type1, type2)]
-            matrix[(type1, type2)][0] += no_cooccur
-            matrix[(type1, type2)][1] += no_not_cooccur
-    return matrix
+                matrix[(type1, type2)] = 0
+                matrix[(type2, type1)] = 0
+            matrix[(type1, type2)] += counts[(type1, type2)]
+            matrix[(type2, type1)] = matrix[(type1, type2)]
+
+    final_matrix = {}  # {type -> {type -> counts}}
+    for type1, type2 in matrix:
+        final_matrix[type1] = final_matrix.get(type1, {})
+        final_matrix[type1][type2] = matrix[(type1,type2)]
+
+    occurrences = {}  # maps from object type to number of occurrences of the type
+    for scene_name, scene_info in scene_infos.items():
+        objtypes = scene_info.obj_types()
+        for objtype in objtypes:
+            occurrences[objtype] = occurrences.get(objtype, 0) \
+                                   + len(scene_info.pomdp_objids(objtype))
+    return final_matrix, occurrences
 
 
-def prob_locs(loc1, loc2, type1, type2, comatrix, scale=4):
-    """
-    This gives the prior distribution for Pr(s1 = loc1, s2 = loc2).
+# Build conditional distributions directly; All that we need is
+# the conditionals.
+class SpatialCorrDist(JointDist):
 
-    This is formulated as:
+    def __init__(self, scene_info, locations, comatrix, occurrences, target_id, scale=4):
+        self.scene_info = scene_info
+        self.comatrix = comatrix
+        self.occurs = occurrences
+        self.target_id = target_id
+        self.locations = locations
+        self.scale = scale
 
-    Pr(s1 = loc1, s2 = loc2) = sum Pr(s1 = loc1, s2 = loc2 | C) Pr(C)
-                                C
+    def marginal(self, variables, observation=None):
+        """We only account for the case Pr(si | starget)"""
+        if len(variables) != 1:
+            raise ValueError("Only accept one variable.")
+        if observation is None or len(observation) != 1:
+            raise ValueError("observation (starget) must not be None / must only contain target")
+        var_corrobj = variables[0]
+        var_target, starget = list(observation.items())[0]
+        assert svar(self.target_id) == var_target
 
-    where C is a binary variable that is True if objects of type 1 and type 2
-    co-occurs and False if not. The Pr(C) can be estimated from comatrix.
-    And the term Pr(s1 = loc1, s2 = loc2 | C) can be straightforwardly
-    defined based on the cooccur function.
-    """
-    if (type1, type2) in comatrix:
-        counts = comatrix[(type1, type2)]
-    elif (type2, type1) in comatrix:
-        counts = comatrix[(type2, type1)]
-    else:
-        raise ValueError("No counts for {}, {}".format(type1, type2))
-    n_cooccur, n_not_cooccur = counts
-    if n_cooccur == 0 and n_not_cooccur == 0:
-        return 1  # always return 1; independent
+        corrobj = self.scene_info.obj(id_from_svar(var_corrobj))
+        targetobj = self.scene_info.obj(self.target_id)
 
-    # Pr(s1 = loc1, s2 = loc2 | C = True); Let's leave the normalization for later.
-    pr_t = indicator(cooccur(loc1, loc2, scale=scale))\
-            * (n_cooccur / (n_cooccur + n_not_cooccur))
-    pr_f = indicator(not cooccur(loc1, loc2, scale=scale))\
-            * (n_not_cooccur / (n_cooccur + n_not_cooccur))
-    return pr_t + pr_f
-
-
-def build_factor(locations, obj1, obj2, comatrix, scale=4):
-    """
-    Given a grid_map (GridMap), two objects, obj1, obj2 (Object),
-    and a cooccurrence matrix, return a TabularDistribution that
-    represents Pr(s_obj1, s_obj2) over the given locations
-
-    The object is expected to have attribute "class"
-    """
-    type1 = obj1["class"]
-    type2 = obj2["class"]
-    weights = []
-    for grid_loc1 in locations:
-
-        objstate1 = LocObjState(obj1.id, type1, {"loc": grid_loc1})
-
-        for grid_loc2 in locations:
-            objstate2 = LocObjState(obj2.id, type2, {"loc": grid_loc2})
-
-            setting = [(svar(obj1.id), objstate1),
-                       (svar(obj2.id), objstate2)]
-            prob = prob_locs(grid_loc1, grid_loc2, type1, type2,
-                             comatrix, scale=scale)
+        weights = []
+        for corrobj_loc in self.locations:
+            state_corrobj = LocObjState(corrobj.id, corrobj["class"], {"loc": corrobj_loc})
+            prob = self._factor(corrobj_loc, corrobj, starget.loc, targetobj)
+            setting = [(var_corrobj, state_corrobj)]
             weights.append((setting, prob))
-    factor = TabularDistribution([svar(obj1.id), svar(obj2.id)],
-                                 weights)
-    return factor
+        return TabularDistribution([var_corrobj], weights)
+
+    def _factor(self, loc, obj, cond_loc, cond_obj):
+        """Given an object is at cond_loc,
+        return the probability that another object is at loc"""
+        type_obj = obj["class"]
+        type_cond_obj = cond_obj["class"]
+        no_cooccur = self.comatrix[type_obj][type_cond_obj]
+        if cooccur(loc, cond_loc):
+            return no_cooccur / self.occurs[type_obj]
+        else:
+            return 1 - no_cooccur / self.occurs[type_obj]
 
 
 # A little test
 def test():
-    matrix = cooccur_matrix(robothor_scene_names("Train"), scale=12)
-    pprint(["{}:{}".format(k,matrix[k]) for k in sorted(matrix, key=lambda k: matrix[k][0])])
+    matrix, occurs = cooccur_matrix(robothor_scene_names("Train"), scale=12)
+    pprint(matrix)
 
 
 if __name__ == "__main__":

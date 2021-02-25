@@ -14,7 +14,7 @@ from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
 from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
-from corrsearch.experiments.domains.thor.spatial_corr import cooccur_matrix, build_factor
+from corrsearch.experiments.domains.thor.spatial_corr import *
 import matplotlib.pyplot as plt
 
 
@@ -383,9 +383,8 @@ class TestThorProblem(unittest.TestCase):
 
 class TestSpatialCorr(unittest.TestCase):
 
-    def plot_heatmap(self, problem, objid, cond_objid, factor, observation):
-        cond_loc = observation[svar(cond_objid)].loc
-        cond_dist = factor.condition(observation)
+    def plot_heatmap(self, problem, objid, cond_dist, observation):
+        cond_loc = list(observation.items())[0][1].loc
 
         grid_map = problem.grid_map
         hm = np.full((grid_map.length, grid_map.width), 0.0)
@@ -398,12 +397,13 @@ class TestSpatialCorr(unittest.TestCase):
         plt.plot(*cond_loc, "bo")
         plt.show()
 
-    def test_build_factor(self):
+    def test_spatial_corr_dist(self):
         scene_name = "FloorPlan_Train2_1"
         scene_info = load_scene_info(scene_name)
         grid_size = 0.25
         robot_id = 0
-        target_object = (100, "Laptop")
+        target_class = "Laptop"
+        target_object = (scene_info.objid_for_type(target_class), target_class)
         problem = ThorSearch(robot_id,
                              target_object,
                              scene_name,
@@ -411,15 +411,17 @@ class TestSpatialCorr(unittest.TestCase):
                              detectors_spec_path="./config/detectors_spec.yaml",
                              grid_size=0.25)
         scale = 4
-        comatrix = cooccur_matrix(robothor_scene_names("Train"), scale=scale)
+        comatrix, occurs = cooccur_matrix(robothor_scene_names("Train"), scale=scale)
+        dist = SpatialCorrDist(scene_info, problem.locations,
+                               comatrix, occurs, problem.target_id, scale=scale)
 
-        obj1 = scene_info.obj(scene_info.objid_for_type("Book"))
-        obj2 = scene_info.obj(scene_info.objid_for_type("Laptop"))
-        factor = build_factor(problem.locations, obj1, obj2, comatrix, scale=scale)
+        obj = scene_info.obj(scene_info.objid_for_type("AlarmClock"))
+        starget = LocObjState(problem.target_id, problem.target_class,
+                              {"loc": random.sample(problem.locations, 1)[0]})
+        obz = {svar(problem.target_id) : starget}
+        cond = dist.marginal([svar(obj.id)], observation=obz)
+        self.plot_heatmap(problem, obj.id, cond, obz)
 
-        obz2 = factor.random()[svar(obj2.id)]
-        self.plot_heatmap(problem, obj1.id, obj2.id, factor,
-                          {svar(obj2.id) : obz2})
 
 
 

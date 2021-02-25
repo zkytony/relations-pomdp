@@ -35,8 +35,8 @@ class SceneInfo:
         If there are multiple ones, return the smallest."""
         return min(self.pomdp_objids(objtype))
 
-    def obj(self, objid, thor=True):
-        """Returns the THOR object data structure given objid (pomdp)"""
+    def obj(self, objid):
+        """Returns the Object with thor data structure given objid (pomdp)"""
         return Object(objid, self._idp2t[objid])
 
     def obj_type(self, objid):
