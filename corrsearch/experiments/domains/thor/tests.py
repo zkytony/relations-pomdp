@@ -13,6 +13,7 @@ from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
 from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
+from corrsearch.experiments.domains.thor.spatial_corr import cooccur_matrix, build_factor
 import matplotlib.pyplot as plt
 
 
@@ -303,7 +304,7 @@ class TestThorDetector(unittest.TestCase):
         time.sleep(2)
 
 
-# @unittest.SkipTest
+@unittest.SkipTest
 class TestThorEnv(unittest.TestCase):
 
     def test_env_basic(self):
@@ -366,34 +367,44 @@ class TestThorProblem(unittest.TestCase):
 
     def test_problem_basic(self):
         scene_name = "FloorPlan_Train1_1"
+        scene_info = load_scene_info(scene_name)
         grid_size = 0.25
         robot_id = 0
         target_object = (100, "Laptop")
         problem = ThorSearch(robot_id,
                              target_object,
                              scene_name,
+                             scene_info,
                              detectors_spec_path="./config/detectors_spec.yaml",
                              grid_size=0.25)
         problem.instantiate(init_belief="uniform")
 
 
+class TestSpatialCorr(unittest.TestCase):
 
-def test_teleport():
-    controller, grid_map, config = setUp()
+    def test_build_factor(self):
+        scene_name = "FloorPlan_Train1_1"
+        scene_info = load_scene_info(scene_name)
+        grid_size = 0.25
+        robot_id = 0
+        target_object = (100, "Laptop")
+        problem = ThorSearch(robot_id,
+                             target_object,
+                             scene_name,
+                             scene_info,
+                             detectors_spec_path="./config/detectors_spec.yaml",
+                             grid_size=0.25)
+        scale = 12
+        comatrix = cooccur_matrix(robothor_scene_names("Train"), scale=scale)
 
-    # Initial pose
-    event = controller.step("Pass")
-    print("position1:", event.metadata["agent"]["position"])
-    print("rotation1:", event.metadata["agent"]["rotation"])
+        obj1 = scene_info.obj(scene_info.objid_for_type("Laptop"))
+        obj2 = scene_info.obj(scene_info.objid_for_type("SideTable"))
+        factor = build_factor(problem.locations, obj1, obj2, comatrix, scale=scale)
+        print(factor.random())
 
-    # I want the agent to teleport to:
-    #   x=3.25, z=-1.5, rotation_y=270.0
-    # without changing other coordinates
-    event = controller.step('TeleportFull',
-                            x=3.25, z=-1.5,
-                            rotation=dict(y=270.0))
-    print("position2:", event.metadata["agent"]["position"])
-    print("rotation2:", event.metadata["agent"]["rotation"])
+
+
+
 
 
 

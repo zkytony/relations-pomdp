@@ -89,7 +89,7 @@ class ThorSearch(SearchProblem):
                                          {"class":"robot", "color": [30, 30, 200]})}
         for detector in detectors:
             for objid in detector.detectable_objects:
-                objects[objid] = Object(objid, self.scene_info.obj(objid))
+                objects[objid] = self.scene_info.obj(objid)
                 detector.sensors[objid].grid_map = self.grid_map
 
         # Locations where object can be.

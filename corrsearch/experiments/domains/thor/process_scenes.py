@@ -6,6 +6,7 @@ import os
 import pickle
 import yaml
 from corrsearch.experiments.domains.thor.thor import *
+from corrsearch.objects.template import Object
 
 class SceneInfo:
     def __init__(self, scene_name, type_obj_map):
@@ -34,9 +35,9 @@ class SceneInfo:
         If there are multiple ones, return the smallest."""
         return min(self.pomdp_objids(objtype))
 
-    def obj(self, objid):
+    def obj(self, objid, thor=True):
         """Returns the THOR object data structure given objid (pomdp)"""
-        return self._idp2t[objid]
+        return Object(objid, self._idp2t[objid])
 
     def obj_type(self, objid):
         return self._idp2t[objid]["objectType"]
