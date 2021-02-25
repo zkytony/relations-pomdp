@@ -38,7 +38,8 @@ class TestThorTransition(unittest.TestCase):
             "grid_size": 0.25
         }
         controller = launch_controller(config)
-        grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
+        scene_info = load_scene_info(scene_name)
+        grid_map = convert_scene_to_grid_map(controller, scene_info, config["grid_size"])
         controller.grid_size = config["grid_size"]
 
         cls.controller = controller
@@ -198,7 +199,8 @@ class TestGridMap(unittest.TestCase):
             "grid_size": 0.25
         }
         controller = launch_controller(config)
-        grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
+        scene_info = load_scene_info(scene_name)
+        grid_map = convert_scene_to_grid_map(controller, scene_info, config["grid_size"])
         controller.grid_size = config["grid_size"]
 
         cls.controller = controller
@@ -241,7 +243,8 @@ class TestThorDetector(unittest.TestCase):
             "grid_size": 0.25
         }
         controller = launch_controller(config)
-        grid_map = convert_scene_to_grid_map(controller, config["scene_name"], config["grid_size"])
+        scene_info = load_scene_info(scene_name)
+        grid_map = convert_scene_to_grid_map(controller, scene_info, config["grid_size"])
         controller.grid_size = config["grid_size"]
 
         cls.controller = controller

@@ -86,8 +86,8 @@ class GridMap:
         # remap coordinates to be nonnegative (origin AT (0,0))
         thor_gx_min, thor_gx_max = self.ranges_in_thor[0]
         thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
-        gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width))
-        gy = int(remap(thor_gy, thor_gy_min, thor_gy_max, 0, self.length))
+        gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width, enforce=True))
+        gy = int(remap(thor_gy, thor_gy_min, thor_gy_max, 0, self.length, enforce=True))
         return gx, gy
 
 

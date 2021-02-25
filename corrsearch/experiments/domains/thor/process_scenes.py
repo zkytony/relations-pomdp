@@ -5,7 +5,6 @@ in the scene.
 import os
 import pickle
 import yaml
-from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.objects.template import Object
 
 class SceneInfo:

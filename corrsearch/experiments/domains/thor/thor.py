@@ -7,6 +7,7 @@ import math
 from ai2thor.controller import Controller
 from corrsearch.experiments.domains.thor.grid_map import GridMap
 from corrsearch.experiments.domains.thor.transition import DetRobotTrans
+from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
 from corrsearch.utils import remap, to_rad, euclidean_dist
 from corrsearch.models.transition import *
 from corrsearch.models.robot_model import *
@@ -27,6 +28,7 @@ def reachable_thor_loc2d(controller):
     y = np.array([p['y'] for p in positions])
     z = np.array([p['z'] for p in positions])
     return x, z
+
 
 def launch_controller(config):
     controller = Controller(scene=config["scene_name"],
@@ -126,7 +128,7 @@ def robothor_scene_names(scene_type="Train", levels=None, nums=None):
             scenes.append(scene)
     return scenes
 
-def convert_scene_to_grid_map(controller, scene_name, grid_size):
+def convert_scene_to_grid_map(controller, scene_info, grid_size):
     """Converts an Ai2Thor scene to a GridMap"""
     x, z = reachable_thor_loc2d(controller)
 
@@ -166,7 +168,7 @@ def convert_scene_to_grid_map(controller, scene_name, grid_size):
                  if (x,y) not in positions}
 
     grid_map = GridMap(width, length, obstacles,
-                       name=scene_name,
+                       name=scene_info.scene_name,
                        ranges_in_thor=(thor_gx_range, thor_gy_range))
 
     return grid_map
@@ -196,7 +198,7 @@ class ThorEnv(pomdp_py.Environment):
         self.controller = launch_controller(thor_config)
 
         self.grid_map = convert_scene_to_grid_map(self.controller,
-                                                  self.config["scene_name"],
+                                                  scene_info,
                                                   self.grid_size)
 
         # State in POMDP grid space. Only need to know robot and target state

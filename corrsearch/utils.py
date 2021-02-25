@@ -40,8 +40,12 @@ def in_range_inclusive(x, rang):
 def in_region(p, ranges):
     return in_range(p[0], ranges[0]) and in_range(p[1], ranges[1]) and in_range(p[2], ranges[2])
 
-def remap(oldval, oldmin, oldmax, newmin, newmax):
-    return (((oldval - oldmin) * (newmax - newmin)) / (oldmax - oldmin)) + newmin
+def remap(oldval, oldmin, oldmax, newmin, newmax, enforce=False):
+    newval = (((oldval - oldmin) * (newmax - newmin)) / (oldmax - oldmin)) + newmin
+    if enforce:
+        return min(max(newval, newmin), newmax)
+    else:
+        return newval
 
 # Printing
 def json_safe(obj):

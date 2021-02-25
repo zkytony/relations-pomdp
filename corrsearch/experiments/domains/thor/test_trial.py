@@ -78,7 +78,7 @@ def make_trial(config, trial_name="test_trial"):
 
 if __name__ == "__main__":
     config = make_config("./config/config-FloorPlan_Train1_1-Laptop-simple.yaml",
-                         planner="RandomPlanner",#"pomdp_py.POUCT",
+                         planner="pomdp_py.POUCT",
                          # "RandomPlanner",
                          # planner="HeuristicSequentialPlanner",#"EntropyMinimizationPlanner",
                          planner_config=RANDOM_PLANNER_CONFIG,#POMCP_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#,#RANDOM_PLANNER_CONFIG,
