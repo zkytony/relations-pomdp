@@ -411,11 +411,11 @@ class TestSpatialCorr(unittest.TestCase):
                              detectors_spec_path="./config/detectors_spec.yaml",
                              grid_size=0.25)
         scale = 4
-        comatrix, occurs = cooccur_matrix(robothor_scene_names("Train"), scale=scale)
+        comatrix, occurs = cooccur_matrix_scene_counts(robothor_scene_names("Train"), scale=scale)
         dist = SpatialCorrDist(scene_info, problem.locations,
                                comatrix, occurs, problem.target_id, scale=scale)
 
-        obj = scene_info.obj(scene_info.objid_for_type("AlarmClock"))
+        obj = scene_info.obj(scene_info.objid_for_type("SideTable"))
         starget = LocObjState(problem.target_id, problem.target_class,
                               {"loc": random.sample(problem.locations, 1)[0]})
         obz = {svar(problem.target_id) : starget}
