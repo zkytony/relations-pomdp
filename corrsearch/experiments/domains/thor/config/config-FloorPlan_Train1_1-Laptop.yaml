@@ -1,0 +1,163 @@
+# This file configs a uninstantiated problem for our setting, with
+# detectors, target object, and the spatial correlations.
+
+scene_name: "FloorPlan_Train1_1"
+target_class: "Laptop"
+
+# defines the possible locations
+grid_size: 0.25
+boundary_thickness: 4
+
+object_classes:
+  - Laptop
+  - Chair
+  - DiningTable
+  - Painting
+  - Television
+  - Bed
+
+# define the detectors
+detectors:
+
+  # The robot has three detectors. One for small objects,
+  # one for larger objects, and one for the target.
+  - name: target-detector
+    id: 100
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      Laptop:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 1.5
+    params:
+      true_positive:
+        Laptop: 0.7
+      false_positive:
+        Laptop: 0.01
+      sigma:
+        Laptop: 0.1
+
+  - name: furniture-detector
+    id: 200
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      Chair:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 3.0
+      DiningTable:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 3.5
+      Bed:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 3.5
+    params:
+      true_positive:
+        Chair: 0.85
+        DiningTable: 0.82
+        Bed: 0.95
+      false_positive:
+        Chair: 0.02
+        DiningTable: 0.02
+        Bed: 0.0
+      sigma:
+        Chair: 0.1
+        DiningTable: 0.1
+        Bed: 0.1
+
+
+  - name: other-object-detector
+    id: 300
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      Painting:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 2.0
+
+      Television:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 2.0
+
+    params:
+      true_positive:
+        Painting: 0.95
+        Television: 0.9
+      false_positive:
+        Painting: 0.01
+        Television: 0.01
+      sigma:
+        Painting: 0.1
+        Television: 0.1
+
+
+# define the probability
+probability:
+  # The probability will be more coarse
+  # - Laptop
+  # - Chair
+  # - DiningTable
+  # - Painting
+  # - Television
+  # - Bed
+
+  - class: [DiningTable]
+    dist: "uniform"
+
+  - class: [Laptop]
+    dist: "uniform"
+
+  - classes: [Laptop, DiningTable]
+    dist: "nearby"
+    params:
+      radius: 1.5
+
+  - classes: [DiningTable, Chair]
+    dist: "nearby"
+    params:
+      radius: 1.0
+
+  - classes: [Laptop, Painting]
+    dist: "not-nearby"
+    params:
+      radius: 2.0
+
+  - classes: [Laptop, Television]
+    dist: "not-nearby"
+    params:
+      radius: 2.0
+
+  - classes: [Laptop, Bed]
+    dist: "not-nearby"
+    params:
+      radius: 2.0
+
+
+# defines robot moves
+move_actions:
+  - name: forward
+    delta: (1.0, 0.0)
+
+  - name: left
+    delta: (0.0, "-math.pi/4")
+
+  - name: right
+    delta: (0.0, "math.pi/4")
