@@ -6,8 +6,7 @@ to the number of times their instances appear in the same super pixel
 
 Also, involves functions that build the joint distribution (factored graph)
 """
-from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
-from corrsearch.experiments.domains.thor.thor import robothor_scene_names
+from corrsearch.experiments.domains.thor.thor import robothor_scene_names, load_scene_info
 from corrsearch.models import *
 from corrsearch.probability import *
 from corrsearch.utils import indicator, euclidean_dist

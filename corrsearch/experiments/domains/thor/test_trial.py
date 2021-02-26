@@ -2,7 +2,7 @@ import pomdp_py
 import random
 import yaml
 from corrsearch.experiments.domains.thor.problem import *
-from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
+from corrsearch.experiments.domains.thor.thor import load_scene_info
 from corrsearch.experiments.trial import SearchTrial
 from corrsearch.experiments.defaults import *
 from corrsearch.models import *

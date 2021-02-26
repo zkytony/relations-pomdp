@@ -4,7 +4,6 @@ Config parser for THOR.
 Very similar to the parser for Field2D but differ in details.
 """
 from corrsearch.experiments.domains.thor.detector import *
-from corrsearch.experiments.domains.thor.process_scenes import *
 from corrsearch.experiments.domains.thor.spatial_corr import *
 import numpy as np
 import math

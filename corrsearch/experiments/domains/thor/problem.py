@@ -10,7 +10,6 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.belief import *
 from corrsearch.experiments.domains.thor.visualizer import *
-from corrsearch.experiments.domains.thor.process_scenes import *
 from corrsearch.experiments.domains.thor.parser import *
 from corrsearch.experiments.domains.thor.topo_maps import TopoMap
 from corrsearch.experiments.domains.thor.transition import TopoPolicyModel

@@ -13,7 +13,6 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.transition import *
-from corrsearch.experiments.domains.thor.process_scenes import *
 from corrsearch.experiments.domains.thor.spatial_corr import *
 import matplotlib.pyplot as plt
 
