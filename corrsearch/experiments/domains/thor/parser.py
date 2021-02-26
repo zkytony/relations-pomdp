@@ -98,7 +98,6 @@ def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size=0.25):
                     objclass = scene_info.obj_type(objid)
                     loc = grid_map.to_grid_pos(*thor_location_combo[i],
                                                grid_size=grid_size)
-                    import pdb; pdb.set_trace()
                     objstate = LocObjState(objid, objclass, {"loc": loc})
                     setting.append((svar(objid), objstate))
                 if tuple(setting) not in settings:

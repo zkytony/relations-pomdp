@@ -150,8 +150,8 @@ def convert_scene_to_grid_map(controller, scene_info, grid_size):
     x, z = reachable_thor_loc2d(controller)
 
     # obtain grid indices for coordinates  (origin NOT at (0,0))
-    thor_gx = np.round(x / grid_size).astype(int)#np.round(x // grid_size).astype(int)
-    thor_gy = np.round(z / grid_size).astype(int)#np.round(z // grid_size).astype(int)
+    thor_gx = np.round(x / grid_size).astype(int)
+    thor_gy = np.round(z / grid_size).astype(int)
     width = max(thor_gx) - min(thor_gx) + 1
     length = max(thor_gy) - min(thor_gy) + 1
 
