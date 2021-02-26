@@ -362,7 +362,7 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
 
     """
     def __init__(self, robot_id, target_id, grid_map,
-                 grid_size=0.25, rmax=100, rmin=-100):
+                 grid_size=0.25, rmax=100, rmin=-100, valid_declare_distance=1.0):
         self.rmax = rmax
         self.rmin = rmin
         self.robot_id = robot_id
@@ -370,7 +370,7 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
         self.grid_map = grid_map
 
         # Number of grids away that the agent can validly declare
-        self.declare_dist_grids = 1.0 / grid_size
+        self.declare_dist_grids = valid_declare_distance / grid_size
 
     def _facing(self, robot_pose, point):
         """Returns true if the robot pose is looking in the direction of point"""
@@ -396,6 +396,7 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
                 if not self.grid_map.blocked(robot_loc, target_loc):
                     # facing the object (not guaranteed to be visible)
                     if self._facing(state[self.robot_id].pose, target_loc):
+                        print("HEY")
                         return self.rmax
             return self.rmin
         else:

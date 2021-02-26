@@ -98,7 +98,8 @@ class ThorSearch(SearchProblem):
             "scene_name": scene_name,
             "width": 400,
             "height": 400,
-            "grid_size": grid_size
+            "grid_size": grid_size,
+            "agent_mode": "default"
         }
         env = ThorEnv(robot_id, target_object, config, scene_info, topo_map=topo_map)
 
