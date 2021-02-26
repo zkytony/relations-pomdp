@@ -97,11 +97,9 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         robot_id = agent.belief.robot_id
         target_id = agent.belief.target_id
         default_policy_model = agent.policy_model
-        actions = set(agent.policy_model.move_actions) | set(UseDetector(d) for d in detector_valmap)\
-                  | set(agent.policy_model.declare_actions)
         heuristic_policy_model = HeuristicRollout(
             robot_id, target_id,
-            actions,
+            agent.policy_model,
             agent.transition_model,
             agent.observation_model,
             agent.reward_model)
@@ -147,24 +145,31 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
         self._last_action_observation = [(real_action, real_observation)]
 
 
-class HeuristicRollout(BasicPolicyModel):
+class HeuristicRollout(pomdp_py.RolloutPolicy):
     """Rollout policy for heuristic planner.
     This is initialized for the agent with CURRENT belief,
     to plan for the NEXT step"""
     def __init__(self,
                  robot_id,
                  target_id,
-                 actions,
+                 original_policy_model,
                  transition_model,
                  observation_model,
                  reward_model):
         self.robot_id = robot_id
         self.target_id = target_id
+        self.original_policy_model = original_policy_model
         self.observation_model = observation_model
         self.reward_model = reward_model
         self.transition_model = transition_model
+        self.robot_trans_model = transition_model.robot_trans_model
         self._cache = {}
-        super().__init__(actions, transition_model.robot_trans_model)
+
+    def sample(self, state, **kwargs):
+        return self.original_policy_model.sample(state, **kwargs)
+
+    def get_all_actions(self, *args, **kwargs):
+        return self.original_policy_model.get_all_actions(*args, **kwargs)
 
     def rollout(self, state, history):
         """For rollout, use a policy from an action prior"""
@@ -174,12 +179,12 @@ class HeuristicRollout(BasicPolicyModel):
             candidates = self._cache[key_]
         else:
             candidates = []
-            move_actions = self.valid_moves(state)
+            move_actions = self.original_policy_model.valid_moves(state)
             preferred_move = min(move_actions,
                 key=lambda move_action: euclidean_dist(self.robot_trans_model.sample(state, move_action)["loc"],
                                                        state[self.target_id]["loc"]))
             candidates.append(preferred_move)
-            for detect_action in self.detect_actions:
+            for detect_action in self.original_policy_model.detect_actions:
                 detector = self.observation_model.detectors[detect_action.detector_id]
                 z = self.observation_model.sample(state, detect_action)
                 for objid in z.object_obzs:
@@ -188,7 +193,7 @@ class HeuristicRollout(BasicPolicyModel):
                         break
             if isinstance(history[-1][0], UseDetector):
                 # Declare follows detect; This is what is done in the basic rollout policy too
-                if Declare(state[self.target_id]) in self.declare_actions:
+                if Declare(state[self.target_id]) in self.original_policy_model.declare_actions:
                     candidates.append(Declare(state[self.target_id]))
                 else:
                     next_state = self.transition_model.sample(state, Declare())
