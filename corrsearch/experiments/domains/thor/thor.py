@@ -374,6 +374,8 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
     def _facing(self, robot_pose, point):
         """Returns true if the robot pose is looking in the direction of point"""
         rx, ry, th = robot_pose
+        if (rx,ry) == point:
+            return True
         # point in direction of robot facing
         rx2 = rx + math.sin(th)
         ry2 = ry + math.cos(th)

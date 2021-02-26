@@ -22,10 +22,13 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
     averaging the resulting beliefs.
     """
 
-    def __init__(self, num_samples=100, declare_threshold=0.9, entropy_improvement_threshold=1e-3):
+    def __init__(self, num_samples=100, declare_threshold=0.9,
+                 entropy_improvement_threshold=1e-3,
+                 epsilon_move=0.0):
         self.num_samples = num_samples
         self.declare_threshold = declare_threshold
         self.entropy_improvement_threshold = entropy_improvement_threshold
+        self.epsilon_move = epsilon_move
 
     def sample_next_belief(self, agent, action):
         """
@@ -73,7 +76,7 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
 
         min_dist = float("inf")
         next_move_action = None
-        for a in agent.policy_model.actions:
+        for a in agent.policy_model.valid_moves(mpe_state):
             if isinstance(a, Move):
                 next_belief = self.sample_next_belief(agent, a)
                 next_robot_pose = next_belief.mpe()[robot_id]["pose"]
@@ -94,11 +97,14 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
 
         # First, decide whether to declare. If belief is already
         # greater than some threshold given, then just move towards it.
-        if agent.belief[mpe_state] >= self.declare_threshold:
-           if robot_pose[:2] == mpe_state[target_id]["loc"]:
-               return Declare()
-           else:
-               return self.move_towards_highest_belief(agent, mpe_state)
+        if agent.belief[mpe_state] >= self.declare_threshold\
+           or random.uniform(0,1) < self.epsilon_move:
+            next_state = agent.transition_model.sample(mpe_state, Declare())
+            reward = agent.reward_model.sample(mpe_state, Declare(), next_state)
+            if reward == agent.reward_model.rmax:
+                return Declare()
+            else:
+                return self.move_towards_highest_belief(agent, mpe_state)
 
         # Compute the entropy of expected beliefs if the robot stays where it is
         expected_entropies = self.compute_expected_entropy(agent, agent.belief)

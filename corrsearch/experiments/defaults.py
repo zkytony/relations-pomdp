@@ -9,7 +9,8 @@ POMCP_PLANNER_CONFIG = {
 ENTROPY_PLANNER_CONFIG = {
     "declare_threshold": 0.9,
     "entropy_improvement_threshold": 1e-3,
-    "num_samples": 100
+    "num_samples": 20,
+    "epsilon_move": 0.15
 }
 
 RANDOM_PLANNER_CONFIG = {
