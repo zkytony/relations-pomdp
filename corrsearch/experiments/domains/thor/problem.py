@@ -157,6 +157,13 @@ class ThorSearch(SearchProblem):
                     belief_hist[starget] = 1 - epsilon
                 else:
                     belief_hist[starget] = epsilon
+        elif init_belief == "prior":
+            prior = self.joint_dist.marginal([svar(self.target_id)])
+            for loc in self.locations:
+                starget = LocObjState(self.target_id,
+                                      self.target_class,
+                                      {"loc": loc})
+                belief_hist[starget] = prior.prob({svar(self.target_id):starget})
         else:
             raise ValueError("Unsupported initial belief type %s" % init_belief)
 

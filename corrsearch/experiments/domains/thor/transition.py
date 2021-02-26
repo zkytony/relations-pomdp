@@ -72,6 +72,8 @@ class TopoMove(Move):
         """
         self.src = src
         self.dst = dst
+        self.src_nid = src_nid
+        self.dst_nid = dst_nid
         delta = (dst[0] - src[0],
                  dst[1] - src[1],
                  0)
@@ -91,7 +93,8 @@ class TopoRobotTrans(RobotTransModel):
         self._grid_nid_map = {}
         for nid in self.topo_map.nodes:
             thor_x, thor_z = self.topo_map.nodes[nid].pose
-            x, y = self.grid_map.to_grid_pos(thor_x, thor_z, grid_size=self.grid_size)
+            x, y = self.grid_map.to_grid_pos(thor_x, thor_z,
+                                             grid_size=self.grid_size, avoid_obstacle=True)
             self._grid_nid_map[(x,y)] = nid
 
     def move_by(self, robot_pose, action):
@@ -118,6 +121,8 @@ class TopoRobotTrans(RobotTransModel):
         """
         Pr(s_r' | s, a)
         """
+        # if isinstance(action, TopoMove) and action.src_nid == 12 and action.dst_nid == 11:
+        #     import pdb; pdb.set_trace()
         return indicator(next_robot_state == self.sample(state, action))
 
     def sample(self, state, action, **kwargs):
@@ -129,14 +134,14 @@ class TopoRobotTrans(RobotTransModel):
 
         # Enforce snapping onto topo node
         if robot_pose[:2] not in self._grid_nid_map:
-            robot_loc = min(self._grid_nid_map.keys(),
-                            key=lambda p: euclidean_dist(p, robot_pose[:2]))
+            robot_loc = min(self._grid_nid_map.keys(), key=lambda p: euclidean_dist(p, robot_pose[:2]))
             robot_pose = (*robot_loc, robot_pose[2])
 
         next_energy = robot_state["energy"] - action.energy_cost
         if isinstance(action, Move):
             next_robot_pose = self.move_by(robot_pose, action)
             if next_robot_pose[:2] not in self.grid_map.free_locations:
+                import pdb; pdb.set_trace()
                 next_robot_pose = robot_pose
         else:
             next_robot_pose = robot_pose
@@ -161,10 +166,10 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         for nid in topo_map.nodes:
             move_actions = set()
             thor_x, thor_z = topo_map.nodes[nid].pose
-            src_pos = grid_map.to_grid_pos(thor_x, thor_z, grid_size=self.grid_size)
+            src_pos = grid_map.to_grid_pos(thor_x, thor_z, grid_size=self.grid_size, avoid_obstacle=True)
             for neighbor_nid in topo_map.neighbors(nid):
                 dst_thor_x, dst_thor_z = topo_map.nodes[neighbor_nid].pose
-                dst_pos = grid_map.to_grid_pos(dst_thor_x, dst_thor_z, grid_size=self.grid_size)
+                dst_pos = grid_map.to_grid_pos(dst_thor_x, dst_thor_z, grid_size=self.grid_size, avoid_obstacle=True)
                 move_actions.add(TopoMove(src_pos, dst_pos, nid, neighbor_nid))
             self._motion_map[src_pos] = move_actions
         self.detect_actions = detect_actions

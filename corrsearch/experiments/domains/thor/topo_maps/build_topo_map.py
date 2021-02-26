@@ -61,13 +61,13 @@ def draw_topo(img, topo_spec, grid_map, grid_size, viz):
     for nid1, nid2 in topo_spec["edges"]:
         thor_pos1 = topo_spec["nodes"][nid1]["x"], topo_spec["nodes"][nid1]["z"]
         thor_pos2 = topo_spec["nodes"][nid2]["x"], topo_spec["nodes"][nid2]["z"]
-        pos1 = grid_map.to_grid_pos(*thor_pos1, grid_size=grid_size)
-        pos2 = grid_map.to_grid_pos(*thor_pos2, grid_size=grid_size)
+        pos1 = grid_map.to_grid_pos(*thor_pos1, grid_size=grid_size, avoid_obstacle=True)
+        pos2 = grid_map.to_grid_pos(*thor_pos2, grid_size=grid_size, avoid_obstacle=True)
         img = draw_edge(img, pos1, pos2, viz._res)
 
     for nid in topo_spec["nodes"]:
         thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
-        pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
+        pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size, avoid_obstacle=True)
         img = mark_cell(img, pos, int(nid), viz._res)
 
     return img

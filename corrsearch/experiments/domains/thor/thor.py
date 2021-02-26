@@ -243,7 +243,6 @@ class ThorEnv(pomdp_py.Environment):
             thor_x, thor_y, thor_z = thor_objposes[thor_objid]
             objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
                                                grid_size=self.grid_size)
-            # objloc = self.grid_map.snap_to_grid(objloc)
             objstate = LocObjState(objid, target_type, {"loc": objloc})
             object_states[objid] = objstate
 
@@ -318,7 +317,6 @@ class ThorEnv(pomdp_py.Environment):
                 thor_x, thor_y, thor_z = thor_instance_poses[thor_objid]
                 objloc = self.grid_map.to_grid_pos(thor_x, thor_z,
                                                    grid_size=self.grid_size)
-                # objloc = self.grid_map.snap_to_grid(objloc)
                 instance_poses.add(objloc)
             # Selecting the instance with closest geodesic dist;
             closest_instance_pose = min(instance_poses,

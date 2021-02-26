@@ -70,7 +70,7 @@ class GridMap:
         else:
             return (thor_gx, thor_gy)
 
-    def to_grid_pos(self, thor_x, thor_z, grid_size=None):
+    def to_grid_pos(self, thor_x, thor_z, grid_size=None, avoid_obstacle=False):
         """
         Convert thor location to grid map location. If grid_size is specified,
         then will regard thor_x, thor_z as the original Unity coordinates.
@@ -88,8 +88,10 @@ class GridMap:
         thor_gy_min, thor_gy_max = self.ranges_in_thor[1]
         gx = int(remap(thor_gx, thor_gx_min, thor_gx_max, 0, self.width, enforce=True))
         gy = int(remap(thor_gy, thor_gy_min, thor_gy_max, 0, self.length, enforce=True))
-        return gx, gy
-
+        if avoid_obstacle and (gx, gy) not in self.free_locations:
+            return self.closest_free_cell((gx, gy))
+        else:
+            return gx, gy
 
     def free_region(self, x, y):
         """Given (x,y) location, return a set of locations
@@ -126,12 +128,12 @@ class GridMap:
             last_boundary.update(boundary)
         return last_boundary
 
-    def snap_to_grid(self, loc):
+    def closest_free_cell(self, loc):
         """Snaps given loc (x,y) to the closest grid cell"""
         return min(self.free_locations,
                    key=lambda l: euclidean_dist(l, loc))
 
-    def shortest_path(self, loc1, loc2):
+    def shortest_path(self, gloc1, gloc2):
         """
         Computes the shortest distance between two locations.
         The two locations will be snapped to the closest free cell.
@@ -143,9 +145,6 @@ class GridMap:
                 v = prev[v]
                 path.append(v)
             return path
-
-        gloc1 = self.snap_to_grid(loc1)
-        gloc2 = self.snap_to_grid(loc2)
 
         # BFS; because no edge weight
         visited = set()
