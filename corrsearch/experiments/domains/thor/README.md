@@ -28,3 +28,21 @@ The `ai2thor` package version used is [2.7.2](https://github.com/allenai/ai2thor
 3. The POMDP agent outputs actions that get converted into Teleop commands for THOR
 
 4. 2D poses are mapped 1-to-1 between POMDP and THOR environment.
+
+
+### Issues with RoboThor
+
+1. Cannot retrieve information about walls
+
+2. Occlusion cannot be estimated correctly; There is no way to
+   distinguish between a wall and an unreachable location
+
+3. Spatial correlation based on proximity won't be implementable
+   because of reason 1; Two locations may be close in euclidean
+   distance but actually be separated by a wall.
+
+4. Scalability: 0.25 is not manageable by the joint distribution.
+   0.5 is ok but likely does not scale to more objects.
+
+5. Overall the scene lacks information necessary to build a POMDP agent. The map
+   is larger than desired for creating the distribution.
