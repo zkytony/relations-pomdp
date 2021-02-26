@@ -56,6 +56,22 @@ def draw_edge(img, pos1, pos2, r, thickness=2):
              (0, 0, 0, 255), thickness=thickness)
     return img
 
+def draw_topo(img, topo_spec, grid_map, grid_size, viz):
+    for nid in topo_spec["nodes"]:
+        thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
+        pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
+        img = mark_cell(img, pos, int(nid), viz._res)
+
+    for nid1, nid2 in topo_spec["edges"]:
+        thor_pos1 = topo_spec["nodes"][nid1]["x"], topo_spec["nodes"][nid1]["z"]
+        thor_pos2 = topo_spec["nodes"][nid2]["x"], topo_spec["nodes"][nid2]["z"]
+        pos1 = grid_map.to_grid_pos(*thor_pos1, grid_size=grid_size)
+        pos2 = grid_map.to_grid_pos(*thor_pos2, grid_size=grid_size)
+        img = draw_edge(img, pos1, pos2, viz._res)
+
+    return img
+
+
 def print_options(options):
     for num, txt in sorted(options.items()):
         print(num, ":", txt)
@@ -85,8 +101,9 @@ def builder(scene_name, grid_size=0.25):
     OPTIONS = {
         0: "add_node",
         1: "add_edge",
-        2: "save",
-        3: "load"
+        2: "remove_node",
+        3: "save",
+        4: "load"
     }
     last_opt = None
     while True:
@@ -141,14 +158,46 @@ def builder(scene_name, grid_size=0.25):
 
             pygame.image.save(viz._display_surf, "../data/topo/{}-topo.png".format(scene_name))
 
-
         elif action == "load":
-            loadpath = input("Load Path: ")
+            default_path = "../data/topo/{}-topo.json".format(scene_name)
+            loadpath = input("Load Path: [default {}]".format(default_path))
+            if len(loadpath) == 0:
+                loadpath = default_path
             if not os.path.exists(loadpath):
                 print("Path not found")
             else:
                 with open(loadpath) as f:
                     topo_spec = json.load(f)
+                img = draw_topo(img, topo_spec, grid_map, config["grid_size"], viz)
+                viz.show_img(img)
+
+        elif action == "remove_node":
+            print("Click on window to select cell")
+            x, y = get_clicked_pos(viz._res, grid_map.width, grid_map.length)
+            removing_nid = None
+            for nid in topo_spec["nodes"]:
+                thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
+                pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
+                if pos == (x,y):
+                    removing_nid = int(nid)
+                    break
+            if removing_nid is not None:
+                topo_spec["nodes"].pop(int(removing_nid), None)
+                topo_spec["nodes"].pop(str(removing_nid), None)
+                topo_spec["edges"] = [
+                    edge for edge in topo_spec["edges"]
+                    if removing_nid not in tuple(map(int,edge))
+                ]
+
+                # redraw
+                img = viz.gridworld_img()
+                img = draw_topo(img, topo_spec, grid_map, config["grid_size"], viz)
+                viz.show_img(img)
+
+            else:
+                print("Misclicked. Please click on a node")
+
+
 
 if __name__ == "__main__":
     scene_name = input("Scene name [default: FloorPlan_Train1_1]: ")
