@@ -77,8 +77,8 @@ class GridMap:
         If not, then will regard them as grid indices but with origin not at (0,0).
         """
         if grid_size is not None:
-            thor_gx = thor_x // grid_size
-            thor_gy = thor_z // grid_size
+            thor_gx = int(round(thor_x / grid_size))
+            thor_gy = int(round(thor_z / grid_size))
         else:
             thor_gx = thor_x
             thor_gy = thor_z

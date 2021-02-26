@@ -36,24 +36,24 @@ detectors:
       sigma:
         Book: 0.1
 
-  # - name: furniture-detector
-  #   id: 200
-  #   type: "loc"
-  #   energy_cost: 0.0
-  #   sensors:
-  #     CounterTop:
-  #       type: "fan"
-  #       params:
-  #         fov: 90
-  #         min_range: 0.25
-  #         max_range: 2.0
-  #   params:
-  #     true_positive:
-  #       CounterTop: 0.90
-  #     false_positive:
-  #       CounterTop: 0.00
-  #     sigma:
-  #       CounterTop: 0.1
+  - name: furniture-detector
+    id: 200
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      CounterTop:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 2.0
+    params:
+      true_positive:
+        CounterTop: 0.90
+      false_positive:
+        CounterTop: 0.00
+      sigma:
+        CounterTop: 0.1
 
 
 # define the probability

@@ -118,6 +118,12 @@ class ThorSearch(SearchProblem):
         locations = copy.deepcopy(env.grid_map.free_locations)
         locations |= env.grid_map.boundary_cells(thickness=boundary_thickness)
 
+
+        # THIS IS THE PROBLEM
+        # import pdb; pdb.set_trace()
+        # geez = env.grid_map.to_thor_pos(1, 3, grid_size=grid_size)
+        # thorgeez = env.grid_map.to_grid_pos(*geez, grid_size=grid_size)
+
         thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
                              for loc in locations)
         locations2 = set(env.grid_map.to_grid_pos(*loc, grid_size=grid_size)
