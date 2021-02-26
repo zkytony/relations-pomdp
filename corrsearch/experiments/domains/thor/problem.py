@@ -12,6 +12,8 @@ from corrsearch.experiments.domains.thor.belief import *
 from corrsearch.experiments.domains.thor.visualizer import *
 from corrsearch.experiments.domains.thor.process_scenes import *
 from corrsearch.experiments.domains.thor.parser import *
+from corrsearch.experiments.domains.thor.topo_maps import TopoMap
+from corrsearch.experiments.domains.thor.transition import TopoPolicyModel
 
 MOVE_ACTIONS=set(
     [Move((1.0, 0.0), "forward"),
@@ -76,21 +78,31 @@ class ThorSearch(SearchProblem):
         assert grid_size_dist >= grid_size, "grid_size_dist must NOT be LESS THAN grid_size"
         boundary_thickness = spec["boundary_thickness"]
 
+        detectors = parse_detectors(scene_info, spec["detectors"], robot_id)
+        detect_actions = set(UseDetector(detector.id,
+                                         name=detector.name,
+                                         energy_cost=detector.energy_cost)
+                             for detector in detectors)
+        actions = {"detect_actions": detect_actions,
+                   "declare_actions": {Declare()}}
+
+        # load topological map, if specified
+        topo_map = None
+        if spec["move_schema"] == "topo":
+            topo_file = os.path.join(spec["topo_dir_path"], "{}-topo.json".format(scene_name))
+            topo_map = TopoMap.load(topo_file)
+            actions["rotate_actions"] = parse_move_actions(spec["rotate_actions"])
+        else:
+            actions["move_actions"] = parse_move_actions(spec["move_actions"])
+
         config = {
             "scene_name": scene_name,
             "width": 400,
             "height": 400,
             "grid_size": grid_size
         }
-        env = ThorEnv(robot_id, target_object, config, scene_info)
+        env = ThorEnv(robot_id, target_object, config, scene_info, topo_map=topo_map)
 
-        detectors = parse_detectors(scene_info, spec["detectors"], robot_id)
-
-        actions = parse_move_actions(spec["move_actions"]) | {Declare()}
-        actions |= set(UseDetector(detector.id,
-                                   name=detector.name,
-                                   energy_cost=detector.energy_cost)
-                       for detector in detectors)
         robot_trans_model = env.transition_model.robot_trans_model
         robot_trans_model.schema = spec["move_schema"]
         robot_model = RobotModel(detectors, actions, robot_trans_model)
@@ -172,8 +184,19 @@ class ThorSearch(SearchProblem):
         observation_model = MultiDetectorModel(detectors)
 
         # policy model. Default is uniform
-        policy_model = BasicPolicyModel(self.robot_model.actions,
-                                        self.robot_model.trans_model)
+        if self.robot_model.trans_model.schema == "topo":
+            topo_map = self.robot_model.trans_model.topo_map
+            policy_model = TopoPolicyModel(self.robot_id, topo_map, self.grid_map,
+                                           self.robot_model.actions["rotate_actions"],
+                                           self.robot_model.actions["detect_actions"],
+                                           self.robot_model.actions["declare_actions"],
+                                           grid_size=self.grid_size)
+        else:
+            actions = self.robot_model.actions["move_actions"]\
+                      | self.robot_model.actions["detect_actions"]\
+                      | self.robot_model.actions["declare_actions"]
+            policy_model = BasicPolicyModel(actions,
+                                            self.robot_model.trans_model)
 
         agent = pomdp_py.Agent(init_belief,
                                policy_model,

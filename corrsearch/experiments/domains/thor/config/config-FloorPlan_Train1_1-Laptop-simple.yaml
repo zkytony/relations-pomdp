@@ -74,27 +74,39 @@ probability:
     params:
       radius: 1.5
 
-
-# defines robot moves
 robot_id: 0
-move_schema: "xy"
-move_actions:
-  - name: north
-    delta: [0, 1, 0]
+move_schema: "topo"
+topo_dir_path: "data/topo"
+rotate_actions:
+  - name: left
+    delta: [0.0, "-math.pi/2"]
     energy_cost: 0.0
 
-  - name: east
-    delta: [-1, 0, "3*math.pi/2"]
+  - name: right
+    delta: [0.0, "math.pi/2"]
     energy_cost: 0.0
 
-  - name: south
-    delta: [0, -1, "math.pi"]
-    energy_cost: 0.0
 
-  - name: west
-    delta: [1, 0, "math.pi/2"]
-    energy_cost: 0.0
 
+# # defines robot moves
+# robot_id: 0
+# move_schema: "xy"
+# move_actions:
+#   - name: north
+#     delta: [0, 1, 0]
+#     energy_cost: 0.0
+
+#   - name: east
+#     delta: [-1, 0, "3*math.pi/2"]
+#     energy_cost: 0.0
+
+#   - name: south
+#     delta: [0, -1, "math.pi"]
+#     energy_cost: 0.0
+
+#   - name: west
+#     delta: [1, 0, "math.pi/2"]
+#     energy_cost: 0.0
 
 # move_schema: "vw"
 # move_actions:

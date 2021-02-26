@@ -131,7 +131,7 @@ def builder(scene_name, grid_size=0.25):
                 viz.show_img(img)
 
         elif action == "save":
-            default_path = "./tmp_topo.json"
+            default_path = "./{}-topo.json".format(scene_name)
             savepath = input("Save Path [default {}]: ".format(default_path))
             if len(savepath) == 0:
                 savepath = default_path
@@ -148,4 +148,7 @@ def builder(scene_name, grid_size=0.25):
                     topo_spec = json.load(f)
 
 if __name__ == "__main__":
-    builder("FloorPlan_Train1_1", grid_size=0.25)
+    scene_name = input("Scene name [default: FloorPlan_Train1_1]: ")
+    if len(scene_name) == 0:
+        scene_name = "FloorPlan_Train1_1"
+    builder(scene_name, grid_size=0.25)

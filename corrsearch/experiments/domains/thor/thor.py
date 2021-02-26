@@ -6,7 +6,7 @@ import numpy as np
 import math
 from ai2thor.controller import Controller
 from corrsearch.experiments.domains.thor.grid_map import GridMap
-from corrsearch.experiments.domains.thor.transition import DetRobotTrans
+from corrsearch.experiments.domains.thor.transition import DetRobotTrans, TopoRobotTrans
 from corrsearch.experiments.domains.thor.process_scenes import load_scene_info
 from corrsearch.utils import remap, to_rad, euclidean_dist
 from corrsearch.models.transition import *
@@ -232,7 +232,12 @@ class ThorEnv(pomdp_py.Environment):
 
         init_state = JointState(object_states)
 
-        robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map)
+        if params.get("topo_map", None) is not None:
+            topo_map = params["topo_map"]
+            robot_trans_model = TopoRobotTrans(self.robot_id, topo_map, self.grid_map,
+                                               grid_size=self.grid_size)
+        else:
+            robot_trans_model = DetRobotTrans(self.robot_id, self.grid_map)
         transition_model = SearchTransitionModel(self.robot_id, robot_trans_model)
 
         reward_model = ThorSearchRewardModel(self.robot_id, self.target_id, self.grid_map,
