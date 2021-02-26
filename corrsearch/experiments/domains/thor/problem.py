@@ -119,7 +119,8 @@ class ThorSearch(SearchProblem):
         locations = copy.deepcopy(env.grid_map.free_locations)
         locations |= env.grid_map.boundary_cells(thickness=boundary_thickness)
 
-        if os.path.exists(spec["joint_dist_path"]):
+        if spec.get("joint_dist_path", None) is not None\
+           and os.path.exists(spec["joint_dist_path"]):
             print("Joint Distribution exists. Loading")
             with open(spec["joint_dist_path"], "rb") as f:
                 joint_dist = pickle.load(f)

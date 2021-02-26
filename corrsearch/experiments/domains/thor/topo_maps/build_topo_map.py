@@ -218,4 +218,7 @@ if __name__ == "__main__":
     scene_name = input("Scene name [default: FloorPlan_Train1_1]: ")
     if len(scene_name) == 0:
         scene_name = "FloorPlan_Train1_1"
-    builder(scene_name, grid_size=0.25)
+    grid_size = input("Grid size [default: 0.25]: ")
+    if len(grid_size) == 0:
+        grid_size = 0.25
+    builder(scene_name, grid_size=grid_size)
