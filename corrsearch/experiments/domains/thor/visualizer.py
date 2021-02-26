@@ -10,6 +10,7 @@ import time
 import os
 from corrsearch.models.visualizer import Visualizer
 from corrsearch.utils import overlay, lighter, lighter_with_alpha, cv2shape
+from corrsearch.experiments.domains.thor.topo_maps.build_topo_map import draw_topo
 
 class ThorViz(Visualizer):
 
@@ -61,6 +62,12 @@ class ThorViz(Visualizer):
 
     def visualize(self, state, belief=None, action=None, sensor=None):
         img = self._make_gridworld_image(self._res)
+
+        # Draw topo map, if there is one
+        if hasattr(self.problem.env, "topo_map"):
+            topo_map = self.problem.env.topo_map
+            img = draw_topo(img, topo_map.to_json(),
+                            self.problem.grid_map, self.problem.env.grid_size, self)
 
         robot_pose = state[self.problem.robot_id]["pose"]
         if sensor is not None:

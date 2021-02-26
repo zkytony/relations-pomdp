@@ -251,6 +251,7 @@ class ThorEnv(pomdp_py.Environment):
 
         if params.get("topo_map", None) is not None:
             topo_map = params["topo_map"]
+            self.topo_map = topo_map
             robot_trans_model = TopoRobotTrans(self.robot_id, topo_map, self.grid_map,
                                                grid_size=self.grid_size)
         else:
@@ -396,7 +397,6 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
                 if not self.grid_map.blocked(robot_loc, target_loc):
                     # facing the object (not guaranteed to be visible)
                     if self._facing(state[self.robot_id].pose, target_loc):
-                        print("HEY")
                         return self.rmax
             return self.rmin
         else:

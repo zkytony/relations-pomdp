@@ -55,3 +55,14 @@ class TopoMap(Graph):
                     stack.append(neighbor_nid)
                     visited.add(neighbor_nid)
         return False
+
+    def to_json(self):
+        result = {"nodes": {}, "edges": []}
+        for nid in self.nodes:
+            pose = self.nodes[nid].pose
+            result["nodes"][nid] = {"x": pose[0], "z": pose[1]}
+        for eid in self.edges:
+            edge = self.edges[eid]
+            node1, node2 = edge.nodes
+            result["edges"].append([node1.id, node2.id])
+        return result

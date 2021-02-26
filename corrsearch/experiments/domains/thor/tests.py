@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 class DummyProblem(SearchProblem):
     def __init__(self, robot_id):
         self.robot_id = robot_id
+        self.env = None
 
     def obj(self, objid):
         return {}

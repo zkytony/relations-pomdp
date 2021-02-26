@@ -29,7 +29,7 @@ def mark_cell(img, pos, nid, r, linewidth=1, unmark=False):
     if unmark:
         color = (255, 255, 255, 255)
     else:
-        color = (53, 190, 232, 255)
+        color = (242, 212, 203, 255)
     x, y = pos
     cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                   color, -1)
@@ -39,8 +39,8 @@ def mark_cell(img, pos, nid, r, linewidth=1, unmark=False):
 
     if not unmark:
         font                   = cv2.FONT_HERSHEY_COMPLEX_SMALL
-        fontScale              = 0.75
-        fontColor              = (255, 246, 179)
+        fontScale              = 0.72
+        fontColor              = (43, 13, 4)
         lineType               = 1
         imgtxt = np.full((r, r, 4), color, dtype=np.uint8)
         text_loc = (int(round(r/4)), int(round(r/1.5)))
