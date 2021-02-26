@@ -31,6 +31,7 @@ def fill_detector(detector_id, name, cls, cfg):
             sigma={cls: 0.1}
         )
     )
+    return detector
 
 
 def fill_dist(objclass, target_class, cfg):
@@ -41,12 +42,12 @@ def fill_dist(objclass, target_class, cfg):
     )
     return dist
 
-grid_size = 0.25
-ntrials = 1
+grid_size = 0.4
+ntrials = 3
 max_steps = 100
 split = 5
 
-exp_name = "ThorSearch"
+exp_name = "ThorSearch-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -56,16 +57,16 @@ case1_kitchen = {
     "objects":
     (("Knife", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("Toaster", dict(rel="nearby", radius=0.75, fov=80, max_range=1.5, truepos=0.9)),
-      ("Shelf", dict(rel="not_nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)))
+     ("Mug", dict(rel="nearby", radius=0.5, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case2_kitchen = {
     "scene": "FloorPlan2",
     "scene_type": "kitchen",
     "objects":
-    (("Apple", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("Fridge", dict(rel="nearby", radius=0.75, fov=80, max_range=2.0, truepos=0.95)),
-     ("Microwave", dict(rel="not_nearby", radius=1.5, fov=80, max_range=1.5, truepos=0.9)))
+    (("Bread", dict(fov=60, max_range=0.5, truepos=0.7)),
+     ("CounterTop", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)),
+     ("Mug", dict(rel="nearby", radius=1.0, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case3_living = {
@@ -74,7 +75,7 @@ case3_living = {
     "objects":
     (("Laptop", dict(fov=60, max_range=0.75, truepos=0.8)),
      ("DiningTable", dict(rel="nearby", radius=1.0, fov=80, max_range=2.0, truepos=0.95)),
-     ("DeskLamp", dict(rel="not_nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.9)))
+     ("Book", dict(rel="nearby", radius=0.5, fov=80, max_range=0.75, truepos=0.9)))
 }
 
 
@@ -84,7 +85,7 @@ case4_living = {
     "objects":
     (("KeyChain", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("TVStand", dict(rel="nearby", radius=1.0, fov=80, max_range=1.5, truepos=0.9)),
-     ("Sofa", dict(rel="not_nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)))
+     ("Book", dict(rel="nearby", radius=1.0, fov=80, max_range=0.75, truepos=0.95)))
 }
 
 case5_bedroom = {
@@ -93,16 +94,16 @@ case5_bedroom = {
     "objects":
     (("CellPhone", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("Bed", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)),
-     ("GarbageCan", dict(rel="not_nearby", radius=1.5, fov=80, max_range=1.5, truepos=0.9)))
+     ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case6_bedroom = {
     "scene": "FloorPlan302",
     "scene_type": "bedroom",
     "objects":
-    (("CD", dict(fov=60, max_range=0.5, truepos=0.7)),
+    (("Pen", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("Shelf", dict(rel="nearby", radius=1.5, fov=80, max_range=1.5, truepos=0.95)),
-     ("Bed", dict(rel="not_nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.9)))
+     ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case7_bathroom = {
@@ -111,7 +112,7 @@ case7_bathroom = {
     "objects":
     (("Towel", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("TowelHolder", dict(rel="nearby", radius=1.5, fov=80, max_range=1.25, truepos=0.8)),
-     ("GarbageCan", dict(rel="not_nearby", radius=2.0, fov=80, max_range=1.5, truepos=0.9)))
+     ("Window", dict(rel="nearby", radius=2.0, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case8_bathroom = {
@@ -120,7 +121,7 @@ case8_bathroom = {
     "objects":
     (("SprayBottle", dict(fov=60, max_range=0.5, truepos=0.7)),
      ("SinkBasin", dict(rel="nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.8)),
-     ("ShowerDoor", dict(rel="not_nearby", radius=2.25, fov=80, max_range=2.0, truepos=0.9)))
+     ("Faucet", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.9)))
 }
 
 cases = [
@@ -161,7 +162,7 @@ for case in cases:
     ]
 
     spec["object_classes"] = []
-    spec["detector"] = []
+    spec["detectors"] = []
     spec["probability"] = []
 
     target_objtup = case["objects"][0]
@@ -175,7 +176,7 @@ for case in cases:
                              "target-{}-detector".format(target_class),
                              target_class,
                              target_cfg)
-    spec["detector"].append(detector)
+    spec["detectors"].append(detector)
     spec_target_only = copy.deepcopy(spec)
 
     for other_objtup in case["objects"][1:]:
@@ -185,6 +186,8 @@ for case in cases:
                                  "{}-detector".format(objclass),
                                  objclass,
                                  objcfg)
+        spec["detectors"].append(detector)
+
         pairdist = fill_dist(objclass, target_class, objcfg)
         spec["probability"].append(dict(classes=[objclass], dist="uniform"))
         spec["probability"].append(pairdist)
@@ -208,18 +211,18 @@ for case in cases:
         all_trials.append(trial)
 
 
-        ########## ENTROPY MIN
-        trial_name = "{}-{}-{}_{}_entropymin"\
-                     .format(spec["scene_type"], spec["target_class"],
-                             spec["scene_name"].replace("_", "#"),
-                             i+1)
-        config_entropy = make_config(copy.deepcopy(spec),
-                                     init_belief="uniform",
-                                     planner="EntropyMinimizationPlanner",
-                                     planner_config=ENTROPY_PLANNER_CONFIG,
-                                     max_steps=max_steps)
-        trial = make_trial(config_corr, trial_name)
-        all_trials.append(trial)
+        # ########## ENTROPY MIN
+        # trial_name = "{}-{}-{}_{}_entropymin"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+1)
+        # config_entropy = make_config(copy.deepcopy(spec),
+        #                              init_belief="uniform",
+        #                              planner="EntropyMinimizationPlanner",
+        #                              planner_config=ENTROPY_PLANNER_CONFIG,
+        #                              max_steps=max_steps)
+        # trial = make_trial(config_corr, trial_name)
+        # all_trials.append(trial)
 
 
         ########## TARGET ONLY
