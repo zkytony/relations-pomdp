@@ -61,7 +61,7 @@ def parse_detectors(scene_info, spec_or_filepath, robot_id):
         detectors.append(detector)
     return detectors
 
-def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size_dist=0.5):
+def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size=0.25):
     """
     grid_map should be the one loaded directly from the scene.
 
@@ -97,7 +97,7 @@ def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size_dist=0
                     objid = combo[i]
                     objclass = scene_info.obj_type(objid)
                     loc = grid_map.to_grid_pos(*thor_location_combo[i],
-                                               grid_size=grid_size_dist)
+                                               grid_size=grid_size)
                     objstate = LocObjState(objid, objclass, {"loc": loc})
                     setting.append((svar(objid), objstate))
                 if tuple(setting) not in settings:

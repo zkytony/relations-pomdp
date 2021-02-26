@@ -57,7 +57,6 @@ detectors:
 
 
 # define the probability
-grid_size_dist: 0.5  # grid size that the distributions are defined over
 probability:
   # The probability will be more coarse
   - classes: [CounterTop]
