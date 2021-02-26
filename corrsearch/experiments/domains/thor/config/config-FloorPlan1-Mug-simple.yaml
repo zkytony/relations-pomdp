@@ -63,7 +63,7 @@ probability:
     dist: "uniform"
 
   - classes: [Mug, CounterTop]
-    dist: "nearby"
+    dist: "not_nearby"
     params:
       radius: 0.5
 
