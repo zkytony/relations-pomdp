@@ -130,7 +130,20 @@ def robothor_scene_names(scene_type="Train", levels=None, nums=None):
             scenes.append(scene)
     return scenes
 
-# def ithor_scene_names()
+def ithor_scene_names(scene_type="kitchen", levels=None):
+    scenes = dict(
+        kitchen = [f"FloorPlan{i}" for i in range(1, 31)],
+        living_room = [f"FloorPlan{200 + i}" for i in range(1, 31)],
+        bedroom = [f"FloorPlan{300 + i}" for i in range(1, 31)],
+        bathroom = [f"FloorPlan{400 + i}" for i in range(1, 31)]
+    )
+    if scene_type.lower() in scenes:
+        if levels is None:
+            return scenes[scene_type]
+        else:
+            return [scenes[scene_type][i] for i in levels]
+    raise ValueError("Unknown scene type {}".format(scene_type))
+
 
 def convert_scene_to_grid_map(controller, scene_info, grid_size):
     """Converts an Ai2Thor scene to a GridMap"""
