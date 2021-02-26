@@ -9,6 +9,7 @@ import time
 import os
 import pygame
 import json
+import numpy as np
 from pprint import pprint
 
 def get_clicked_pos(r, w, l):
@@ -38,11 +39,11 @@ def mark_cell(img, pos, nid, r, linewidth=1, unmark=False):
 
     if not unmark:
         font                   = cv2.FONT_HERSHEY_COMPLEX_SMALL
-        fontScale              = 1
-        fontColor              = (240, 140, 130)
-        lineType               = 2
+        fontScale              = 0.75
+        fontColor              = (255, 246, 179)
+        lineType               = 1
         imgtxt = np.full((r, r, 4), color, dtype=np.uint8)
-        text_loc = (r//4, int(round(r/1.5)))
+        text_loc = (int(round(r/4)), int(round(r/1.5)))
         cv2.putText(imgtxt, str(nid), text_loc, #(y*r+r//4, x*r+r//2),
                     font, fontScale, fontColor, lineType)
         imgtxt = cv2.rotate(imgtxt, cv2.ROTATE_90_CLOCKWISE)
@@ -57,17 +58,17 @@ def draw_edge(img, pos1, pos2, r, thickness=2):
     return img
 
 def draw_topo(img, topo_spec, grid_map, grid_size, viz):
-    for nid in topo_spec["nodes"]:
-        thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
-        pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
-        img = mark_cell(img, pos, int(nid), viz._res)
-
     for nid1, nid2 in topo_spec["edges"]:
         thor_pos1 = topo_spec["nodes"][nid1]["x"], topo_spec["nodes"][nid1]["z"]
         thor_pos2 = topo_spec["nodes"][nid2]["x"], topo_spec["nodes"][nid2]["z"]
         pos1 = grid_map.to_grid_pos(*thor_pos1, grid_size=grid_size)
         pos2 = grid_map.to_grid_pos(*thor_pos2, grid_size=grid_size)
         img = draw_edge(img, pos1, pos2, viz._res)
+
+    for nid in topo_spec["nodes"]:
+        thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
+        pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
+        img = mark_cell(img, pos, int(nid), viz._res)
 
     return img
 
@@ -123,7 +124,10 @@ def builder(scene_name, grid_size=0.25):
         if action == "add_node":
             print("Click on window to select cell")
             x, y = get_clicked_pos(viz._res, grid_map.width, grid_map.length)
-            nid = len(topo_spec["nodes"])
+            max_nid = max(map(int, topo_spec["nodes"]))
+            nid = min(possible_nid for possible_nid in np.arange(max_nid)
+                      if possible_nid not in map(int, topo_spec["nodes"]))
+
             thor_pos = grid_map.to_thor_pos(x, y, grid_size=config["grid_size"])
             topo_spec["nodes"][str(nid)] = {"x": thor_pos[0], "z": thor_pos[1]}
             img = mark_cell(img, (x,y), nid, viz._res, viz._linewidth)
@@ -144,8 +148,12 @@ def builder(scene_name, grid_size=0.25):
                 pos1 = grid_map.to_grid_pos(*thor_pos1, grid_size=config["grid_size"])
                 pos2 = grid_map.to_grid_pos(*thor_pos2, grid_size=config["grid_size"])
                 topo_spec["edges"].append([nid1, nid2])
-                img = draw_edge(img, pos1, pos2, viz._res)
+
+                # redraw
+                img = viz.gridworld_img()
+                img = draw_topo(img, topo_spec, grid_map, config["grid_size"], viz)
                 viz.show_img(img)
+
 
         elif action == "save":
             default_path = "../data/topo/{}-topo.json".format(scene_name)
