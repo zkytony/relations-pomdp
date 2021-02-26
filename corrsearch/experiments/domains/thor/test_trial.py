@@ -45,8 +45,8 @@ def make_config(spec_path,
 
     exec_config = dict(
         max_steps=max_steps,
-        step_delay=step_delay,
-        debugging=True
+        step_delay=step_delay
+        # debugging=True
     )
     discount_factor = planner_config.get("discount_factor", 0.95)
 
@@ -77,8 +77,8 @@ def make_trial(config, trial_name="test_trial"):
 
 
 if __name__ == "__main__":
-    config = make_config("./config/config-FloorPlan1-Book-simple.yaml",
-                         planner="HeuristicSequentialPlanner",#"RandomPlanner",#"pomdp_py.POUCT",
+    config = make_config("./config/config-FloorPlan1-Mug-simple.yaml",
+                         planner="HeuristicSequentialPlanner",#"EntropyMinimizationPlanner",#"HeuristicSequentialPlanner",#"RandomPlanner",#"pomdp_py.POUCT",
                          # "RandomPlanner",
                          # planner="HeuristicSequentialPlanner",#"EntropyMinimizationPlanner",
                          planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#POMCP_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#,#RANDOM_PLANNER_CONFIG,

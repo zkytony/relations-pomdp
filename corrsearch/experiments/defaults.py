@@ -23,7 +23,7 @@ HEURISTIC_ONLINE_PLANNER_CONFIG = {
     "num_rsamples": 30,
     "gamma": 0.95,
     "num_visits_init": 0,
-    "init_qvalue_lower_bound": True
+    "init_qvalue_lower_bound": False
 }
 
 

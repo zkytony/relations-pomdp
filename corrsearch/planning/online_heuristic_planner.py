@@ -27,7 +27,7 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
                  num_rsamples=30,
                  num_zsamples=100,
                  gamma=0.95,
-                 init_qvalue_lower_bound=True,
+                 init_qvalue_lower_bound=False,
                  **params):
         """
         Args:
@@ -85,13 +85,14 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
 
     def plan(self, agent):
         # First, choose a subset of detectors
-        detector_valmap = self.detector_values(agent)
-        if self.k > 0:
+        if self.k < len(agent.observation_model.detectors):
+            detector_valmap = self.detector_values(agent)
             chosen_detectors = list(sorted(detector_valmap, key=detector_valmap.get, reverse=True))[:self.k]
             detector_valmap = {d:detector_valmap[d] for d in chosen_detectors}
-
-        print("Detectors {} chosen from {}".format(list(detector_valmap.keys()),
-                                                   agent.observation_model.detectors))
+            print("Detectors {} chosen from {}".format(list(detector_valmap.keys()),
+                                                       agent.observation_model.detectors))
+        else:
+             chosen_detectors = agent.observation_model.detectors
 
         # Create an agent, for planning, with heuristic policy model
         robot_id = agent.belief.robot_id

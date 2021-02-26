@@ -1,0 +1,80 @@
+# This file configs a uninstantiated problem for our setting, with
+# detectors, target object, and the spatial correlations.
+
+scene_name: "FloorPlan1"
+target_class: "Mug"
+
+# defines the possible locations
+grid_size: 0.4
+boundary_thickness: 4
+
+object_classes:
+  - Mug
+  - Countertop
+
+# define the detectors
+detectors:
+
+  # The robot has three detectors. One for small objects,
+  # one for larger objects, and one for the target.
+  - name: target-detector
+    id: 100
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      Mug:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.0
+          max_range: 1.0
+    params:
+      true_positive:
+        Mug: 0.7
+      false_positive:
+        Mug: 0.00
+      sigma:
+        Mug: 0.1
+
+  - name: furniture-detector
+    id: 200
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      CounterTop:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.0
+          max_range: 2.0
+    params:
+      true_positive:
+        CounterTop: 0.90
+      false_positive:
+        CounterTop: 0.00
+      sigma:
+        CounterTop: 0.1
+
+
+# define the probability
+probability:
+  # The probability will be more coarse
+  - classes: [CounterTop]
+    dist: "uniform"
+
+  - classes: [Mug, CounterTop]
+    dist: "nearby"
+    params:
+      radius: 0.5
+
+robot_id: 0
+move_schema: "topo"
+topo_dir_path: "data/topo"
+rotate_actions:
+  - name: left
+    delta: [0.0, "-math.pi/2"]
+    energy_cost: 0.0
+
+  - name: right
+    delta: [0.0, "math.pi/2"]
+    energy_cost: 0.0
