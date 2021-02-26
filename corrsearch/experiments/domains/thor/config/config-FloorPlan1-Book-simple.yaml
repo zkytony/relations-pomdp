@@ -32,7 +32,7 @@ detectors:
       true_positive:
         Book: 0.7
       false_positive:
-        Book: 0.01
+        Book: 0.00
       sigma:
         Book: 0.1
 
