@@ -185,7 +185,8 @@ class HeuristicRollout(pomdp_py.RolloutPolicy):
                 key=lambda move_action: euclidean_dist(self.robot_trans_model.sample(state, move_action)["loc"],
                                                        state[self.target_id]["loc"]))
             candidates.append(preferred_move)
-            for detect_action in self.original_policy_model.detect_actions:
+            detect_actions = self.original_policy_model.detect_actions
+            for detect_action in detect_actions:
                 detector = self.observation_model.detectors[detect_action.detector_id]
                 z = self.observation_model.sample(state, detect_action)
                 for objid in z.object_obzs:

@@ -180,14 +180,22 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         self.actions = move_actions | declare_actions | detect_actions
 
     def get_all_actions(self, state, history=None):
+        """If the last action is a move, then this action will not be a move.
+        (Domain-specific setting)"""
         if state is None:
             return self.actions
         else:
             moves = self.valid_moves(state)
-            if history is None or len(history) == 0 or not isinstance(history[-1][0], UseDetector):
+            if history is None or len(history) == 0:
                 return moves | self.detect_actions
             else:
-                return moves | self.detect_actions | self.declare_actions
+                last_action = history[-1][0]
+                if isinstance(last_action, Move):
+                    return self.detect_actions
+                elif isinstance(last_action, UseDetector):
+                    return moves | self.detect_actions | self.declare_actions
+                else: # Last action is Declare.
+                    return moves | self.detect_actions
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
