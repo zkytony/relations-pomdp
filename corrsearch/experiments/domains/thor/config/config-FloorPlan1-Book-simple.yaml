@@ -1,0 +1,119 @@
+# This file configs a uninstantiated problem for our setting, with
+# detectors, target object, and the spatial correlations.
+
+scene_name: "FloorPlan1"
+target_class: "Book"
+
+# defines the possible locations
+grid_size: 0.4
+boundary_thickness: 4
+
+object_classes:
+  - Book
+  - CounterTop
+
+# define the detectors
+detectors:
+
+  # The robot has three detectors. One for small objects,
+  # one for larger objects, and one for the target.
+  - name: target-detector
+    id: 100
+    type: "loc"
+    energy_cost: 0.0
+    sensors:
+      Book:
+        type: "fan"
+        params:
+          fov: 90
+          min_range: 0.25
+          max_range: 1.5
+    params:
+      true_positive:
+        Book: 0.7
+      false_positive:
+        Book: 0.01
+      sigma:
+        Book: 0.1
+
+  # - name: furniture-detector
+  #   id: 200
+  #   type: "loc"
+  #   energy_cost: 0.0
+  #   sensors:
+  #     CounterTop:
+  #       type: "fan"
+  #       params:
+  #         fov: 90
+  #         min_range: 0.25
+  #         max_range: 2.0
+  #   params:
+  #     true_positive:
+  #       CounterTop: 0.90
+  #     false_positive:
+  #       CounterTop: 0.00
+  #     sigma:
+  #       CounterTop: 0.1
+
+
+# define the probability
+grid_size_dist: 0.5  # grid size that the distributions are defined over
+probability:
+  # The probability will be more coarse
+  - classes: [CounterTop]
+    dist: "uniform"
+
+  - classes: [Book, CounterTop]
+    dist: "nearby"
+    params:
+      radius: 1.5
+
+robot_id: 0
+move_schema: "topo"
+topo_dir_path: "data/topo"
+rotate_actions:
+  - name: left
+    delta: [0.0, "-math.pi/2"]
+    energy_cost: 0.0
+
+  - name: right
+    delta: [0.0, "math.pi/2"]
+    energy_cost: 0.0
+
+# # defines robot moves
+# robot_id: 0
+# move_schema: "xy"
+# move_actions:
+#   - name: north
+#     delta: [0, 1, 0]
+#     energy_cost: 0.0
+
+#   - name: east
+#     delta: [-1, 0, "3*math.pi/2"]
+#     energy_cost: 0.0
+
+#   - name: south
+#     delta: [0, -1, "math.pi"]
+#     energy_cost: 0.0
+
+#   - name: west
+#     delta: [1, 0, "math.pi/2"]
+#     energy_cost: 0.0
+
+# move_schema: "vw"
+# move_actions:
+#   - name: forward
+#     delta: [1.0, 0.0]
+#     energy_cost: 0.0
+
+#   - name: forwardx2
+#     delta: [2.0, 0.0]
+#     energy_cost: 0.0
+
+#   - name: left
+#     delta: [0.0, "-math.pi/2"]
+#     energy_cost: 0.0
+
+#   - name: right
+#     delta: [0.0, "math.pi/2"]
+#     energy_cost: 0.0
