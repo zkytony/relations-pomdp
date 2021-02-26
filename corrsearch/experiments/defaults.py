@@ -10,7 +10,7 @@ ENTROPY_PLANNER_CONFIG = {
     "declare_threshold": 0.9,
     "entropy_improvement_threshold": 1e-3,
     "num_samples": 20,
-    "epsilon_move": 0.15
+    "epsilon_move": 0.1
 }
 
 RANDOM_PLANNER_CONFIG = {

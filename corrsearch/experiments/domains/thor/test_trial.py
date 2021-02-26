@@ -8,7 +8,7 @@ from corrsearch.experiments.defaults import *
 from corrsearch.models import *
 from corrsearch.objects import *
 
-def make_config(spec_path,
+def make_config(spec_or_path,
                 init_belief="uniform",
                 planner_config={},
                 planner="pomdp_py.POUCT",
@@ -17,8 +17,13 @@ def make_config(spec_path,
                 seed=None,
                 step_delay=0.1,
                 viz_res=30):
-    with open(spec_path) as f:
-        spec = yaml.load(f, Loader=yaml.Loader)
+    if type(spec_or_path) == str:
+        with open(spec_path) as f:
+            spec = yaml.load(f, Loader=yaml.Loader)
+    elif type(spec_or_path) == dict:
+        spec = spec_or_path
+    else:
+        raise TypeError("spec_or_path must be str or dict")
     problem_creator = "ThorSearch.parse"
     problem_config = dict(
         spec_or_path=spec
