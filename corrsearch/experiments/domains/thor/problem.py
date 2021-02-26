@@ -57,7 +57,7 @@ class ThorSearch(SearchProblem):
         )
 
     @classmethod
-    def parse(cls, spec_or_path):
+    def parse(cls, spec_or_path, scene_data_path="data", topo_dir_path="data/topo"):
         """
         Create a ThorSearch problem given spec (or path to .yaml file for spec)
         """
@@ -69,7 +69,7 @@ class ThorSearch(SearchProblem):
 
         robot_id = spec["robot_id"]
         scene_name = spec["scene_name"]
-        scene_info = load_scene_info(scene_name)
+        scene_info = load_scene_info(scene_name, data_path=scene_data_path)
         target_class = spec["target_class"]
         target_id = scene_info.objid_for_type(target_class)
         target_object = (target_id, target_class)
@@ -87,7 +87,7 @@ class ThorSearch(SearchProblem):
         # load topological map, if specified
         topo_map = None
         if spec["move_schema"] == "topo":
-            topo_file = os.path.join(spec["topo_dir_path"], "{}-topo.json".format(scene_name))
+            topo_file = os.path.join(topo_dir_path, "{}-topo.json".format(scene_name))
             topo_map = TopoMap.load(topo_file)
             actions["rotate_actions"] = parse_move_actions(spec["rotate_actions"])
         else:

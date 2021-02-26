@@ -55,8 +55,8 @@ start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
 os.makedirs(os.path.join(OUTPUT_DIR, exp_name), exist_ok=True)
-shutil.copytree("domains/thor/data", os.path.join(OUTPUT_DIR, exp_name))
-shutil.copytree("domains/thor/config", os.path.join(OUTPUT_DIR, exp_name))
+shutil.copytree("domains/thor/data", os.path.join(OUTPUT_DIR, exp_name, "data"))
+shutil.copytree("domains/thor/config", os.path.join(OUTPUT_DIR, exp_name, "config"))
 
 case1_kitchen = {
     "scene": "FloorPlan1",
@@ -139,7 +139,7 @@ cases = [
     case5_bedroom,
     case6_bedroom,
     case7_bathroom,
-    case7_bathroom
+    case8_bathroom
 ]
 
 all_trials = []
@@ -154,7 +154,6 @@ for case in cases:
 
     spec["robot_id"] = 0
     spec["move_schema"] = "topo"
-    spec["topo_dir_path"] = "data/topo"
     spec["rotate_actions"] = [
         dict(
             name = "left",
@@ -209,9 +208,11 @@ for case in cases:
     os.makedirs(exp_resources_path, exist_ok=True)
     if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
         # We will instantiate the problem for once and save its joint distribution.
-        problem = ThorSearch.parse(spec)
+        problem = ThorSearch.parse(spec, scene_data_path="./domains/thor/data",
+                                   topo_dir_path="./domains/thor/data/topo")
         with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
             pickle.dump(problem.joint_dist, f)
+        problem.env.controller.stop()
 
     print("Built spec")
     pprint(spec)
@@ -224,7 +225,7 @@ for case in cases:
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         config_corr = make_config(copy.deepcopy(spec),
-                                  init_belief="uniform",
+                                  init_belief="prior",
                                   planner="HeuristicSequentialPlanner",
                                   planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
                                   max_steps=max_steps)
@@ -238,7 +239,7 @@ for case in cases:
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         config_entropy = make_config(copy.deepcopy(spec),
-                                     init_belief="uniform",
+                                     init_belief="prior",
                                      planner="EntropyMinimizationPlanner",
                                      planner_config=ENTROPY_PLANNER_CONFIG,
                                      max_steps=max_steps)

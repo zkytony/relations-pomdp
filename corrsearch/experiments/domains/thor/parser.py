@@ -111,8 +111,8 @@ def parse_dist(scene_info, grid_map, thor_locations, prob_spec, grid_size=0.25):
 
             factors.append(factor)
 
-    factor_graph = FactorGraph(list(sorted(variables)),
-                               factors, compute_joint=False)
+    factor_graph = FactorGraph(list(sorted(variables)), factors)
+
     return factor_graph
 
 
