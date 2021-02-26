@@ -120,6 +120,9 @@ class ThorSearch(SearchProblem):
 
         thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
                              for loc in locations)
+        locations2 = set(env.grid_map.to_grid_pos(*loc, grid_size=grid_size)
+                         for loc in thor_locations)
+        assert locations2 == locations
         joint_dist = parse_dist(scene_info, env.grid_map, thor_locations, spec["probability"],
                                 grid_size=grid_size)
         return ThorSearch(robot_id, target_object, scene_info, env,

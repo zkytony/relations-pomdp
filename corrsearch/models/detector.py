@@ -167,6 +167,7 @@ class CorrDetectorModel(pomdp_py.ObservationModel):
         if (svar(objid), starget) in self.cond_dists:
             si_dist = self.cond_dists[(svar(objid), starget)]
         else:
+            import pdb; pdb.set_trace()
             si_dist = self.dist.marginal([svar(objid)],
                                          observation={svar(self.target_id) : starget})
             # convert to tabular for faster inference
