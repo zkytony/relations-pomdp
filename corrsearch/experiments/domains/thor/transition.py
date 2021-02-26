@@ -63,3 +63,7 @@ class DetRobotTrans(RobotTransModel):
                            "loc": next_robot_pose[:2],
                            "energy": next_energy,
                            "terminal": terminal})
+
+
+class TopoRobotTrans(RobotTransModel):
+    pass

@@ -87,7 +87,7 @@ class ThorViz(Visualizer):
         img = self.draw_robot(img, x, y, th,
                               color=color)
 
-        self._show_img(img)
+        self.show_img(img)
         return img
 
     def highlight(self, locations, color=(53, 190, 232)):
@@ -101,8 +101,11 @@ class ThorViz(Visualizer):
             # Draw boundary
             cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
                           (0, 0, 0), self._linewidth)
-        self._show_img(img)
+        self.show_img(img)
         return img
+
+    def gridworld_img(self):
+        return self._make_gridworld_image(self._res)
 
     def draw_fov(self, img, robot_pose, sensor):
         size = self._res
@@ -126,7 +129,7 @@ class ThorViz(Visualizer):
         color = tuple(color)
         return color
 
-    def _show_img(self, img):
+    def show_img(self, img):
         """
         Internally, the img origin (0,0) is top-left (that is the opencv image),
         so +x is right, +z is down.

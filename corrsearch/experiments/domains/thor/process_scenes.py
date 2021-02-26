@@ -85,7 +85,7 @@ def load_scene_info(scene_name, data_path="data"):
     with open(os.path.join(
             data_path, "{}-objects.pkl".format(scene_name)), "rb") as f:
         type_obj_map = pickle.load(f)
-    with open(os.path.join("config", "colors.yaml")) as f:
+    with open(os.path.join(os.path.dirname(data_path), "config", "colors.yaml")) as f:
         colors = yaml.load(f)
     scene_info = SceneInfo(scene_name, type_obj_map)
     for objid in scene_info.objects:

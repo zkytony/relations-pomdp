@@ -198,6 +198,8 @@ class GridMap:
     def blocked(self, loc1, loc2, nsteps=40):
         """
         Returns True if:
+        - loc1 is not free,
+        OR
         - loc1 is a reachable location AND
         - the line segment between loc1 and loc2 goes through
           an obstacle, and then goes through a free cell
@@ -209,9 +211,8 @@ class GridMap:
         if loc1 == loc2:
             return False
 
-        assert loc1 in self.free_locations, "in blocked: {} not free".format(loc1)
-        # if not (loc1 in self.free_locations and loc2 in self.free_locations):
-        #     return False
+        if loc1 not in self.free_locations:
+            return True
 
         _key = tuple(loc1), tuple(loc2)
         if _key in self._blocked_cache:

@@ -465,6 +465,29 @@ def plot_pose(ax, pos, rot, color='b', radians=True):
              0.2*math.sin(rot),  # dy
              width=0.005, head_width=0.05, color=color)
 
+def plot_dot(ax, px, py, color='blue', dotsize=2, fill=True, zorder=0, linewidth=0, edgecolor=None, label_text=None, alpha=1.0):
+    very_center = plt.Circle((px, py), dotsize, facecolor=color, fill=fill, zorder=zorder, linewidth=linewidth, edgecolor=edgecolor, alpha=alpha)
+    ax.add_artist(very_center)
+    if label_text:
+        text = ax.text(px, py, label_text, color='white',
+                        ha='center', va='center', size=7, weight='bold')
+        text.set_path_effects([path_effects.Stroke(linewidth=1, foreground='black'),
+                               path_effects.Normal()])
+
+        # t = ax.text(px-5, py-5, label_text, fontdict=font)
+        # t.set_bbox(dict(facecolor='red', alpha=0.5, edgecolor='red'))
+    return px, py
+
+
+def plot_line(ax, p1, p2, linewidth=1, color='black', zorder=0, alpha=1.0):
+    p1x, p1y = p1
+    p2x, p2y = p2
+    ax = plt.gca()
+    line = lines.Line2D([p1x, p2x], [p1y, p2y], linewidth=linewidth, color=color, zorder=zorder,
+                        alpha=alpha)
+    ax.add_line(line)
+
+
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     """
