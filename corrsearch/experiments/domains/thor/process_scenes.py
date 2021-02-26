@@ -23,7 +23,8 @@ def shared_objects_in_scenes(scenes):
 
 def plot_object_dist(scenes):
     fig, ax = plt.subplots(figsize=(15,12))
-    dirpath = os.makedirs("data", "plots", exist_ok=True)
+    dirpath = os.path.join("data", "plots")
+    os.makedirs(dirpath, exist_ok=True)
     for scene in scenes:
         print(scene)
         scene_info = ThorSceneInfo.load(scene)
@@ -55,7 +56,7 @@ def main(do_what):
                 mapping = ThorSceneInfo.extract_objects_info(scene)
                 with open(os.path.join("data", "{}-objects.pkl".format(scene)), "wb") as f:
                     pickle.dump(mapping, f)
-    elif do_what == "plot_object_dist":
+    elif do_what == "plot_object_dist_ithor":
         plot_object_dist(ithor_scene_names("kitchen"))
         plot_object_dist(ithor_scene_names("living_room"))
         plot_object_dist(ithor_scene_names("bedroom"))
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     OPTIONS = {
         0: "process_robothor",
         1: "process_ithor",
-        2: "plot_object_dist"
+        2: "plot_object_dist_ithor"
     }
     for num, txt in sorted(OPTIONS.items()):
         print(num, ":", txt)
