@@ -1,6 +1,7 @@
 
 import yaml
 import pomdp_py
+import pickle
 import random
 import copy
 from corrsearch.models import *
@@ -118,10 +119,16 @@ class ThorSearch(SearchProblem):
         locations = copy.deepcopy(env.grid_map.free_locations)
         locations |= env.grid_map.boundary_cells(thickness=boundary_thickness)
 
-        thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
-                             for loc in locations)
-        joint_dist = parse_dist(scene_info, env.grid_map, thor_locations, spec["probability"],
-                                grid_size=grid_size)
+        if os.path.exists(spec["joint_dist_path"]):
+            print("Joint Distribution exists. Loading")
+            with open(spec["joint_dist_path"], "rb") as f:
+                joint_dist = pickle.load(f)
+        else:
+            print("Creating Joint Distribution...")
+            thor_locations = set(env.grid_map.to_thor_pos(*loc, grid_size=grid_size)
+                                 for loc in locations)
+            joint_dist = parse_dist(scene_info, env.grid_map, thor_locations, spec["probability"],
+                                    grid_size=grid_size)
         return ThorSearch(robot_id, target_object, scene_info, env,
                           locations, objects, joint_dist, robot_model, grid_size)
 

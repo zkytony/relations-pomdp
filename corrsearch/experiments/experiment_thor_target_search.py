@@ -1,6 +1,7 @@
 import pomdp_py
 import random
 import yaml
+import pickle
 import copy
 from pprint import pprint
 from corrsearch.experiments.domains.thor.problem import *
@@ -8,6 +9,7 @@ from corrsearch.experiments.domains.thor.thor import *
 from corrsearch.experiments.domains.thor.test_trial import *
 from sciex import Experiment
 from datetime import datetime as dt
+import shutil
 
 def fill_detector(detector_id, name, cls, cfg):
     detector = dict(
@@ -43,39 +45,44 @@ def fill_dist(objclass, target_class, cfg):
     return dist
 
 grid_size = 0.4
-ntrials = 3
-max_steps = 100
+ntrials = 15
+max_steps = 30
 split = 5
 
+OUTPUT_DIR = os.path.join("results", "thor")
 exp_name = "ThorSearch-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
+
+os.makedirs(os.path.join(OUTPUT_DIR, exp_name), exist_ok=True)
+shutil.copytree("domains/thor/data", os.path.join(OUTPUT_DIR, exp_name))
+shutil.copytree("domains/thor/config", os.path.join(OUTPUT_DIR, exp_name))
 
 case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Knife", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("Toaster", dict(rel="nearby", radius=0.75, fov=80, max_range=1.5, truepos=0.9)),
-     ("Mug", dict(rel="nearby", radius=0.5, fov=80, max_range=1.0, truepos=0.95)))
+    (("Knife", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("Toaster", dict(rel="nearby", radius=0.75, fov=90, max_range=1.5, truepos=0.9))),
+     # ("Mug", dict(rel="nearby", radius=0.5, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case2_kitchen = {
     "scene": "FloorPlan2",
     "scene_type": "kitchen",
     "objects":
-    (("Bread", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("CounterTop", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)),
-     ("Mug", dict(rel="nearby", radius=1.0, fov=80, max_range=1.0, truepos=0.95)))
+    (("Bread", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("CounterTop", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95))),
+     # ("Mug", dict(rel="nearby", radius=1.0, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case3_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("Laptop", dict(fov=60, max_range=0.75, truepos=0.8)),
-     ("DiningTable", dict(rel="nearby", radius=1.0, fov=80, max_range=2.0, truepos=0.95)),
-     ("Book", dict(rel="nearby", radius=0.5, fov=80, max_range=0.75, truepos=0.9)))
+    (("Laptop", dict(fov=90, max_range=0.75, truepos=0.8)),
+     ("DiningTable", dict(rel="nearby", radius=1.0, fov=80, max_range=2.0, truepos=0.95))),
+     # ("Book", dict(rel="nearby", radius=0.5, fov=80, max_range=0.75, truepos=0.9)))
 }
 
 
@@ -83,45 +90,45 @@ case4_living = {
     "scene": "FloorPlan202",
     "scene_type": "living#room",
     "objects":
-    (("KeyChain", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("TVStand", dict(rel="nearby", radius=1.0, fov=80, max_range=1.5, truepos=0.9)),
-     ("Book", dict(rel="nearby", radius=1.0, fov=80, max_range=0.75, truepos=0.95)))
+    (("KeyChain", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("TVStand", dict(rel="nearby", radius=1.0, fov=80, max_range=1.5, truepos=0.9)))
+     # ("Book", dict(rel="nearby", radius=1.0, fov=80, max_range=0.75, truepos=0.95)))
 }
 
 case5_bedroom = {
     "scene": "FloorPlan301",
     "scene_type": "bedroom",
     "objects":
-    (("CellPhone", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("Bed", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)),
-     ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
+    (("CellPhone", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("Bed", dict(rel="nearby", radius=1.5, fov=80, max_range=2.0, truepos=0.95)))
+     # ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case6_bedroom = {
     "scene": "FloorPlan302",
     "scene_type": "bedroom",
     "objects":
-    (("Pen", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("Shelf", dict(rel="nearby", radius=1.5, fov=80, max_range=1.5, truepos=0.95)),
-     ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
+    (("Pen", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("Shelf", dict(rel="nearby", radius=1.5, fov=80, max_range=1.5, truepos=0.95)))
+     # ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case7_bathroom = {
     "scene": "FloorPlan401",
     "scene_type": "bathroom",
     "objects":
-    (("Towel", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("TowelHolder", dict(rel="nearby", radius=1.5, fov=80, max_range=1.25, truepos=0.8)),
-     ("Window", dict(rel="nearby", radius=2.0, fov=80, max_range=1.5, truepos=0.9)))
+    (("Towel", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("TowelHolder", dict(rel="nearby", radius=1.5, fov=80, max_range=1.25, truepos=0.8)))
+     # ("Window", dict(rel="nearby", radius=2.0, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case8_bathroom = {
     "scene": "FloorPlan402",
     "scene_type": "bathroom",
     "objects":
-    (("SprayBottle", dict(fov=60, max_range=0.5, truepos=0.7)),
-     ("SinkBasin", dict(rel="nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.8)),
-     ("Faucet", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.9)))
+    (("SprayBottle", dict(fov=90, max_range=0.5, truepos=0.7)),
+     ("SinkBasin", dict(rel="nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.8)))
+     # ("Faucet", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.9)))
 }
 
 cases = [
@@ -179,6 +186,8 @@ for case in cases:
     spec["detectors"].append(detector)
     spec_target_only = copy.deepcopy(spec)
 
+    os.makedirs(os.path.join(OUTPUT_DIR, exp_name, "resources"), exist_ok=True)
+
     for other_objtup in case["objects"][1:]:
         count += 100
         objclass, objcfg = other_objtup
@@ -191,6 +200,18 @@ for case in cases:
         pairdist = fill_dist(objclass, target_class, objcfg)
         spec["probability"].append(dict(classes=[objclass], dist="uniform"))
         spec["probability"].append(pairdist)
+
+    joint_dist_file = "{}-{}-{}-GridSize{}_joint-dist.pkl".format(spec["scene_type"], spec["scene_name"],
+                                                                  "_".join(spec["object_classes"]),
+                                                                  grid_size)
+    spec["joint_dist_path"] = os.path.join("resources", joint_dist_file)
+    exp_resources_path = os.path.join(OUTPUT_DIR, exp_name, "resources")
+    os.makedirs(exp_resources_path, exist_ok=True)
+    if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
+        # We will instantiate the problem for once and save its joint distribution.
+        problem = ThorSearch.parse(spec)
+        with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
+            pickle.dump(problem.joint_dist, f)
 
     print("Built spec")
     pprint(spec)
@@ -211,18 +232,18 @@ for case in cases:
         all_trials.append(trial)
 
 
-        # ########## ENTROPY MIN
-        # trial_name = "{}-{}-{}_{}_entropymin"\
-        #              .format(spec["scene_type"], spec["target_class"],
-        #                      spec["scene_name"].replace("_", "#"),
-        #                      i+1)
-        # config_entropy = make_config(copy.deepcopy(spec),
-        #                              init_belief="uniform",
-        #                              planner="EntropyMinimizationPlanner",
-        #                              planner_config=ENTROPY_PLANNER_CONFIG,
-        #                              max_steps=max_steps)
-        # trial = make_trial(config_corr, trial_name)
-        # all_trials.append(trial)
+        ########## ENTROPY MIN
+        trial_name = "{}-{}-{}_{}_entropymin"\
+                     .format(spec["scene_type"], spec["target_class"],
+                             spec["scene_name"].replace("_", "#"),
+                             i+1)
+        config_entropy = make_config(copy.deepcopy(spec),
+                                     init_belief="uniform",
+                                     planner="EntropyMinimizationPlanner",
+                                     planner_config=ENTROPY_PLANNER_CONFIG,
+                                     max_steps=max_steps)
+        trial = make_trial(config_entropy, trial_name)
+        all_trials.append(trial)
 
 
         ########## TARGET ONLY
@@ -235,11 +256,10 @@ for case in cases:
                                          planner="pomdp_py.POUCT",
                                          planner_config=POMCP_PLANNER_CONFIG,
                                          max_steps=max_steps)
-        trial = make_trial(config_corr, trial_name)
+        trial = make_trial(config_target_only, trial_name)
         all_trials.append(trial)
 
 
-OUTPUT_DIR = os.path.join("results", "thor")
 random.shuffle(all_trials)
 exp = Experiment(exp_name, all_trials, OUTPUT_DIR, verbose=True,
                  add_timestamp=False)
