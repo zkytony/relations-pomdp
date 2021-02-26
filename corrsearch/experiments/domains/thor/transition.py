@@ -178,13 +178,7 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         if state is None:
             return self.actions
         else:
-            # Only declare if the last one was a UseDetector
-            robot_loc = state[self.robot_id].loc
-            if robot_loc not in self.move_actions:
-                # Snap robot loc to closest node
-                robot_loc = min(self._motion_map.keys(),
-                                key=lambda p: euclidean_dist(p, robot_loc))
-            moves = self._motion_map[robot_loc] | self.rotate_actions
+            moves = self.valid_moves(state)
             if history is None or len(history) == 0 or not isinstance(history[-1][0], UseDetector):
                 return moves | self.detect_actions
             else:
@@ -195,3 +189,13 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
 
     def sample(self, state, history=None):
         return random.sample(self._get_all_actions(state=state, history=history), 1)[0]
+
+    def valid_moves(self, state):
+        # Only declare if the last one was a UseDetector
+        robot_loc = state[self.robot_id].loc
+        if robot_loc not in self.move_actions:
+            # Snap robot loc to closest node
+            robot_loc = min(self._motion_map.keys(),
+                            key=lambda p: euclidean_dist(p, robot_loc))
+        moves = self._motion_map[robot_loc] | self.rotate_actions
+        return moves
