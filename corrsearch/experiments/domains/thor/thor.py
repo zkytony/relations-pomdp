@@ -141,7 +141,7 @@ def ithor_scene_names(scene_type="kitchen", levels=None):
         if levels is None:
             return scenes[scene_type]
         else:
-            return [scenes[scene_type][i] for i in levels]
+            return [scenes[scene_type][i-1] for i in levels]
     raise ValueError("Unknown scene type {}".format(scene_type))
 
 

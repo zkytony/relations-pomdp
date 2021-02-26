@@ -131,13 +131,16 @@ def builder(scene_name, grid_size=0.25):
                 viz.show_img(img)
 
         elif action == "save":
-            default_path = "./{}-topo.json".format(scene_name)
+            default_path = "../data/topo/{}-topo.json".format(scene_name)
             savepath = input("Save Path [default {}]: ".format(default_path))
             if len(savepath) == 0:
                 savepath = default_path
             os.makedirs(os.path.dirname(savepath), exist_ok=True)
             with open(savepath, "w") as f:
                 json.dump(topo_spec, f, sort_keys=True, indent=4)
+
+            pygame.image.save(viz._display_surf, "../data/topo/{}-topo.png".format(scene_name))
+
 
         elif action == "load":
             loadpath = input("Load Path: ")
