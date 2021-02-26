@@ -44,9 +44,9 @@ def fill_dist(objclass, target_class, cfg):
     )
     return dist
 
-grid_size = 0.4
+grid_size = 0.25
 ntrials = 15
-max_steps = 30
+max_steps = 40
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
@@ -184,6 +184,7 @@ for case in cases:
                              target_cfg)
     spec["detectors"].append(detector)
     spec_target_only = copy.deepcopy(spec)
+    spec_target_only["probability"].append(dict(classes=[target_class], dist="uniform"))
 
     os.makedirs(os.path.join(OUTPUT_DIR, exp_name, "resources"), exist_ok=True)
 
@@ -204,15 +205,16 @@ for case in cases:
                                                                   "_".join(spec["object_classes"]),
                                                                   grid_size)
     spec["joint_dist_path"] = os.path.join("resources", joint_dist_file)
-    exp_resources_path = os.path.join(OUTPUT_DIR, exp_name, "resources")
-    os.makedirs(exp_resources_path, exist_ok=True)
-    if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
-        # We will instantiate the problem for once and save its joint distribution.
-        problem = ThorSearch.parse(spec, scene_data_path="./domains/thor/data",
-                                   topo_dir_path="./domains/thor/data/topo")
-        with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
-            pickle.dump(problem.joint_dist, f)
-        problem.env.controller.stop()
+    spec_target_only["joint_dist_path"] = None  # we don't expect this to be needed
+    # exp_resources_path = os.path.join(OUTPUT_DIR, exp_name, "resources")
+    # os.makedirs(exp_resources_path, exist_ok=True)
+    # if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
+    #     # We will instantiate the problem for once and save its joint distribution.
+    #     problem = ThorSearch.parse(spec, scene_data_path="./domains/thor/data",
+    #                                topo_dir_path="./domains/thor/data/topo")
+    #     with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
+    #         pickle.dump(problem.joint_dist, f)
+    #     problem.env.controller.stop()
 
     print("Built spec")
     pprint(spec)
