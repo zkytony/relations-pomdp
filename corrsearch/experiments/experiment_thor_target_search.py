@@ -63,7 +63,7 @@ case1_kitchen = {
     "scene_type": "kitchen",
     "objects":
     (("Knife", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("Toaster", dict(rel="nearby", radius=1.25, fov=90, max_range=1.5, truepos=0.9))),
+     ("Toaster", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95))),
 }
 
 case2_kitchen = {
@@ -71,8 +71,8 @@ case2_kitchen = {
     "scene_type": "kitchen",
     "objects":
     (("Bread", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("CounterTop", dict(rel="nearby", radius=1.25, fov=80, max_range=1.75, truepos=0.95))),
-     # ("Mug", dict(rel="nearby", radius=1.25, fov=80, max_range=1.0, truepos=0.95)))
+     ("CounterTop", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95))),
+     # ("Mug", dict(rel="nearby", radius=1.0, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case3_living = {
@@ -80,8 +80,8 @@ case3_living = {
     "scene_type": "living#room",
     "objects":
     (("Laptop", dict(fov=90, max_range=0.75, truepos=0.8)),
-     ("DiningTable", dict(rel="nearby", radius=1.25, fov=80, max_range=1.75, truepos=0.95))),
-     # ("Book", dict(rel="nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.9)))
+     ("DiningTable", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95))),
+     # ("Book", dict(rel="nearby", radius=1.0, fov=80, max_range=0.75, truepos=0.95)))
 }
 
 
@@ -90,8 +90,8 @@ case4_living = {
     "scene_type": "living#room",
     "objects":
     (("KeyChain", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("TVStand", dict(rel="nearby", radius=1.25, fov=80, max_range=1.5, truepos=0.9)))
-     # ("Book", dict(rel="nearby", radius=1.25, fov=80, max_range=0.75, truepos=0.95)))
+     ("TVStand", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95)))
+     # ("Book", dict(rel="nearby", radius=1.0, fov=80, max_range=0.75, truepos=0.95)))
 }
 
 case5_bedroom = {
@@ -99,8 +99,8 @@ case5_bedroom = {
     "scene_type": "bedroom",
     "objects":
     (("CellPhone", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("Bed", dict(rel="nearby", radius=1.25, fov=80, max_range=1.75, truepos=0.95)))
-     # ("Laptop", dict(rel="nearby", radius=1.25, fov=80, max_range=1.5, truepos=0.9)))
+     ("Bed", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95)))
+     # ("Laptop", dict(rel="nearby", radius=1.0, fov=80, max_range=1.5, truepos=0.95)))
 }
 
 case6_bedroom = {
@@ -108,8 +108,8 @@ case6_bedroom = {
     "scene_type": "bedroom",
     "objects":
     (("Pen", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("Shelf", dict(rel="nearby", radius=1.25, fov=80, max_range=1.5, truepos=0.95)))
-     # ("Laptop", dict(rel="nearby", radius=1.25, fov=80, max_range=1.5, truepos=0.9)))
+     ("Shelf", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95)))
+     # ("Laptop", dict(rel="nearby", radius=1.0, fov=80, max_range=1.5, truepos=0.9)))
 }
 
 case7_bathroom = {
@@ -117,7 +117,7 @@ case7_bathroom = {
     "scene_type": "bathroom",
     "objects":
     (("Towel", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("TowelHolder", dict(rel="nearby", radius=1.25, fov=80, max_range=1.25, truepos=0.85)))
+     ("TowelHolder", dict(rel="nearby", radius=1.0, fov=90, max_range=1.25, truepos=0.95)))
      # ("Window", dict(rel="nearby", radius=2.0, fov=80, max_range=1.5, truepos=0.9)))
 }
 
@@ -126,8 +126,8 @@ case8_bathroom = {
     "scene_type": "bathroom",
     "objects":
     (("SprayBottle", dict(fov=90, max_range=0.75, truepos=0.7)),
-     ("SinkBasin", dict(rel="nearby", radius=1.25, fov=80, max_range=1.5, truepos=0.85)))
-     # ("Faucet", dict(rel="nearby", radius=1.25, fov=80, max_range=1.25, truepos=0.9)))
+     ("SinkBasin", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.95)))
+     # ("Faucet", dict(rel="nearby", radius=1.0, fov=80, max_range=1.25, truepos=0.9)))
 }
 
 cases = [
