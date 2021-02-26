@@ -84,6 +84,6 @@ if __name__ == "__main__":
                          planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#POMCP_PLANNER_CONFIG,#HEURISTIC_ONLINE_PLANNER_CONFIG,#RANDOM_PLANNER_CONFIG,#,#RANDOM_PLANNER_CONFIG,
                          #ENTROPY_PLANNER_CONFIG,#
                          seed=100,
-                         init_belief="informed")
+                         init_belief="uniform")
     trial = make_trial(config)
     trial.run()

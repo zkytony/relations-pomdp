@@ -46,3 +46,7 @@ The `ai2thor` package version used is [2.7.2](https://github.com/allenai/ai2thor
 
 5. Overall the scene lacks information necessary to build a POMDP agent. The map
    is larger than desired for creating the distribution.
+
+### iTHOR
+
+iTHOR is a lot more manageable!

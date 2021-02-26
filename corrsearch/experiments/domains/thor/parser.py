@@ -5,6 +5,7 @@ Very similar to the parser for Field2D but differ in details.
 """
 from corrsearch.experiments.domains.thor.detector import *
 from corrsearch.experiments.domains.thor.spatial_corr import *
+from corrsearch.probability import *
 import numpy as np
 import math
 import yaml
