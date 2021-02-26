@@ -124,9 +124,16 @@ def builder(scene_name, grid_size=0.25):
         if action == "add_node":
             print("Click on window to select cell")
             x, y = get_clicked_pos(viz._res, grid_map.width, grid_map.length)
-            max_nid = max(map(int, topo_spec["nodes"]))
-            nid = min(possible_nid for possible_nid in np.arange(max_nid)
-                      if possible_nid not in map(int, topo_spec["nodes"]))
+            if len(topo_spec["nodes"]) == 0:
+                nid = 0
+            else:
+                max_nid = max(map(int, topo_spec["nodes"]))
+                possnids = [possible_nid for possible_nid in np.arange(max_nid)
+                            if possible_nid not in map(int, topo_spec["nodes"])]
+                if len(possnids) > 0:
+                    nid = min(possnids)
+                else:
+                    nid = len(topo_spec["nodes"])
 
             thor_pos = grid_map.to_thor_pos(x, y, grid_size=config["grid_size"])
             topo_spec["nodes"][str(nid)] = {"x": thor_pos[0], "z": thor_pos[1]}
