@@ -38,7 +38,7 @@ def launch_controller(config):
                             width=config.get("width", 300),
                             height=config.get("height", 300),
                             visibilityDistance=config.get("visibility_distance", 5.0),
-                            fieldOfView=config.get("fov", 90),
+                            fieldOfView=config.get("fov", 120),
                             gridSize=config.get("grid_size", 0.25),
                             renderDepthImage=config.get("render_depth", True),
                             renderClassImage=config.get("render_class", True),

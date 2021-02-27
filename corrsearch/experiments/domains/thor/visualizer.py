@@ -11,11 +11,28 @@ import os
 from corrsearch.models.visualizer import Visualizer
 from corrsearch.utils import overlay, lighter, lighter_with_alpha, cv2shape
 from corrsearch.experiments.domains.thor.topo_maps.build_topo_map import draw_topo
+from corrsearch.experiments.domains.thor.thor import thor_object_poses
 
 class ThorViz(Visualizer):
 
     def __init__(self, problem, **config):
         super().__init__(problem)
+
+        # Actually grab all the detectable object poses
+        object_poses = {}
+        for objid in problem.objects:
+            object_type = problem.objects[objid]["class"]
+            if object_type not in object_poses:
+                object_poses[object_type] = set()
+
+            thor_instance_poses = thor_object_poses(problem.env.controller, object_type)
+            for thor_objid in thor_instance_poses:
+                thor_x, thor_y, thor_z = thor_instance_poses[thor_objid]
+                objloc = problem.grid_map.to_grid_pos(thor_x, thor_z,
+                                                      grid_size=problem.grid_size)
+                object_poses[object_type].add(objloc)
+        self.object_poses = object_poses
+
         self._res = config.get("res", 30)   # resolution
         self._linewidth = config.get("linewidth", 1)
         self.on_init()
@@ -73,16 +90,19 @@ class ThorViz(Visualizer):
         if sensor is not None:
             img = self.draw_fov(img, robot_pose, sensor)
 
-        # Draw where the target is
-        target_id = self.problem.target_id
-        if target_id is not None:
-            target_x, target_y = state[target_id].loc
-            r = self._res
-            cv2.rectangle(img, (target_y*r, target_x*r),
-                          (target_y*r+r, target_x*r+r),
-                          lighter(self.get_color(target_id)[:3], 0.5), -1)
+        # Draw where the objects are
+        for object_type in self.object_poses:
+            if object_type == "robot":
+                continue
+            objid = self.problem.scene_info.objid_for_type(object_type)
+            for obj_x, obj_y in self.object_poses[object_type]:
+                r = self._res
+                cv2.rectangle(img, (obj_y*r, obj_x*r),
+                              (obj_y*r+r, obj_x*r+r),
+                              lighter(self.get_color(objid)[:3], 0.5), -1)
 
         # Draw belief (only about target)
+        target_id = self.problem.target_id
         if belief is not None:
             target_color = self.get_color(target_id, alpha=0.8)
             img = self.draw_object_belief(img, belief.obj(target_id),

@@ -228,3 +228,7 @@ class ThorSearch(SearchProblem):
     @property
     def grid_map(self):
         return self.env.grid_map
+
+    @property
+    def objects(self):
+        return self._objects
