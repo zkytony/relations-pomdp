@@ -92,6 +92,7 @@ def builder(scene_name, grid_size=0.25):
     # Display grid map, starts interaction
     problem = DummyProblem(robot_id)
     problem.grid_map = grid_map
+    problem.objects = {}
 
     viz = ThorViz(problem)
     img = viz.gridworld_img()
