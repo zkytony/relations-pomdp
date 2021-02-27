@@ -82,7 +82,7 @@ def builder(scene_name, grid_size=0.25):
         "scene_name": scene_name,
         "width": 400,
         "height": 400,
-        "grid_size": 0.25
+        "grid_size": grid_size
     }
     robot_id = 0
     controller = launch_controller(config)
@@ -222,4 +222,5 @@ if __name__ == "__main__":
     grid_size = input("Grid size [default: 0.25]: ")
     if len(grid_size) == 0:
         grid_size = 0.25
+    grid_size = float(grid_size)
     builder(scene_name, grid_size=grid_size)
