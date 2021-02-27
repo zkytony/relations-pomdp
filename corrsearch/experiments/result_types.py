@@ -110,14 +110,12 @@ class RewardsResult(YamlResult):
             cls.plot_bar_stat(disc_reward_avg, disc_reward_ci95, axes[0], "Discounted Reward")
 
             success_avg = summary.loc[target_class].unstack().loc[("success", "avg")]
-            success_ci95 = summary.loc[target_class].unstack().loc[("success", "ci95")]
-            cls.plot_bar_stat(success_avg, success_ci95, axes[1], "Success")
+            cls.plot_bar_stat(success_avg, None, axes[1], "Success")
             axes[1].set_ylim(0, 1.1)
             axes[1].axhline(y=0.0, color='k', linestyle='-')
 
             fail_avg = summary.loc[target_class].unstack().loc[("fail", "avg")]
-            fail_ci95 = summary.loc[target_class].unstack().loc[("fail", "ci95")]
-            cls.plot_bar_stat(fail_avg, fail_ci95, axes[2], "Fail")
+            cls.plot_bar_stat(fail_avg, None, axes[2], "Fail")
             plt.savefig(os.path.join(path, f"summary-{target_class}.png"))
             axes[2].set_ylim(0, 1.1)
             axes[2].axhline(y=0.0, color='k', linestyle='-')
@@ -130,11 +128,12 @@ class RewardsResult(YamlResult):
         xvals = np.arange(len(avg_series))
         heights = []
         ticks = []
-        yerr = []
+        yerr = None if ci95_series is None else []
         for baseline in avg_series.index:
             ticks.append(method_to_name[baseline])
             heights.append(avg_series[baseline])
-            yerr.append(ci95_series[baseline])
+            if ci95_series is not None:
+                yerr.append(ci95_series[baseline])
         ax.bar(xvals, heights, tick_label=ticks, yerr=yerr)
         ax.set_title(title)
 
