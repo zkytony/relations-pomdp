@@ -13,6 +13,7 @@ class FanSensorThor(FanSensor):
         Will interpret min, max ranges in meters. Convert them
         to grids using grid size
         """
+        import pdb; pdb.set_trace()
         fov = params.get("fov", 90)
         min_range = int(round(params.get("min_range", 0.0) / grid_size))
         max_range = int(round(params.get("max_range", 1.5) / grid_size))

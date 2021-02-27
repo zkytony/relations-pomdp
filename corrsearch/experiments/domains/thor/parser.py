@@ -12,15 +12,15 @@ import yaml
 import pickle
 import os
 
-def parse_sensor(sensor_spec):
+def parse_sensor(sensor_spec, grid_size=0.25):
     """Build sensor given sensor_space (dict)"""
     if sensor_spec["type"] == "fan":
-        sensor = FanSensorThor(**sensor_spec["params"])
+        sensor = FanSensorThor(**sensor_spec["params"], grid_size=grid_size)
     else:
         raise ValueError("Unrecognized sensor type %s" % sensor_spec["type"])
     return sensor
 
-def parse_detectors(scene_info, spec_or_filepath, robot_id):
+def parse_detectors(scene_info, spec_or_filepath, robot_id, grid_size=0.25):
     """
     scene_info (dict) see load_scene_info in process_scenes.py
     """
@@ -41,7 +41,7 @@ def parse_detectors(scene_info, spec_or_filepath, robot_id):
             objid_for_type = scene_info.objid_for_type(objtype)
 
             sensor_spec = dspec["sensors"][ref]
-            sensors[objid_for_type] = parse_sensor(sensor_spec)
+            sensors[objid_for_type] = parse_sensor(sensor_spec, grid_size=grid_size)
 
         params = {}
         for param_name in dspec["params"]:

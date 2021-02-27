@@ -76,7 +76,7 @@ class ThorSearch(SearchProblem):
         grid_size = spec["grid_size"]
         boundary_thickness = spec["boundary_thickness"]
 
-        detectors = parse_detectors(scene_info, spec["detectors"], robot_id)
+        detectors = parse_detectors(scene_info, spec["detectors"], robot_id, grid_size=grid_size)
         detect_actions = set(UseDetector(detector.id,
                                          name=detector.name,
                                          energy_cost=detector.energy_cost)
