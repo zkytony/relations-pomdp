@@ -62,7 +62,7 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=4.0)),
+    (("PepperShaker", dict(fov=90, max_range=1.2, truepos=0.6, energy_cost=3.0)),
      ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=2.0, truepos=0.9, energy_cost=1.0))),
      # ("Mug", dict(rel="nearby", radius=0.9, fov=80, max_range=1.0, truepos=0.95)))
 }
@@ -71,7 +71,7 @@ case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Statue", dict(fov=90, max_range=0.8, truepos=0.6, energy_cost=3.0)),
+    (("Statue", dict(fov=90, max_range=1.2, truepos=0.8, energy_cost=4.0)),
      ("Shelf", dict(rel="nearby", radius=0.8, fov=90, max_range=2.0, truepos=0.9, energy_cost=1.0))),
 }
 
