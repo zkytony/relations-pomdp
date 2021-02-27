@@ -9,7 +9,7 @@ import copy
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from corrsearch.utils import hex_to_rgb
+from corrsearch.utils import hex_to_rgb, ci_normal
 from statannot import add_stat_annotation
 
 
@@ -17,6 +17,7 @@ method_to_name = {
     "heuristic#noprune#iq"  : "Corr+Heuristic",
     "corr-pouct"            : "Corr",
     "target-only-pouct"     : "Target",
+    "target-only"     : "Target",
     "entropymin"            : "Greedy",
     "random"                : "Random",
     "heuristic#k=2#iq"      : "Corr+Heuristic(k=2)",
@@ -71,10 +72,76 @@ class RewardsResult(YamlResult):
                     elif r == -100.0:
                         fail = 1  # means found, but wrong
                 rows.append([baseline, seed, cum_reward, success, fail])
+        cls.sharedheader = ["baseline", "seed", "disc_reward", "success", "fail"]
         return rows
 
     @classmethod
     def save_gathered_results(cls, gathered_results, path):
+        if "Field2D" in path:
+            cls.save_gathered_results_field2d(gathered_results, path)
+        elif "Thor" in path:
+            cls.save_gathered_results_thor(gathered_results, path)
+
+    ###### Thor
+    @classmethod
+    def save_gathered_results_thor(cls, gathered_results, path):
+        all_rows = []
+        for global_name in gathered_results:
+            tokens = global_name.split("-")
+            scene_type = tokens[0]
+            target_class = tokens[1]
+            scene_name = tokens[2]
+            for row in gathered_results[global_name]:
+                all_rows.append([scene_type, target_class, scene_name] + row)
+        df = pd.DataFrame(all_rows,
+                          columns=["scene_type", "target_class", "scene_name"] + cls.sharedheader)
+        # Produce a summary table as follows:
+        # target class scene_name baseline success% fail% reward SPL?/DistanceOfSuccess?
+        summary = df.groupby(['target_class', 'baseline'])\
+                    .agg([("avg", "mean"),
+                          "std",
+                          ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))])
+        summary = summary.unstack()
+
+        for target_class in summary.index:
+            fig, axes = plt.subplots(1,3, figsize=(8,4))
+            disc_reward_avg = summary.loc[target_class].unstack().loc[("disc_reward", "avg")]
+            disc_reward_ci95 = summary.loc[target_class].unstack().loc[("disc_reward", "ci95")]
+            cls.plot_bar_stat(disc_reward_avg, disc_reward_ci95, axes[0], "Discounted Reward")
+
+            success_avg = summary.loc[target_class].unstack().loc[("success", "avg")]
+            success_ci95 = summary.loc[target_class].unstack().loc[("success", "ci95")]
+            cls.plot_bar_stat(success_avg, success_ci95, axes[1], "Success")
+            axes[1].set_ylim(0, 1.1)
+            axes[1].axhline(y=0.0, color='k', linestyle='-')
+
+            fail_avg = summary.loc[target_class].unstack().loc[("fail", "avg")]
+            fail_ci95 = summary.loc[target_class].unstack().loc[("fail", "ci95")]
+            cls.plot_bar_stat(fail_avg, fail_ci95, axes[2], "Fail")
+            plt.savefig(os.path.join(path, f"summary-{target_class}.png"))
+            axes[2].set_ylim(0, 1.1)
+            axes[2].axhline(y=0.0, color='k', linestyle='-')
+
+        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(summary)
+
+    @classmethod
+    def plot_bar_stat(cls, avg_series, ci95_series, ax, title="title"):
+        xvals = np.arange(len(avg_series))
+        heights = []
+        ticks = []
+        yerr = []
+        for baseline in avg_series.index:
+            ticks.append(method_to_name[baseline])
+            heights.append(avg_series[baseline])
+            yerr.append(ci95_series[baseline])
+        ax.bar(xvals, heights, tick_label=ticks, yerr=yerr)
+        ax.set_title(title)
+
+
+    ###### Field2D
+    @classmethod
+    def save_gathered_results_field2d(cls, gathered_results, path):
         all_rows = []
         prepend_header = []
         for global_name in gathered_results:
@@ -130,6 +197,9 @@ class RewardsResult(YamlResult):
         if additional_x is not None:
             cls.plot_and_save(path, df, prepend_header[additional_x], xlabel, invert_x,
                               suffix="_otherobj", ylim=ylim)
+
+
+
 
 
     @classmethod
