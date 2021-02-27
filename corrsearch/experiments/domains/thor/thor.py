@@ -191,6 +191,7 @@ def convert_scene_to_grid_map(controller, scene_info, grid_size):
     return grid_map
 
 
+VALID_DECLARE_DISTANCE = 1.0
 class ThorEnv(pomdp_py.Environment):
     """Maintains Thor scene controller as well as POMDP state.
 
@@ -260,7 +261,7 @@ class ThorEnv(pomdp_py.Environment):
         reward_model = ThorSearchRewardModel(self.robot_id, self.target_id, self.grid_map,
                                              rmax=params.get("rmax", 100),
                                              rmin=params.get("rmin", -100),
-                                             valid_declare_distance=self.grid_size*2)
+                                             valid_declare_distance=VALID_DECLARE_DISTANCE)
         super().__init__(init_state, transition_model, reward_model)
 
     @property

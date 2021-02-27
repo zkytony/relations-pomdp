@@ -46,11 +46,11 @@ def fill_dist(objclass, target_class, cfg):
 
 grid_size = 0.4
 ntrials = 15
-max_steps = 50
+max_steps = 100
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchJJ-GridSize{}".format(grid_size)
+exp_name = "ThorSearchKK-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -62,8 +62,8 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=4.0)),
-     ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=1.0))),
+    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=4.0)),
+     ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=2.0, truepos=0.9, energy_cost=1.0))),
      # ("Mug", dict(rel="nearby", radius=0.9, fov=80, max_range=1.0, truepos=0.95)))
 }
 
@@ -71,8 +71,8 @@ case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Statue", dict(fov=90, max_range=0.8, truepos=0.7, energy_cost=3.0)),
-     ("Shelf", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=0.5))),
+    (("Statue", dict(fov=90, max_range=0.8, truepos=0.6, energy_cost=3.0)),
+     ("Shelf", dict(rel="nearby", radius=0.8, fov=90, max_range=2.0, truepos=0.9, energy_cost=1.0))),
 }
 
 
@@ -187,7 +187,7 @@ for case in cases:
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-        instance_config = {"topo_move_cost_factor": 4.0,
+        instance_config = {"topo_move_cost_factor": 1.0,
                            "applies_all_everywhere": False}
         config_corr = make_config(copy.deepcopy(spec),
                                   init_belief="prior",
@@ -204,7 +204,7 @@ for case in cases:
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-        instance_config = {"topo_move_cost_factor": 4.0,
+        instance_config = {"topo_move_cost_factor": 1.0,
                            "applies_all_everywhere": True}
         config_corr = make_config(copy.deepcopy(spec),
                                   init_belief="prior",
@@ -221,7 +221,7 @@ for case in cases:
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-        instance_config = {"topo_move_cost_factor": 4.0,
+        instance_config = {"topo_move_cost_factor": 1.0,
                            "applies_all_everywhere": True}
         config_target_only = make_config(spec_target_only,
                                          init_belief="uniform",
