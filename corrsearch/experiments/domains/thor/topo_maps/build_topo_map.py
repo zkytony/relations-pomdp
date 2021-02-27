@@ -164,7 +164,7 @@ def builder(scene_name, grid_size=0.25):
 
 
         elif action == "save":
-            default_path = "../data/topo/{}-topo.json".format(scene_name)
+            default_path = "../data/topo/{}-topo-{}.json".format(scene_name, config["grid_size"])
             savepath = input("Save Path [default {}]: ".format(default_path))
             if len(savepath) == 0:
                 savepath = default_path

@@ -87,7 +87,7 @@ class ThorSearch(SearchProblem):
         # load topological map, if specified
         topo_map = None
         if spec["move_schema"] == "topo":
-            topo_file = os.path.join(topo_dir_path, "{}-topo.json".format(scene_name))
+            topo_file = os.path.join(topo_dir_path, "{}-topo-{}.json".format(scene_name, grid_size))
             topo_map = TopoMap.load(topo_file)
             actions["rotate_actions"] = parse_move_actions(spec["rotate_actions"])
         else:
