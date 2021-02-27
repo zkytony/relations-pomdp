@@ -188,15 +188,14 @@ def builder(scene_name, grid_size=0.25):
                 viz.show_img(img)
 
         elif action == "remove_node":
-            print("Click on window to select cell")
-            x, y = get_clicked_pos(viz._res, grid_map.width, grid_map.length)
-            removing_nid = None
-            for nid in topo_spec["nodes"]:
-                thor_pos = topo_spec["nodes"][nid]["x"], topo_spec["nodes"][nid]["z"]
-                pos = grid_map.to_grid_pos(*thor_pos, grid_size=grid_size)
-                if pos == (x,y):
-                    removing_nid = int(nid)
-                    break
+            removing_nid = input("Node to remove: ")
+
+            if removing_nid not in topo_spec["nodes"]:
+                print("Node {} is invalid".format(removing_nid))
+                continue
+
+            removing_nid = int(removing_nid)
+
             if removing_nid is not None:
                 topo_spec["nodes"].pop(int(removing_nid), None)
                 topo_spec["nodes"].pop(str(removing_nid), None)

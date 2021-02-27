@@ -44,13 +44,13 @@ def fill_dist(objclass, target_class, cfg):
     )
     return dist
 
-grid_size = 0.3
+grid_size = 0.4
 ntrials = 15
 max_steps = 50
-split = 5
+split = 6
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchEE-GridSize{}".format(grid_size)
+exp_name = "ThorSearchFF-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -62,8 +62,8 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Bread", dict(fov=90, max_range=0.9, truepos=0.7, energy_cost=1.0)),
-     ("CounterTop", dict(rel="nearby", radius=0.9, fov=90, max_range=2.1, truepos=0.9, energy_cost=0.5))),
+    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=0.0)),
+     ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=0.0))),
      # ("Mug", dict(rel="nearby", radius=0.9, fov=80, max_range=1.0, truepos=0.95)))
 }
 
@@ -71,8 +71,8 @@ case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Mug", dict(fov=90, max_range=1.2, truepos=0.8, energy_cost=1.0)),
-     ("CoffeeMachine", dict(rel="nearby", radius=0.9, fov=90, max_range=1.8, truepos=0.9, energy_cost=0.5))),
+    (("Mug", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
+     ("CoffeeMachine", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=0.0))),
 }
 
 
@@ -80,8 +80,8 @@ case3_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("KeyChain", dict(fov=90, max_range=0.9, truepos=0.7, energy_cost=1.0)),
-     ("Vase", dict(rel="nearby", radius=0.9, fov=90, max_range=1.8, truepos=0.9, energy_cost=0.5)))
+    (("KeyChain", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=0.0)),
+     ("Vase", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=0.0)))
      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 }
 
@@ -90,8 +90,8 @@ case4_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("Laptop", dict(fov=90, max_range=1.5, truepos=0.8, energy_cost=1.0)),
-     ("DiningTable", dict(rel="nearby", radius=0.9, fov=90, max_range=2.1, truepos=0.9, energy_cost=0.5))),
+    (("Laptop", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
+     ("DiningTable", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=0.0))),
      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 }
 
@@ -235,19 +235,34 @@ for case in cases:
         trial = make_trial(config_corr, trial_name)
         all_trials.append(trial)
 
+        ########### Correlation, no heuristic
+        trial_name = "{}-{}-{}_{}_corr-pouct"\
+                     .format(spec["scene_type"], spec["target_class"],
+                             spec["scene_name"].replace("_", "#"),
+                             i+1)
+        config_corr = make_config(copy.deepcopy(spec),
+                                  init_belief="prior",
+                                  planner="pomdp_py.POUCT",
+                                  planner_config=POMCP_PLANNER_CONFIG,
+                                  max_steps=max_steps)
+        trial = make_trial(config_corr, trial_name)
+        all_trials.append(trial)
 
-        # ########## ENTROPY MIN
-        # trial_name = "{}-{}-{}_{}_entropymin"\
-        #              .format(spec["scene_type"], spec["target_class"],
-        #                      spec["scene_name"].replace("_", "#"),
-        #                      i+1)
-        # config_entropy = make_config(copy.deepcopy(spec),
-        #                              init_belief="prior",
-        #                              planner="EntropyMinimizationPlanner",
-        #                              planner_config=ENTROPY_PLANNER_CONFIG,
-        #                              max_steps=max_steps)
-        # trial = make_trial(config_entropy, trial_name)
-        # all_trials.append(trial)
+
+        ########## ENTROPY MIN
+        trial_name = "{}-{}-{}_{}_entropymin"\
+                     .format(spec["scene_type"], spec["target_class"],
+                             spec["scene_name"].replace("_", "#"),
+                             i+1)
+        entropymin_config = ENTROPY_PLANNER_CONFIG
+        entropymin_config["num_samples"] = 10
+        config_entropy = make_config(copy.deepcopy(spec),
+                                     init_belief="prior",
+                                     planner="EntropyMinimizationPlanner",
+                                     planner_config=entropymin_config,
+                                     max_steps=max_steps)
+        trial = make_trial(config_entropy, trial_name)
+        all_trials.append(trial)
 
 
         ########## TARGET ONLY

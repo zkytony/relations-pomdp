@@ -171,7 +171,7 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
                 dst_thor_x, dst_thor_z = topo_map.nodes[neighbor_nid].pose
                 dst_pos = grid_map.to_grid_pos(dst_thor_x, dst_thor_z, grid_size=self.grid_size, avoid_obstacle=True)
                 move_actions.add(TopoMove(src_pos, dst_pos, nid, neighbor_nid,
-                                          energy_cost=0.8*euclidean_dist(src_pos, dst_pos)))
+                                          energy_cost=euclidean_dist((thor_x, thor_z), (dst_thor_x, dst_thor_z))))
             self._motion_map[src_pos] = move_actions
         self.detect_actions = detect_actions
         self.declare_actions = declare_actions
