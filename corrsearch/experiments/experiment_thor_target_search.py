@@ -45,7 +45,7 @@ def fill_dist(objclass, target_class, cfg):
     return dist
 
 grid_size = 0.4
-ntrials = 1
+ntrials = 15
 max_steps = 50
 split = 5
 
