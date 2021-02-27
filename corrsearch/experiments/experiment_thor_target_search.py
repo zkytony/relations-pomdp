@@ -50,7 +50,7 @@ max_steps = 50
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchAA-GridSize{}".format(grid_size)
+exp_name = "ThorSearchBB-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -62,37 +62,39 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Mug", dict(fov=90, max_range=1.25, truepos=0.7)),
-     ("CoffeeMachine", dict(rel="nearby", radius=0.75, fov=90, max_range=2.5, truepos=0.95))),
+    (("Bread", dict(fov=90, max_range=0.75, truepos=0.7)),
+     ("CounterTop", dict(rel="nearby", radius=1.0, fov=90, max_range=2.0, truepos=0.9))),
+     # ("Mug", dict(rel="nearby", radius=0.75, fov=80, max_range=1.0, truepos=0.95)))
 }
 
 case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Bread", dict(fov=90, max_range=1.25, truepos=0.7)),
-     ("CounterTop", dict(rel="nearby", radius=0.75, fov=90, max_range=2.5, truepos=0.95))),
-     # ("Mug", dict(rel="nearby", radius=0.75, fov=80, max_range=1.0, truepos=0.95)))
+    (("Mug", dict(fov=90, max_range=1.0, truepos=0.8)),
+     ("CoffeeMachine", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.9))),
 }
+
 
 case3_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("Laptop", dict(fov=90, max_range=1.25, truepos=0.8)),
-     ("DiningTable", dict(rel="nearby", radius=0.75, fov=90, max_range=2.5, truepos=0.95))),
+    (("KeyChain", dict(fov=90, max_range=0.75, truepos=0.7)),
+     ("DeskLamp", dict(rel="nearby", radius=1.0, fov=90, max_range=1.5, truepos=0.9)))
      # ("Book", dict(rel="nearby", radius=0.75, fov=80, max_range=0.75, truepos=0.95)))
 }
 
 
 case4_living = {
-    "scene": "FloorPlan202",
+    "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("KeyChain", dict(fov=90, max_range=1.25, truepos=0.7)),
-     ("TVStand", dict(rel="nearby", radius=0.75, fov=90, max_range=2.5, truepos=0.95)))
+    (("Laptop", dict(fov=90, max_range=1.25, truepos=0.8)),
+     ("DiningTable", dict(rel="nearby", radius=1.0, fov=90, max_range=2.0, truepos=0.9))),
      # ("Book", dict(rel="nearby", radius=0.75, fov=80, max_range=0.75, truepos=0.95)))
 }
+
 
 # case5_bedroom = {
 #     "scene": "FloorPlan301",
@@ -118,7 +120,7 @@ case4_living = {
 #     "objects":
 #     (("Towel", dict(fov=90, max_range=1.25, truepos=0.7)),
 #      ("TowelHolder", dict(rel="nearby", radius=0.5, fov=90, max_range=2.5, truepos=0.95)))
-#      # ("Window", dict(rel="nearby", radius=2.0, fov=80, max_range=1.25, truepos=0.9)))
+#      # ("Window", dict(rel="nearby", radius=2.5, fov=80, max_range=1.25, truepos=0.9)))
 # }
 
 # case8_bathroom = {
@@ -205,15 +207,15 @@ for case in cases:
                                                                   grid_size)
     spec["joint_dist_path"] = os.path.join("resources", joint_dist_file)
     spec_target_only["joint_dist_path"] = None  # we don't expect this to be needed
-    # exp_resources_path = os.path.join(OUTPUT_DIR, exp_name, "resources")
-    # os.makedirs(exp_resources_path, exist_ok=True)
-    # if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
-    #     # We will instantiate the problem for once and save its joint distribution.
-    #     problem = ThorSearch.parse(spec, scene_data_path="./domains/thor/data",
-    #                                topo_dir_path="./domains/thor/data/topo")
-    #     with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
-    #         pickle.dump(problem.joint_dist, f)
-    #     problem.env.controller.stop()
+    exp_resources_path = os.path.join(OUTPUT_DIR, exp_name, "resources")
+    os.makedirs(exp_resources_path, exist_ok=True)
+    if not os.path.exists(os.path.join(exp_resources_path, joint_dist_file)):
+        # We will instantiate the problem for once and save its joint distribution.
+        problem = ThorSearch.parse(spec, scene_data_path="./domains/thor/data",
+                                   topo_dir_path="./domains/thor/data/topo")
+        with open(os.path.join(exp_resources_path, joint_dist_file), "wb") as f:
+            pickle.dump(problem.joint_dist, f)
+        problem.env.controller.stop()
 
     print("Built spec")
     pprint(spec)

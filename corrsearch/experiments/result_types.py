@@ -107,6 +107,7 @@ class RewardsResult(YamlResult):
             fig, axes = plt.subplots(1,3, figsize=(8,4))
             disc_reward_avg = summary.loc[target_class].unstack().loc[("disc_reward", "avg")]
             disc_reward_ci95 = summary.loc[target_class].unstack().loc[("disc_reward", "ci95")]
+            axes[0].axhline(y=0.0, color='k', linestyle='-')
             cls.plot_bar_stat(disc_reward_avg, disc_reward_ci95, axes[0], "Discounted Reward")
 
             success_avg = summary.loc[target_class].unstack().loc[("success", "avg")]
@@ -116,9 +117,9 @@ class RewardsResult(YamlResult):
 
             fail_avg = summary.loc[target_class].unstack().loc[("fail", "avg")]
             cls.plot_bar_stat(fail_avg, None, axes[2], "Fail")
-            plt.savefig(os.path.join(path, f"summary-{target_class}.png"))
             axes[2].set_ylim(0, 1.1)
             axes[2].axhline(y=0.0, color='k', linestyle='-')
+            plt.savefig(os.path.join(path, f"summary-{target_class}.png"))
 
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(summary)
