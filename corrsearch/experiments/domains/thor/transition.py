@@ -188,7 +188,7 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         else:
             moves = self.valid_moves(state)
             if history is None or len(history) == 0:
-                return self.detect_actions
+                return moves | self.detect_actions
             else:
                 last_action = history[-1][0]
                 if isinstance(last_action, UseDetector):
