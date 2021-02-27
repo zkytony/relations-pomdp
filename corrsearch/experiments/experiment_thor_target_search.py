@@ -16,7 +16,7 @@ def fill_detector(detector_id, name, cls, cfg):
         name=name,
         id=detector_id,
         type="loc",
-        energy_cost=0.0,
+        energy_cost=cfg["energy_cost"],
         sensors={
             cls:dict(
                 type="fan",
@@ -50,7 +50,7 @@ max_steps = 50
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchCC-GridSize{}".format(grid_size)
+exp_name = "ThorSearchEE-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -62,8 +62,8 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Bread", dict(fov=90, max_range=0.9, truepos=0.7)),
-     ("CounterTop", dict(rel="nearby", radius=1.2, fov=90, max_range=2.1, truepos=0.9))),
+    (("Bread", dict(fov=90, max_range=0.9, truepos=0.7, energy_cost=1.0)),
+     ("CounterTop", dict(rel="nearby", radius=0.9, fov=90, max_range=2.1, truepos=0.9, energy_cost=0.5))),
      # ("Mug", dict(rel="nearby", radius=0.9, fov=80, max_range=1.0, truepos=0.95)))
 }
 
@@ -71,8 +71,8 @@ case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Mug", dict(fov=90, max_range=1.2, truepos=0.8)),
-     ("CoffeeMachine", dict(rel="nearby", radius=1.2, fov=90, max_range=1.8, truepos=0.9))),
+    (("Mug", dict(fov=90, max_range=1.2, truepos=0.8, energy_cost=1.0)),
+     ("CoffeeMachine", dict(rel="nearby", radius=0.9, fov=90, max_range=1.8, truepos=0.9, energy_cost=0.5))),
 }
 
 
@@ -80,8 +80,8 @@ case3_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("KeyChain", dict(fov=90, max_range=0.9, truepos=0.7)),
-     ("Vase", dict(rel="nearby", radius=1.2, fov=90, max_range=1.8, truepos=0.9)))
+    (("KeyChain", dict(fov=90, max_range=0.9, truepos=0.7, energy_cost=1.0)),
+     ("Vase", dict(rel="nearby", radius=0.9, fov=90, max_range=1.8, truepos=0.9, energy_cost=0.5)))
      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 }
 
@@ -90,8 +90,8 @@ case4_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("Laptop", dict(fov=90, max_range=1.5, truepos=0.8)),
-     ("DiningTable", dict(rel="nearby", radius=1.2, fov=90, max_range=2.1, truepos=0.9))),
+    (("Laptop", dict(fov=90, max_range=1.5, truepos=0.8, energy_cost=1.0)),
+     ("DiningTable", dict(rel="nearby", radius=0.9, fov=90, max_range=2.1, truepos=0.9, energy_cost=0.5))),
      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 }
 

@@ -8,7 +8,7 @@ class Move(pomdp_py.SimpleAction):
             name = str(delta)
         self.name = name
         self.delta = delta
-        self.energy_cost = 0
+        self.energy_cost = energy_cost
         super().__init__("move-{}".format(self.name))
 
 class UseDetector(pomdp_py.SimpleAction):
@@ -18,7 +18,7 @@ class UseDetector(pomdp_py.SimpleAction):
             name = "detector_%d" % detector_id
         self.name = name
         self.detector_id = detector_id
-        self.energy_cost = 0
+        self.energy_cost = energy_cost
         super().__init__("use-detector-{}-{}".format(detector_id, self.name))
 
 class Declare(pomdp_py.SimpleAction):

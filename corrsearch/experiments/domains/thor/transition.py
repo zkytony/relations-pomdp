@@ -170,7 +170,8 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
             for neighbor_nid in topo_map.neighbors(nid):
                 dst_thor_x, dst_thor_z = topo_map.nodes[neighbor_nid].pose
                 dst_pos = grid_map.to_grid_pos(dst_thor_x, dst_thor_z, grid_size=self.grid_size, avoid_obstacle=True)
-                move_actions.add(TopoMove(src_pos, dst_pos, nid, neighbor_nid))
+                move_actions.add(TopoMove(src_pos, dst_pos, nid, neighbor_nid,
+                                          energy_cost=0.8*euclidean_dist(src_pos, dst_pos)))
             self._motion_map[src_pos] = move_actions
         self.detect_actions = detect_actions
         self.declare_actions = declare_actions
@@ -187,14 +188,12 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         else:
             moves = self.valid_moves(state)
             if history is None or len(history) == 0:
-                return moves | self.detect_actions
+                return self.detect_actions
             else:
                 last_action = history[-1][0]
-                if isinstance(last_action, Move):
-                    return moves | self.detect_actions
-                elif isinstance(last_action, UseDetector):
+                if isinstance(last_action, UseDetector):
                     return moves | self.detect_actions | self.declare_actions
-                else: # Last action is Declare.
+                else:
                     return moves | self.detect_actions
 
     def rollout(self, state, history=None):

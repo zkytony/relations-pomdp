@@ -403,10 +403,7 @@ class ThorSearchRewardModel(pomdp_py.RewardModel):
             return self.step_reward_func(state, action, next_state)
 
     def step_reward_func(self, state, action, next_state):
-        if next_state[self.robot_id]["energy"] < 0:
-            return self.rmin
-        else:
-            return -1
+        return -1 - action.energy_cost
 
 class ThorSceneInfo:
     def __init__(self, scene_name, type_obj_map):
