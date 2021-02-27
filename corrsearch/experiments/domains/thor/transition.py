@@ -197,6 +197,7 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
                 if self.applies_all_everywhere:
                     return self._get_all_actions_detect_all_everywhere(state, history, moves)
                 else:
+                    last_action = history[-1][0]
                     if isinstance(last_action, UseDetector):
                         return moves | self.detect_actions | self.declare_actions
                     else:
