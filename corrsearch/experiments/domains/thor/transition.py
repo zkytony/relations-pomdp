@@ -191,7 +191,7 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
             else:
                 last_action = history[-1][0]
                 if isinstance(last_action, Move):
-                    return self.detect_actions
+                    return moves | self.detect_actions
                 elif isinstance(last_action, UseDetector):
                     return moves | self.detect_actions | self.declare_actions
                 else: # Last action is Declare.
