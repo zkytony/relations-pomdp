@@ -259,7 +259,8 @@ class ThorEnv(pomdp_py.Environment):
 
         reward_model = ThorSearchRewardModel(self.robot_id, self.target_id, self.grid_map,
                                              rmax=params.get("rmax", 100),
-                                             rmin=params.get("rmin", -100))
+                                             rmin=params.get("rmin", -100),
+                                             valid_declare_distance=grid_size*2)
         super().__init__(init_state, transition_model, reward_model)
 
     @property
