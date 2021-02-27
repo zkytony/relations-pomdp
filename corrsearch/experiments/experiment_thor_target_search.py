@@ -90,7 +90,7 @@ case4_living = {
     "scene": "FloorPlan201",
     "scene_type": "living#room",
     "objects":
-    (("Laptop", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
+    (("Book", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
      ("DiningTable", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=0.0))),
      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 }
@@ -235,45 +235,15 @@ for case in cases:
         trial = make_trial(config_corr, trial_name)
         all_trials.append(trial)
 
-        ########### Correlation, no heuristic
-        trial_name = "{}-{}-{}_{}_corr-pouct"\
-                     .format(spec["scene_type"], spec["target_class"],
-                             spec["scene_name"].replace("_", "#"),
-                             i+1)
-        config_corr = make_config(copy.deepcopy(spec),
-                                  init_belief="prior",
-                                  planner="pomdp_py.POUCT",
-                                  planner_config=POMCP_PLANNER_CONFIG,
-                                  max_steps=max_steps)
-        trial = make_trial(config_corr, trial_name)
-        all_trials.append(trial)
-
-
-        ########## ENTROPY MIN
-        trial_name = "{}-{}-{}_{}_entropymin"\
-                     .format(spec["scene_type"], spec["target_class"],
-                             spec["scene_name"].replace("_", "#"),
-                             i+1)
-        entropymin_config = ENTROPY_PLANNER_CONFIG
-        entropymin_config["num_samples"] = 10
-        config_entropy = make_config(copy.deepcopy(spec),
-                                     init_belief="prior",
-                                     planner="EntropyMinimizationPlanner",
-                                     planner_config=entropymin_config,
-                                     max_steps=max_steps)
-        trial = make_trial(config_entropy, trial_name)
-        all_trials.append(trial)
-
-
-        ########## TARGET ONLY
-        trial_name = "{}-{}-{}_{}_target-only"\
+        ########## TARGET ONLY (But using heuristic rollout)
+        trial_name = "{}-{}-{}_{}_target-only-heuristic"\
                      .format(spec["scene_type"], spec["target_class"],
                              spec["scene_name"].replace("_", "#"),
                              i+1)
         config_target_only = make_config(spec_target_only,
                                          init_belief="uniform",
-                                         planner="pomdp_py.POUCT",
-                                         planner_config=POMCP_PLANNER_CONFIG,
+                                         planner="HeuristicSequentialPlanner",
+                                         planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
                                          max_steps=max_steps)
         trial = make_trial(config_target_only, trial_name)
         all_trials.append(trial)
