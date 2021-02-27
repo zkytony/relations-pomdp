@@ -203,6 +203,8 @@ class ThorSearch(SearchProblem):
                                            self.robot_model.actions["rotate_actions"],
                                            self.robot_model.actions["detect_actions"],
                                            self.robot_model.actions["declare_actions"],
+                                           applies_all_everywhere=kwargs.get("applies_all_everywhere", False),
+                                           topo_move_cost_factor=kwargs.get("topo_move_cost_factor", 4.0),
                                            grid_size=self.grid_size)
         else:
             actions = self.robot_model.actions["move_actions"]\

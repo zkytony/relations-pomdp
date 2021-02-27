@@ -16,6 +16,7 @@ def make_config(spec_or_path,
                 visualize=True,
                 seed=None,
                 step_delay=0.1,
+                instance_config={},
                 viz_res=30):
     if type(spec_or_path) == str:
         with open(spec_path) as f:
@@ -31,7 +32,8 @@ def make_config(spec_or_path,
     planner_exec_config = dict()
 
     instance_config = dict(
-        init_belief=init_belief
+        init_belief=init_belief,
+        **instance_config
     )
 
     if planner == "pomdp_py.POUCT":

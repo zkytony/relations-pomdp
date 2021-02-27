@@ -45,12 +45,12 @@ def fill_dist(objclass, target_class, cfg):
     return dist
 
 grid_size = 0.4
-ntrials = 15
+ntrials = 1
 max_steps = 50
-split = 6
+split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchGG-GridSize{}".format(grid_size)
+exp_name = "ThorSearchHH-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -62,8 +62,8 @@ case1_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=0.0)),
-     ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=0.0))),
+    (("PepperShaker", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=3.0)),
+     ("StoveBurner", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=1.0))),
      # ("Mug", dict(rel="nearby", radius=0.9, fov=80, max_range=1.0, truepos=0.95)))
 }
 
@@ -71,76 +71,35 @@ case2_kitchen = {
     "scene": "FloorPlan1",
     "scene_type": "kitchen",
     "objects":
-    (("Mug", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
-     ("CoffeeMachine", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=0.0))),
+    (("Mug", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=3.0)),
+     ("CoffeeMachine", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=1.0))),
 }
 
 
-case3_living = {
-    "scene": "FloorPlan201",
-    "scene_type": "living#room",
-    "objects":
-    (("KeyChain", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=0.0)),
-     ("Vase", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=0.0)))
-     # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
-}
-
-
-case4_living = {
-    "scene": "FloorPlan201",
-    "scene_type": "living#room",
-    "objects":
-    (("Book", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=0.0)),
-     ("DiningTable", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=0.0))),
-     # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
-}
-
-
-# case5_bedroom = {
-#     "scene": "FloorPlan301",
-#     "scene_type": "bedroom",
+# case3_living = {
+#     "scene": "FloorPlan201",
+#     "scene_type": "living#room",
 #     "objects":
-#     (("CellPhone", dict(fov=90, max_range=1.25, truepos=0.7)),
-#      ("Bed", dict(rel="nearby", radius=0.5, fov=90, max_range=2.5, truepos=0.95)))
-#      # ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.95)))
+#     (("KeyChain", dict(fov=90, max_range=0.8, truepos=0.5, energy_cost=3.0)),
+#      ("Vase", dict(rel="nearby", radius=0.8, fov=90, max_range=1.2, truepos=0.9, energy_cost=1.0)))
+#      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 # }
 
-# case6_bedroom = {
-#     "scene": "FloorPlan302",
-#     "scene_type": "bedroom",
-#     "objects":
-#     (("Pen", dict(fov=90, max_range=1.25, truepos=0.7)),
-#      ("Shelf", dict(rel="nearby", radius=0.5, fov=90, max_range=2.5, truepos=0.95)))
-#      # ("Laptop", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.9)))
-# }
 
-# case7_bathroom = {
-#     "scene": "FloorPlan401",
-#     "scene_type": "bathroom",
+# case4_living = {
+#     "scene": "FloorPlan201",
+#     "scene_type": "living#room",
 #     "objects":
-#     (("Towel", dict(fov=90, max_range=1.25, truepos=0.7)),
-#      ("TowelHolder", dict(rel="nearby", radius=0.5, fov=90, max_range=2.5, truepos=0.95)))
-#      # ("Window", dict(rel="nearby", radius=2.5, fov=80, max_range=1.25, truepos=0.9)))
-# }
-
-# case8_bathroom = {
-#     "scene": "FloorPlan402",
-#     "scene_type": "bathroom",
-#     "objects":
-#     (("SprayBottle", dict(fov=90, max_range=1.25, truepos=0.7)),
-#      ("SinkBasin", dict(rel="nearby", radius=0.5, fov=90, max_range=2.5, truepos=0.95)))
-#      # ("Faucet", dict(rel="nearby", radius=0.5, fov=80, max_range=1.25, truepos=0.9)))
+#     (("Book", dict(fov=90, max_range=0.8, truepos=0.8, energy_cost=3.0)),
+#      ("DiningTable", dict(rel="nearby", radius=0.8, fov=90, max_range=1.6, truepos=0.9, energy_cost=1.0))),
+#      # ("Book", dict(rel="nearby", radius=0.9, fov=80, max_range=0.9, truepos=0.95)))
 # }
 
 cases = [
     case1_kitchen,
     case2_kitchen,
-    case3_living,
-    case4_living,
-    # case5_bedroom,
-    # case6_bedroom,
-    # case7_bathroom,
-    # case8_bathroom
+    # case3_living,
+    # case4_living,
 ]
 
 all_trials = []
@@ -227,23 +186,48 @@ for case in cases:
                      .format(spec["scene_type"], spec["target_class"],
                              spec["scene_name"].replace("_", "#"),
                              i+1)
+        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        instance_config = {"topo_move_cost_factor": 4.0,
+                           "applies_all_everywhere": False}
         config_corr = make_config(copy.deepcopy(spec),
                                   init_belief="prior",
                                   planner="HeuristicSequentialPlanner",
-                                  planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
+                                  planner_config=planner_config,
+                                  instance_config=instance_config,
                                   max_steps=max_steps)
         trial = make_trial(config_corr, trial_name)
         all_trials.append(trial)
 
-        ########## TARGET ONLY (But using heuristic rollout)
-        trial_name = "{}-{}-{}_{}_target-only-heuristic"\
+        ########### HEURISTIC (Applies All Everywhere)
+        trial_name = "{}-{}-{}_{}_heuristic#noprune#iq-all-everywhere"\
                      .format(spec["scene_type"], spec["target_class"],
                              spec["scene_name"].replace("_", "#"),
                              i+1)
+        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        instance_config = {"topo_move_cost_factor": 4.0,
+                           "applies_all_everywhere": True}
+        config_corr = make_config(copy.deepcopy(spec),
+                                  init_belief="prior",
+                                  planner="HeuristicSequentialPlanner",
+                                  planner_config=planner_config,
+                                  instance_config=instance_config,
+                                  max_steps=max_steps)
+        trial = make_trial(config_corr, trial_name)
+        all_trials.append(trial)
+
+        ########## TARGET ONLY (Applies All Everywhere)
+        trial_name = "{}-{}-{}_{}_target-only-heuristic-all-everywhere"\
+                     .format(spec["scene_type"], spec["target_class"],
+                             spec["scene_name"].replace("_", "#"),
+                             i+1)
+        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        instance_config = {"topo_move_cost_factor": 4.0,
+                           "applies_all_everywhere": True}
         config_target_only = make_config(spec_target_only,
                                          init_belief="uniform",
                                          planner="HeuristicSequentialPlanner",
-                                         planner_config=HEURISTIC_ONLINE_PLANNER_CONFIG,
+                                         planner_config=planner_config,
+                                         instance_config=instance_config,
                                          max_steps=max_steps)
         trial = make_trial(config_target_only, trial_name)
         all_trials.append(trial)

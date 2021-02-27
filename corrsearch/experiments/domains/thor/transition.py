@@ -159,7 +159,8 @@ class TopoRobotTrans(RobotTransModel):
 class TopoPolicyModel(pomdp_py.RolloutPolicy):
     """This should incorporate BasicPolicyModel with topological moves"""
     def __init__(self, robot_id, topo_map, grid_map,
-                 rotate_actions, detect_actions, declare_actions, grid_size=0.25):
+                 rotate_actions, detect_actions, declare_actions, grid_size=0.25,
+                 applies_all_everywhere=False, topo_move_cost_factor=4.0):
         self.robot_id = robot_id
         self.grid_size = grid_size
         self._motion_map = {}
@@ -171,14 +172,17 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
                 dst_thor_x, dst_thor_z = topo_map.nodes[neighbor_nid].pose
                 dst_pos = grid_map.to_grid_pos(dst_thor_x, dst_thor_z, grid_size=self.grid_size, avoid_obstacle=True)
                 move_actions.add(TopoMove(src_pos, dst_pos, nid, neighbor_nid,
-                                          energy_cost=euclidean_dist((thor_x, thor_z), (dst_thor_x, dst_thor_z))))
+                                          energy_cost=topo_move_cost_factor*euclidean_dist((thor_x, thor_z), (dst_thor_x, dst_thor_z))))
             self._motion_map[src_pos] = move_actions
         self.detect_actions = detect_actions
+        self.detect_actions_list = list(detect_actions)
         self.declare_actions = declare_actions
         self.move_actions = set().union(*[self._motion_map[src_pos]
                                           for src_pos in self._motion_map]) | rotate_actions
         self.rotate_actions = rotate_actions
         self.actions = move_actions | declare_actions | detect_actions
+        self.applies_all_everywhere = applies_all_everywhere
+
 
     def get_all_actions(self, state, history=None):
         """If the last action is a move, then this action will not be a move.
@@ -190,11 +194,26 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
             if history is None or len(history) == 0:
                 return moves | self.detect_actions
             else:
-                last_action = history[-1][0]
-                if isinstance(last_action, UseDetector):
-                    return moves | self.detect_actions | self.declare_actions
+                if self.applies_all_everywhere:
+                    return self._get_all_actions_detect_all_everywhere(state, history, moves)
                 else:
-                    return moves | self.detect_actions
+                    if isinstance(last_action, UseDetector):
+                        return moves | self.detect_actions | self.declare_actions
+                    else:
+                        return moves | self.detect_actions
+
+    def _get_all_actions_detect_all_everywhere(self, state, history, moves):
+        last_action = history[-1][0]
+        if isinstance(last_action, Move):
+            return {self.detect_actions_list[0]}
+        elif isinstance(last_action, UseDetector):
+            idx = self.detect_actions_list.index(last_action)
+            if idx + 1 >= len(self.detect_actions_list):
+                return moves | {self.detect_actions_list[0]}
+            else:
+                return {self.detect_actions_list[idx+1]}
+        else:  # Declare action
+            return moves | {self.detect_actions_list[0]}
 
     def rollout(self, state, history=None):
         return random.sample(self.get_all_actions(state=state, history=history), 1)[0]
