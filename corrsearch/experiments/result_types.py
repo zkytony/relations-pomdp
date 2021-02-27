@@ -14,10 +14,12 @@ from statannot import add_stat_annotation
 
 
 method_to_name = {
-    "heuristic#noprune#iq"  : "Corr+Heuristic",
+    "heuristic#noprune#iq"  : "Corr(H)",
+    "heuristic#noprune#iq-all-everywhere"  : "Corr(H+AE)",
     "corr-pouct"            : "Corr",
     "target-only-pouct"     : "Target",
     "target-only"     : "Target",
+    "target-only-heuristic-all-everywhere"     : "Target (H+AE)",
     "entropymin"            : "Greedy",
     "random"                : "Random",
     "heuristic#k=2#iq"      : "Corr+Heuristic(k=2)",
@@ -104,7 +106,7 @@ class RewardsResult(YamlResult):
         summary = summary.unstack()
 
         for target_class in summary.index:
-            fig, axes = plt.subplots(1,3, figsize=(8,4))
+            fig, axes = plt.subplots(1,3, figsize=(15,7))
             disc_reward_avg = summary.loc[target_class].unstack().loc[("disc_reward", "avg")]
             disc_reward_ci95 = summary.loc[target_class].unstack().loc[("disc_reward", "ci95")]
             axes[0].axhline(y=0.0, color='k', linestyle='-')
