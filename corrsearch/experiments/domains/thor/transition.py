@@ -209,9 +209,9 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
         elif isinstance(last_action, UseDetector):
             idx = self.detect_actions_list.index(last_action)
             if idx + 1 >= len(self.detect_actions_list):
-                return moves | {self.detect_actions_list[0]}
+                return moves | {self.detect_actions_list[0]} | self.declare_actions
             else:
-                return {self.detect_actions_list[idx+1]}
+                return {self.detect_actions_list[idx+1]} | self.declare_actions
         else:  # Declare action
             return moves | {self.detect_actions_list[0]}
 
