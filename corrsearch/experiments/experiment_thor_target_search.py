@@ -50,7 +50,7 @@ max_steps = 100
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchMM-GridSize{}".format(grid_size)
+exp_name = "ThorSearchNN-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
