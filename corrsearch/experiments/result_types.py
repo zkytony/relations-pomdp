@@ -14,16 +14,26 @@ from statannot import add_stat_annotation
 
 
 method_to_name = {
-    "heuristic#noprune#iq"  : "Corr(H)",
-    "heuristic#noprune#iq-all-everywhere"  : "Corr(H+AE)",
-    "corr-pouct"            : "Corr",
-    "target-only-pouct"     : "Target",
-    "target-only"     : "Target",
-    "target-only-heuristic-all-everywhere"     : "Target (H+AE)",
-    "entropymin"            : "Greedy",
-    "random"                : "Random",
-    "heuristic#k=2#iq"      : "Corr+Heuristic(k=2)",
-    "heuristic#k=2#noiq"    : "Corr+Heuristic(k=2, NoIQ)",
+    "heuristic#noprune#iq"                     : "Corr+Heuristic",
+    "heuristic#noprune#iq-all-everywhere"      : "Corr+Heuristic+Everywhere",
+    "corr-pouct"                               : "Corr",
+    "target-only-pouct"                        : "Target",
+    "target-only"                              : "Target",
+    "target-only-heuristic-all-everywhere"     : "Target+Heuristic+Everywhere",
+    "entropymin"                               : "Greedy",
+    "random"                                   : "Random",
+    "heuristic#k=2#iq"                         : "Corr+Heuristic(k=2)",
+    "heuristic#k=2#noiq"                       : "Corr+Heuristic(k=2, NoIQ)",
+}
+
+
+name_to_color = {
+    "Corr+Heuristic(k=2)":  np.array(hex_to_rgb("#8172B2")) / 255.,
+    "Corr+Heuristic":      np.array(hex_to_rgb("#4C72B0")) / 255.,
+    "Corr":                np.array(hex_to_rgb("#55A868")) / 255.,
+    "Target":              np.array(hex_to_rgb("#C44E52")) / 255.,
+    "Greedy":           np.array(hex_to_rgb("#CCB974")) / 255.,
+    "Random":              np.array(hex_to_rgb("#909090")) / 255.
 }
 
 # Order the baselines
@@ -125,6 +135,8 @@ class RewardsResult(YamlResult):
 
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(summary)
+        df.groupby(["target_class", "baseline"]).agg([("avg","mean"),
+                                                      ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))]).to_csv("numbers.csv", float_format='%.2f')
 
     @classmethod
     def plot_bar_stat(cls, avg_series, ci95_series, ax, title="title"):
@@ -158,6 +170,7 @@ class RewardsResult(YamlResult):
                 # Order the baselines
                 baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
                 additional_x = None
+                figsize=(20,8)
             elif global_name.startswith("varynobj"):
                 nobj = global_name.split("-")[1]
                 prepend.append(int(nobj))
@@ -166,9 +179,11 @@ class RewardsResult(YamlResult):
                 invert_x = False
                 # Order the baselines
                 baselines = [ #"Corr+Heuristic(k=2, NoIQ)",
-                              "Corr+Heuristic", "Corr",  "Target", "Greedy", "Random", "Corr+Heuristic(k=2)"]
+                              "Corr+Heuristic(k=2)",
+                              "Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
                 additional_x = None
-                ylim = (-20, 60)
+                ylim = None#(-20, 60)
+                figsize=(12,8)
             elif global_name.startswith("varynoise"):
                 target_tp = float(global_name.split("-")[1][1:])
                 other_tp = float(global_name.split("-")[2][1:])
@@ -176,9 +191,10 @@ class RewardsResult(YamlResult):
                 prepend.append(other_tp)
                 prepend_header = ["target_tp", "other_tp"]
                 xlabel = "Target detector true positive rate"
-                baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
-                invert_x = False
+                baselines = list(reversed(["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]))
+                invert_x = True
                 additional_x = 1
+                figsize=(12,8)
 
             for row in gathered_results[global_name]:
                 all_rows.append(prepend + row)
@@ -194,23 +210,36 @@ class RewardsResult(YamlResult):
                                                       for i in range(len(col))))
         df.to_csv(os.path.join(path, "rewards.csv"))
 
+
+        summary = df.groupby([prepend_header[0], "baseline"]).agg([("avg", "mean"),
+                                                                   ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))])
+        summary.to_csv("numbers.csv", float_format='%.2f')
+
+
         # plotting reward
-        cls.plot_and_save(path, df, prepend_header[0], xlabel, invert_x)
+        cls.plot_and_save(path, df, prepend_header[0], xlabel, invert_x, ylim=ylim, figsize=figsize)
         if additional_x is not None:
-            cls.plot_and_save(path, df, prepend_header[additional_x], xlabel, invert_x,
-                              suffix="_otherobj", ylim=ylim)
+            cls.plot_and_save(path, df, prepend_header[additional_x], "Other object true positive rate", invert_x,
+                              suffix="_otherobj", ylim=ylim, figsize=figsize)
+
+            summary = df.groupby([prepend_header[additional_x], "baseline"]).agg([("avg", "mean"),
+                                                                                  ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))])
+            summary.to_csv("numbers_otherobj.csv", float_format='%.2f')
+
 
 
 
 
 
     @classmethod
-    def plot_and_save(cls, path, df, x, xlabel, invert_x, suffix="", ylim=None):
+    def plot_and_save(cls, path, df, x, xlabel, invert_x, suffix="", ylim=None, figsize=(8,8)):
+
         cls._plot_summary(df, x=x, y="disc_reward",
                           title="Discounted Return",
                           xlabel=xlabel,
                           ylabel="Discounted Cumulative Reward",
                           filename=os.path.join(path, "rewards%s.png" % suffix),
+                          figsize=figsize,
                           invert_x=invert_x,
                           add_stat_annot=True,
                           ylim=ylim)
@@ -222,7 +251,9 @@ class RewardsResult(YamlResult):
                           ylabel="Success Rate",
                           filename=os.path.join(path, "outcome_success%s.png" % suffix),
                           invert_x=invert_x,
+                          figsize=figsize,
                           add_stat_annot=True,
+                          ci=None,
                           ylim=(0,1.0))
 
         # failure rate
@@ -231,51 +262,58 @@ class RewardsResult(YamlResult):
                           xlabel=xlabel,
                           ylabel="Incorrect Declaration Rate",
                           filename=os.path.join(path, "outcome_fail%s.png" % suffix),
+                          figsize=figsize,
                           invert_x=invert_x,
                           add_stat_annot=True,
+                          ci=None,
                           ylim=None)
 
     @classmethod
     def _plot_summary(cls, df, x, y, title, xlabel, ylabel, filename,
-                      invert_x, ylim=None, add_stat_annot=True, plot_type="bar"):
+                      invert_x, ylim=None, add_stat_annot=True, plot_type="bar", figsize=(8,8), ci=95):
         sns.set(style="whitegrid")
-        fig, ax = plt.subplots(figsize=(7,5))
+        sns.set_context('paper', font_scale=2)
+        fig, ax = plt.subplots(figsize=figsize)
         xvals = df[x].unique()
         ax.set_xticks(sorted(xvals))
         if plot_type == "point":
             g = sns.pointplot(x=x, y=y,
-                              hue="baseline", ax=ax, data=df, ci=95, capsize=.15,
-                              palette="muted")
+                              hue="baseline", ax=ax, data=df, ci=ci, capsize=.15,
+                              palette=name_to_color)
         elif plot_type == "bar":
             g = sns.barplot(x=x, y=y,
-                              hue="baseline", ax=ax, data=df, ci=95, capsize=.08,
-                              palette="muted")
-            if add_stat_annot:
-                boxpairs = []
-                for xval in xvals:
-                    pair1 = ((xval, "Corr+Heuristic"), (xval, "Corr"))
-                    pair2 = ((xval, "Corr+Heuristic"), (xval, "Greedy"))
-                    pair3 = ((xval, "Corr"), (xval, "Target"))
-                    boxpairs.extend([pair3,pair2,pair1])
+                            hue="baseline", ax=ax, data=df, ci=ci,# capsize=.08,
+                            saturation=0.8,
+                            palette=name_to_color)
+            # if add_stat_annot:
+            #     boxpairs = []
+            #     for xval in xvals:
+            #         # pair1 = ((xval, "Corr+Heuristic"), (xval, "Corr"))
+            #         pair2 = ((xval, "Corr+Heuristic"), (xval, "Corr+Heuristic(k=2)"))
+            #         pair3 = ((xval, "Corr+Heuristic"), (xval, "Greedy"))
+            #         boxpairs.extend([pair3,pair2])
 
-                add_stat_annotation(ax, plot="barplot", data=df,
-                                    x=x, y=y, hue="baseline",
-                                    box_pairs=boxpairs,
-                                    loc="inside",
-                                    test="t-test_ind",
-                                    line_offset_to_box=0.05,
-                                    line_offset=0.02,
-                                    offset_basis="ymean",
-                                    verbose=2)
+            #     add_stat_annotation(ax, plot="barplot", data=df,
+            #                         x=x, y=y, hue="baseline",
+            #                         box_pairs=boxpairs,
+            #                         loc="inside",
+            #                         test="t-test_ind",
+            #                         line_offset_to_box=0.05,
+            #                         line_offset=0.02,
+            #                         offset_basis="ymean",
+            #                         verbose=2)
         if x == "size":
             ax.set_xticklabels(["{}x{}".format(x, x) for x in sorted(xvals)])
         l = ax.legend()
         l.set_title("")
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        # l.remove()
         ax.set_ylabel(ylabel)
         ax.set_xlabel(xlabel)
         if invert_x:
             ax.invert_xaxis()
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig(filename)
 
 

@@ -107,6 +107,9 @@ class SearchTrial(Trial):
 
             time.sleep(self.config["exec_config"].get("step_delay", 0.1))
 
+        if self.config["exec_config"].get("save", False):
+            viz.save_visuals(self.trial_path)
+
         results = [
             RewardsResult(_Rewards),
             StatesResult(_States),

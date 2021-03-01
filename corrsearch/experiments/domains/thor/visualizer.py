@@ -35,6 +35,11 @@ class ThorViz(Visualizer):
 
         self._res = config.get("res", 30)   # resolution
         self._linewidth = config.get("linewidth", 1)
+        self._save = config.get("save", False)
+
+        self._bg_path = config.get("bg_path", None)
+        self._visuals = []
+
         self.on_init()
 
     def _make_gridworld_image(self, r):
@@ -43,6 +48,11 @@ class ThorViz(Visualizer):
         w, l = grid_map.width, grid_map.length
 
         # Make an image of grids
+        if self._bg_path is not None:
+            bgimg = cv2.imread(self._bg_path, cv2.IMREAD_UNCHANGED)
+            bgimg = cv2.resize(bgimg, (w*r, l*r))
+            img = overlay(img, bgimg, opacity=1.0)
+
         img = np.full((w*r, l*r, 4), 255, dtype=np.uint8)
         for x in range(w):
             for y in range(l):
@@ -90,16 +100,16 @@ class ThorViz(Visualizer):
         if sensor is not None:
             img = self.draw_fov(img, robot_pose, sensor)
 
-        # Draw where the objects are
-        for object_type in self.object_poses:
-            if object_type == "robot":
-                continue
-            objid = self.problem.scene_info.objid_for_type(object_type)
-            for obj_x, obj_y in self.object_poses[object_type]:
-                r = self._res
-                cv2.rectangle(img, (obj_y*r, obj_x*r),
-                              (obj_y*r+r, obj_x*r+r),
-                              lighter(self.get_color(objid)[:3], 0.5), -1)
+        # # Draw where the objects are
+        # for object_type in self.object_poses:
+        #     if object_type == "robot":
+        #         continue
+        #     objid = self.problem.scene_info.objid_for_type(object_type)
+        #     for obj_x, obj_y in self.object_poses[object_type]:
+        #         r = self._res
+        #         cv2.rectangle(img, (obj_y*r, obj_x*r),
+        #                       (obj_y*r+r, obj_x*r+r),
+        #                       lighter(self.get_color(objid)[:3], 0.5), -1)
 
         # Draw belief (only about target)
         target_id = self.problem.target_id
@@ -115,6 +125,21 @@ class ThorViz(Visualizer):
                               color=color)
 
         self.show_img(img)
+
+        # Save visualization. Grab the screenshot from THOR as well.
+        if self._save:
+            controller = self.problem.env.controller
+            event = controller.step(action="Pass")
+            event = controller.step(action="Pass")
+            frame = event.frame
+            controller.step(action="ToggleMapView")
+            event = controller.step(action="Pass")
+            event = controller.step(action="Pass")
+            frame_topdown = event.frame
+            controller.step(action="ToggleMapView")
+            self._visuals.append({"img": img,
+                                  "frame": frame,
+                                  "frame_topdown": frame_topdown})
         return img
 
     def highlight(self, locations, color=(53, 190, 232)):
@@ -211,11 +236,29 @@ class ThorViz(Visualizer):
                     circle_drawn[(tx,ty)] = 0
                 circle_drawn[(tx,ty)] += 1
 
-                img = cv2shape(img, cv2.circle,
-                               (ty*self._res+radius,
-                                tx*self._res+radius), size//circle_drawn[(tx,ty)],
+                img = cv2shape(img, cv2.rectangle,
+                               (ty*self._res,#radius,
+                                tx*self._res),#radius),
+                               (ty*self._res+self._res,#radius,
+                                tx*self._res+self._res),#radius),
+                               # size//circle_drawn[(tx,ty)],
                                color, thickness=-1, alpha=color[3]/255)
                 last_val = hist[state]
                 if last_val <= 0:
                     break
         return img
+
+    def save_visuals(self, trial_path):
+        visual_path = os.path.join(trial_path, "visuals")
+        os.makedirs(visual_path, exist_ok=True)
+        for step, visual in enumerate(self._visuals):
+            print("Saving visual for step %d" % step)
+            for kind in self._visuals[step]:
+                img = self._visuals[step][kind]
+                if kind == "img":
+                    img = cv2.flip(img, 1)  # flip horizontally
+                    img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)  # rotate 90deg clockwise
+                self._visuals[step][kind] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cv2.imwrite(os.path.join(visual_path, "img-%d.png" % step), visual["img"])
+            cv2.imwrite(os.path.join(visual_path, "frame-%d.png" % step), visual["frame"])
+            cv2.imwrite(os.path.join(visual_path, "frame_topdown-%d.png" % step), visual["frame_topdown"])

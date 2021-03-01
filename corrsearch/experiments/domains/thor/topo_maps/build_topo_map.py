@@ -29,13 +29,13 @@ def mark_cell(img, pos, nid, r, linewidth=1, unmark=False):
     if unmark:
         color = (255, 255, 255, 255)
     else:
-        color = (242, 212, 203, 255)
+        color = (242, 227, 15, 255)
     x, y = pos
-    cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                  color, -1)
-    # Draw boundary
-    cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
-                  (0, 0, 0), linewidth)
+    # cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
+    #               color, -1)
+    # # Draw boundary
+    # cv2.rectangle(img, (y*r, x*r), (y*r+r, x*r+r),
+    #               (0, 0, 0), linewidth)
 
     if not unmark:
         font                   = cv2.FONT_HERSHEY_COMPLEX_SMALL

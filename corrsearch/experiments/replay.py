@@ -4,6 +4,7 @@ import copy
 from corrsearch.experiments.domains.field2d.problem import *
 from corrsearch.experiments.domains.field2d.parser import *
 from corrsearch.experiments.trial import SearchTrial
+import subprocess
 
 class PlaybackPlanner(pomdp_py.Planner):
     def __init__(self, history):
@@ -37,8 +38,14 @@ def main():
     config["visualize"] = True
     config["imports"].append("from corrsearch.experiments.replay import PlaybackPlanner")
     config["exec_config"]["step_delay"] = args.delay
+    config["exec_config"]["save"] = args.save
+    config["visualize_config"]["save"] = args.save
+    config["visualize_config"]["bg_path"] = None
     trial = SearchTrial(trial.name, config, verbose=True)
+    trial.trial_path = args.trial_path
     trial.run()
+    if args.save:
+        subprocess.Popen(["nautilus", args.trial_path])
 
 if __name__ == "__main__":
     main()
