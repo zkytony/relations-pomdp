@@ -350,7 +350,10 @@ def lighter_with_alpha(color, percent):
     color = np.array(color)
     white = np.array([255, 255, 255, 255])
     vector = white-color
-    return color + vector * percent
+
+    cc = color + vector*percent
+    cc[3] = color[3] + (color-white)[3]*(percent)
+    return cc
 
 def rgb_to_hex(rgb):
     r,g,b = rgb
