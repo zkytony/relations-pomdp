@@ -24,5 +24,5 @@ class RandomPlanner(pomdp_py.Planner):
         if agent.belief[state] >= self.declare_threshold:
             return Declare()
         else:
-            actions = agent.policy_model.actions
+            actions = agent.policy_model.valid_moves(state) | agent.policy_model.detect_actions
             return random.sample(set(actions) - {Declare()}, 1)[0]

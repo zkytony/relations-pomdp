@@ -45,6 +45,9 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
             next_belief = self.sample_next_belief(agent, action)
             for state in belief_hist:
                 belief_hist[state] += next_belief[state]
+            for state in next_belief:
+                if state not in belief_hist:
+                    belief_hist[state] = next_belief[state]
         # normalize
         total_prob = sum(belief_hist.values())
         for state in belief_hist:
@@ -111,6 +114,7 @@ class EntropyMinimizationPlanner(pomdp_py.Planner):
         detector_action, min_entr = min(expected_entropies, key=lambda t: t[1])
 
         current_entr = entropy([agent.belief[s] for s in agent.belief], base=2)
+        import pdb; pdb.set_trace()
         if current_entr - min_entr >= self.entropy_improvement_threshold:
             # Good enough improvement. Apply detect action
             return detector_action
