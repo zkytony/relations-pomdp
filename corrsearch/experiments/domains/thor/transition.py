@@ -141,7 +141,6 @@ class TopoRobotTrans(RobotTransModel):
         if isinstance(action, Move):
             next_robot_pose = self.move_by(robot_pose, action)
             if next_robot_pose[:2] not in self.grid_map.free_locations:
-                import pdb; pdb.set_trace()
                 next_robot_pose = robot_pose
         else:
             next_robot_pose = robot_pose

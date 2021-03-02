@@ -115,6 +115,14 @@ class RewardsResult(YamlResult):
                           ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))])
         summary = summary.unstack()
 
+
+        df_succ = df.loc[df["success"] == 1]
+        summary_succ = df.groupby(['target_class', 'baseline'])\
+                         .agg([("avg", "mean"),
+                               "std",
+                               ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))])
+        summary_succ = summary_succ.unstack()
+
         for target_class in summary.index:
             fig, axes = plt.subplots(1,3, figsize=(15,7))
             disc_reward_avg = summary.loc[target_class].unstack().loc[("disc_reward", "avg")]
@@ -133,10 +141,18 @@ class RewardsResult(YamlResult):
             axes[2].axhline(y=0.0, color='k', linestyle='-')
             plt.savefig(os.path.join(path, f"summary-{target_class}.png"))
 
+            fig, axes = plt.subplots(1,3, figsize=(15,7))
+            disc_reward_avg = summary_succ.loc[target_class].unstack().loc[("disc_reward", "avg")]
+            disc_reward_ci95 = summary_succ.loc[target_class].unstack().loc[("disc_reward", "ci95")]
+            axes[0].axhline(y=0.0, color='k', linestyle='-')
+            cls.plot_bar_stat(disc_reward_avg, disc_reward_ci95, axes[0], "Discounted Reward")
+
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(summary)
         df.groupby(["target_class", "baseline"]).agg([("avg","mean"),
                                                       ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))]).to_csv("numbers.csv", float_format='%.2f')
+        df_succ.groupby(["target_class", "baseline"]).agg([("avg","mean"),
+                                                           ("ci95", lambda x: ci_normal(x, confidence_interval=0.95))]).to_csv("numbers_succ.csv", float_format='%.2f')
 
     @classmethod
     def plot_bar_stat(cls, avg_series, ci95_series, ax, title="title"):
@@ -165,7 +181,7 @@ class RewardsResult(YamlResult):
                 size = global_name.split("-")[1]
                 prepend.append(int(size.split(",")[0]))
                 prepend_header = ["size"]
-                xlabel = "Search Space Size"
+                xlabel = "Environment Size"
                 invert_x = False
                 # Order the baselines
                 baselines = ["Corr+Heuristic", "Corr",  "Target", "Greedy", "Random"]
@@ -219,7 +235,7 @@ class RewardsResult(YamlResult):
         # plotting reward
         cls.plot_and_save(path, df, prepend_header[0], xlabel, invert_x, ylim=ylim, figsize=figsize)
         if additional_x is not None:
-            cls.plot_and_save(path, df, prepend_header[additional_x], "Other object true positive rate", invert_x,
+            cls.plot_and_save(path, df, prepend_header[additional_x], "Other detector true positive rate", invert_x,
                               suffix="_otherobj", ylim=ylim, figsize=figsize)
 
             summary = df.groupby([prepend_header[additional_x], "baseline"]).agg([("avg", "mean"),

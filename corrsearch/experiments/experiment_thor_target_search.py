@@ -45,12 +45,12 @@ def fill_dist(objclass, target_class, cfg):
     return dist
 
 grid_size = 0.4
-ntrials = 15
+ntrials = 5
 max_steps = 100
 split = 5
 
 OUTPUT_DIR = os.path.join("results", "thor")
-exp_name = "ThorSearchNN-GridSize{}".format(grid_size)
+exp_name = "ThorSearchXX-GridSize{}".format(grid_size)
 start_time_str = dt.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 exp_name += "_" + start_time_str
 
@@ -181,56 +181,126 @@ for case in cases:
 
     # Make config
     for i in range(ntrials):
-        ########### HEURISTIC
-        trial_name = "{}-{}-{}_{}_heuristic#noprune#iq"\
+        # ########### HEURISTIC
+        # trial_name = "{}-{}-{}_{}_heuristic#noprune#iq"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+1)
+        # planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        # instance_config = {"topo_move_cost_factor": 1.0,
+        #                    "applies_all_everywhere": False}
+        # config_corr = make_config(copy.deepcopy(spec),
+        #                           init_belief="prior",
+        #                           planner="HeuristicSequentialPlanner",
+        #                           planner_config=planner_config,
+        #                           instance_config=instance_config,
+        #                           max_steps=max_steps)
+        # trial = make_trial(config_corr, trial_name)
+        # all_trials.append(trial)
+
+        # ########### HEURISTIC (Applies All Everywhere)
+        # trial_name = "{}-{}-{}_{}_heuristic#noprune#iq-all-everywhere"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+1)
+        # planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        # instance_config = {"topo_move_cost_factor": 1.0,
+        #                    "applies_all_everywhere": True}
+        # config_corr = make_config(copy.deepcopy(spec),
+        #                           init_belief="prior",
+        #                           planner="HeuristicSequentialPlanner",
+        #                           planner_config=planner_config,
+        #                           instance_config=instance_config,
+        #                           max_steps=max_steps)
+        # trial = make_trial(config_corr, trial_name)
+        # all_trials.append(trial)
+
+        # ########## TARGET ONLY (Applies All Everywhere)
+        # trial_name = "{}-{}-{}_{}_target-only-heuristic-all-everywhere"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+1)
+        # planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+        # instance_config = {"topo_move_cost_factor": 1.0,
+        #                    "applies_all_everywhere": True}
+        # config_target_only = make_config(spec_target_only,
+        #                                  init_belief="uniform",
+        #                                  planner="HeuristicSequentialPlanner",
+        #                                  planner_config=planner_config,
+        #                                  instance_config=instance_config,
+        #                                  max_steps=max_steps)
+        # trial = make_trial(config_target_only, trial_name)
+        # all_trials.append(trial)
+
+
+        # ########## CORR
+        # trial_name = "{}-{}-{}_{}_corr-pouct"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+11)
+        # planner_config = copy.deepcopy(POMCP_PLANNER_CONFIG)
+        # instance_config = {"topo_move_cost_factor": 1.0,
+        #                    "applies_all_everywhere": False}
+        # config_corr = make_config(copy.deepcopy(spec),
+        #                           init_belief="prior",
+        #                           planner="pomdp_py.POUCT",
+        #                           planner_config=planner_config,
+        #                           instance_config=instance_config,
+        #                           max_steps=max_steps)
+        # trial = make_trial(config_corr, trial_name)
+        # all_trials.append(trial)
+
+        # ########## TARGET ONLY
+        trial_name = "{}-{}-{}_{}_target-only-pouct"\
                      .format(spec["scene_type"], spec["target_class"],
                              spec["scene_name"].replace("_", "#"),
-                             i+1)
-        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
+                             i+1111)
+        planner_config = copy.deepcopy(POMCP_PLANNER_CONFIG)
         instance_config = {"topo_move_cost_factor": 1.0,
                            "applies_all_everywhere": False}
-        config_corr = make_config(copy.deepcopy(spec),
-                                  init_belief="prior",
-                                  planner="HeuristicSequentialPlanner",
-                                  planner_config=planner_config,
-                                  instance_config=instance_config,
-                                  max_steps=max_steps)
-        trial = make_trial(config_corr, trial_name)
-        all_trials.append(trial)
-
-        ########### HEURISTIC (Applies All Everywhere)
-        trial_name = "{}-{}-{}_{}_heuristic#noprune#iq-all-everywhere"\
-                     .format(spec["scene_type"], spec["target_class"],
-                             spec["scene_name"].replace("_", "#"),
-                             i+1)
-        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-        instance_config = {"topo_move_cost_factor": 1.0,
-                           "applies_all_everywhere": True}
-        config_corr = make_config(copy.deepcopy(spec),
-                                  init_belief="prior",
-                                  planner="HeuristicSequentialPlanner",
-                                  planner_config=planner_config,
-                                  instance_config=instance_config,
-                                  max_steps=max_steps)
-        trial = make_trial(config_corr, trial_name)
-        all_trials.append(trial)
-
-        ########## TARGET ONLY (Applies All Everywhere)
-        trial_name = "{}-{}-{}_{}_target-only-heuristic-all-everywhere"\
-                     .format(spec["scene_type"], spec["target_class"],
-                             spec["scene_name"].replace("_", "#"),
-                             i+1)
-        planner_config = copy.deepcopy(HEURISTIC_ONLINE_PLANNER_CONFIG)
-        instance_config = {"topo_move_cost_factor": 1.0,
-                           "applies_all_everywhere": True}
         config_target_only = make_config(spec_target_only,
                                          init_belief="uniform",
-                                         planner="HeuristicSequentialPlanner",
+                                         planner="pomdp_py.POUCT",
                                          planner_config=planner_config,
                                          instance_config=instance_config,
                                          max_steps=max_steps)
         trial = make_trial(config_target_only, trial_name)
         all_trials.append(trial)
+
+        # ########## Entropy min
+        # trial_name = "{}-{}-{}_{}_entropymin"\
+        #              .format(spec["scene_type"], spec["target_class"],
+        #                      spec["scene_name"].replace("_", "#"),
+        #                      i+11)
+        # planner_config = copy.deepcopy(ENTROPY_PLANNER_CONFIG)
+        # instance_config = {"topo_move_cost_factor": 1.0,
+        #                    "applies_all_everywhere": False}
+        # config_entropymin = make_config(copy.deepcopy(spec),
+        #                                  init_belief="prior",
+        #                                  planner="EntropyMinimizationPlanner",
+        #                                  planner_config=planner_config,
+        #                                  instance_config=instance_config,
+        #                                  max_steps=max_steps)
+        # trial = make_trial(config_entropymin, trial_name)
+        # all_trials.append(trial)
+
+        ########## Random
+        trial_name = "{}-{}-{}_{}_random"\
+                     .format(spec["scene_type"], spec["target_class"],
+                             spec["scene_name"].replace("_", "#"),
+                             i+1111)
+        planner_config = copy.deepcopy(RANDOM_PLANNER_CONFIG)
+        instance_config = {"topo_move_cost_factor": 1.0,
+                           "applies_all_everywhere": False}
+        config_random = make_config(copy.deepcopy(spec),
+                                    init_belief="prior",
+                                    planner="RandomPlanner",
+                                    planner_config=planner_config,
+                                    instance_config=instance_config,
+                                    max_steps=max_steps)
+        trial = make_trial(config_random, trial_name)
+        all_trials.append(trial)
+
 
 
 random.shuffle(all_trials)

@@ -100,16 +100,18 @@ class ThorViz(Visualizer):
         if sensor is not None:
             img = self.draw_fov(img, robot_pose, sensor)
 
-        # # Draw where the objects are
-        # for object_type in self.object_poses:
-        #     if object_type == "robot":
-        #         continue
-        #     objid = self.problem.scene_info.objid_for_type(object_type)
-        #     for obj_x, obj_y in self.object_poses[object_type]:
-        #         r = self._res
-        #         cv2.rectangle(img, (obj_y*r, obj_x*r),
-        #                       (obj_y*r+r, obj_x*r+r),
-        #                       lighter(self.get_color(objid)[:3], 0.5), -1)
+        # Draw where the objects are
+        for object_type in self.object_poses:
+            if object_type == "robot":
+                continue
+            objid = self.problem.scene_info.objid_for_type(object_type)
+            if objid != self.problem.target_id:
+                continue
+            for obj_x, obj_y in self.object_poses[object_type]:
+                r = self._res
+                cv2.rectangle(img, (obj_y*r, obj_x*r),
+                              (obj_y*r+r, obj_x*r+r),
+                              lighter(self.get_color(objid)[:3], 0.5), -1)
 
         # Draw belief (only about target)
         target_id = self.problem.target_id
@@ -256,9 +258,9 @@ class ThorViz(Visualizer):
             for kind in self._visuals[step]:
                 img = self._visuals[step][kind]
                 if kind == "img":
-                    img = cv2.flip(img, 1)  # flip horizontally
+                    # img = cv2.flip(img, 1)  # flip horizontally
                     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)  # rotate 90deg clockwise
                 self._visuals[step][kind] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imwrite(os.path.join(visual_path, "img-%d.png" % step), visual["img"])
-            cv2.imwrite(os.path.join(visual_path, "frame-%d.png" % step), visual["frame"])
-            cv2.imwrite(os.path.join(visual_path, "frame_topdown-%d.png" % step), visual["frame_topdown"])
+            # cv2.imwrite(os.path.join(visual_path, "frame-%d.png" % step), visual["frame"])
+            # cv2.imwrite(os.path.join(visual_path, "frame_topdown-%d.png" % step), visual["frame_topdown"])
