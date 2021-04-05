@@ -184,8 +184,6 @@ class TopoPolicyModel(pomdp_py.RolloutPolicy):
 
 
     def get_all_actions(self, state, history=None):
-        """If the last action is a move, then this action will not be a move.
-        (Domain-specific setting)"""
         if state is None:
             return self.actions
         else:
