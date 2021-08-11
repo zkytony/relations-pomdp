@@ -86,7 +86,8 @@ def thor_apply_pose(controller, pose):
     #     import pdb; pdb.set_trace()
     controller.step("TeleportFull",
                     x=x, y=pos["y"], z=z,
-                    rotation=dict(y=th))
+                    rotation=dict(y=th),
+                    horizon=0, standing=True)
     controller.step(action="Pass")  #https://github.com/allenai/ai2thor/issues/538
 
 def thor_object_poses(controller, object_type):

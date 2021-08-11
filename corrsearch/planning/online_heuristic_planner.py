@@ -112,7 +112,6 @@ class HeuristicSequentialPlanner(pomdp_py.Planner):
 
         # Build new tree
         tmp_agent.tree = pomdp_py.RootVNode(self.params["num_visits_init"],
-                                            float("-inf"),
                                             agent.history)
         cur_belief_val_lower_bound = self.value_lower_bound(target_id, tmp_agent.belief,
                                                             tmp_agent.reward_model)

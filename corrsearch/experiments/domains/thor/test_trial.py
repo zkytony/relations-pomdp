@@ -19,7 +19,7 @@ def make_config(spec_or_path,
                 instance_config={},
                 viz_res=30):
     if type(spec_or_path) == str:
-        with open(spec_path) as f:
+        with open(spec_or_path) as f:
             spec = yaml.load(f, Loader=yaml.Loader)
     elif type(spec_or_path) == dict:
         spec = spec_or_path
