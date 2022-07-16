@@ -1,4 +1,7 @@
-# Relations-POMDP
+# Note: This is an early phase of the [COS-POMDP project](https://github.com/zkytony/cos-pomdp). Check out paper ["Towards Optimal Correlational Object Search"](https://kaiyuzheng.me/documents/papers/cospomdp-icra22-full.pdf)  (ICRA 2022)
+
+
+# Relations-POMDP (for Object Search)
 
 
 ## Overview
