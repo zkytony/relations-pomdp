@@ -1,4 +1,5 @@
-"""Sensor model (for example, laser scanner)"""
+"""Sensor model (for example, laser scanner)
+/author: Kaiyu Zheng"""
 
 import math
 import numpy as np
